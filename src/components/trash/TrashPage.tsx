@@ -66,7 +66,7 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
     const deleted = new Date(deletedAt);
     const now = new Date();
     const daysInTrash = Math.floor((now.getTime() - deleted.getTime()) / (1000 * 60 * 60 * 24));
-    const daysRemaining = 30 - daysInTrash; // Default 30 days retention
+    const daysRemaining = 30 - daysInTrash;
     return Math.max(0, daysRemaining);
   };
 
@@ -80,7 +80,6 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Trash</h2>
@@ -100,7 +99,6 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
         )}
       </div>
 
-      {/* Info Banner */}
       {trashedPrompts.length > 0 && (
         <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 px-4 py-3">
           <div className="flex items-center gap-2">
@@ -114,7 +112,6 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
         </div>
       )}
 
-      {/* Trashed Prompts List */}
       {trashedPrompts.length > 0 ? (
         <div className="rounded-lg border bg-card overflow-hidden">
           <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -179,64 +176,84 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
         </Card>
       )}
 
-      {/* Trash Item Detail Modal */}
       {selectedPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedPrompt(null)} />
-          <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl bg-card shadow-2xl border">
-            <div className="flex items-center justify-between border-b px-6 py-4">
-              <h3 className="text-lg font-semibold truncate pr-4">{selectedPrompt.title}</h3>
-              <button
-                onClick={() => setSelectedPrompt(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <TrashDetailModal
+          prompt={selectedPrompt}
+          onClose={() => setSelectedPrompt(null)}
+          onRestore={handleRestore}
+          onPermanentDelete={handlePermanentDelete}
+        />
+      )}
+    </div>
+  );
+}
+
+function TrashDetailModal({
+  prompt,
+  onClose,
+  onRestore,
+  onPermanentDelete,
+}: {
+  prompt: PromptRow;
+  onClose: () => void;
+  onRestore: (id: number) => void;
+  onPermanentDelete: (id: number) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl bg-card shadow-2xl border">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h3 className="text-lg font-semibold truncate pr-4">{prompt.title}</h3>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          {prompt.category && (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                {prompt.category}
+              </span>
             </div>
-            <div className="p-6 space-y-4">
-              {selectedPrompt.category && (
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    {selectedPrompt.category}
-                  </span>
-                </div>
-              )}
-              {selectedPrompt.description && (
-                <p className="text-sm text-muted-foreground">{selectedPrompt.description}</p>
-              )}
-              <div className="rounded-lg border bg-muted/30 p-4 max-h-48 overflow-auto">
-                <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">
-                  {selectedPrompt.content}
-                </pre>
-              </div>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span>Created: {formatDate(selectedPrompt.created_at)}</span>
-                <span>Deleted: {selectedPrompt.deleted_at ? formatDate(selectedPrompt.deleted_at) : "-"}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
-              <Button
-                variant="outline"
-                onClick={() => handlePermanentDelete(selectedPrompt.id)}
-                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                </svg>
-                Delete Permanently
-              </Button>
-              <Button onClick={() => handleRestore(selectedPrompt.id)} className="gap-2">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                </svg>
-                Restore
-              </Button>
-            </div>
+          )}
+          {prompt.description && (
+            <p className="text-sm text-muted-foreground">{prompt.description}</p>
+          )}
+          <div className="rounded-lg border bg-muted/30 p-4 max-h-48 overflow-auto">
+            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">
+              {prompt.content}
+            </pre>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span>Created: {formatDate(prompt.created_at)}</span>
+            <span>Deleted: {prompt.deleted_at ? formatDate(prompt.deleted_at) : "-"}</span>
           </div>
         </div>
-      )}
+        <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
+          <Button
+            variant="outline"
+            onClick={() => onPermanentDelete(prompt.id)}
+            className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+            Delete Permanently
+          </Button>
+          <Button onClick={() => onRestore(prompt.id)} className="gap-2">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+            </svg>
+            Restore
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

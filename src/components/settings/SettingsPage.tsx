@@ -6,52 +6,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useSettings, type LandingPage } from "@/contexts/SettingsContext";
-
-const ACCENT_PRESETS = [
-  { name: "Slate", value: "#1e293b" },
-  { name: "Blue", value: "#2563eb" },
-  { name: "Indigo", value: "#4f46e5" },
-  { name: "Violet", value: "#7c3aed" },
-  { name: "Purple", value: "#9333ea" },
-  { name: "Pink", value: "#db2777" },
-  { name: "Rose", value: "#e11d48" },
-  { name: "Red", value: "#dc2626" },
-  { name: "Orange", value: "#ea580c" },
-  { name: "Amber", value: "#d97706" },
-  { name: "Emerald", value: "#059669" },
-  { name: "Teal", value: "#0d9488" },
-  { name: "Cyan", value: "#0891b2" },
-];
-
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "pt", label: "Português" },
-  { code: "it", label: "Italiano" },
-  { code: "ja", label: "日本語" },
-  { code: "ko", label: "한국어" },
-  { code: "zh", label: "中文" },
-  { code: "ar", label: "العربية" },
-  { code: "hi", label: "हिन्दी" },
-  { code: "ru", label: "Русский" },
-];
-
-const DATE_FORMATS = [
-  { value: "MMM d, yyyy", label: "Jul 22, 2026" },
-  { value: "dd/MM/yyyy", label: "22/07/2026" },
-  { value: "yyyy-MM-dd", label: "2026-07-22" },
-  { value: "d MMMM yyyy", label: "22 July 2026" },
-  { value: "MM/dd/yyyy", label: "07/22/2026" },
-];
-
-const LANDING_PAGES: { value: LandingPage; label: string; description: string }[] = [
-  { value: "dashboard", label: "Dashboard", description: "Overview with stats and recent prompts" },
-  { value: "prompts", label: "All Prompts", description: "Full list of all your prompts" },
-  { value: "categories", label: "Categories", description: "Browse prompts by category" },
-  { value: "tags", label: "Tags", description: "Browse prompts by tags" },
-];
+import { ACCENT_PRESETS, LANGUAGES, DATE_FORMATS, LANDING_PAGES } from "@/constants/settings";
 
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -70,13 +25,11 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Settings</h2>
         <p className="text-sm text-muted-foreground">Customize your Prompt Manager experience</p>
       </div>
 
-      {/* Appearance */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -88,7 +41,6 @@ export function SettingsPage() {
           <CardDescription>Customize the look and feel of the application</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Accent Color */}
           <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">Accent Color</Label>
@@ -137,7 +89,6 @@ export function SettingsPage() {
 
           <Separator />
 
-          {/* Theme */}
           <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">Theme</Label>
@@ -179,7 +130,6 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Language & Region */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -224,7 +174,6 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* General */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -237,13 +186,10 @@ export function SettingsPage() {
           <CardDescription>Configure default behavior and preferences</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Landing Page */}
           <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">Default Landing Page</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Which page to show on launch
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Which page to show on launch</p>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {LANDING_PAGES.map((page) => (
@@ -280,7 +226,6 @@ export function SettingsPage() {
 
           <Separator />
 
-          {/* Trash Timeout */}
           <div className="space-y-3">
             <div>
               <Label className="text-sm font-medium">Trash Retention Period</Label>
@@ -329,7 +274,6 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Actions */}
       <div className="flex items-center justify-between pb-6">
         <Button variant="outline" onClick={handleReset} className="gap-2">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

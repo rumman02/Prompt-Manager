@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import type { PromptRow } from "@/types";
@@ -24,7 +23,6 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       const textarea = document.createElement("textarea");
       textarea.value = prompt.content;
       document.body.appendChild(textarea);
@@ -43,12 +41,8 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Drawer */}
       <div className="relative z-10 w-full max-w-xl bg-card shadow-2xl border-l flex flex-col animate-in slide-in-from-right duration-300">
-        {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold truncate">{prompt.title}</h2>
@@ -98,9 +92,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-auto p-6 space-y-5">
-          {/* Meta info */}
           <div className="flex flex-wrap gap-2">
             {prompt.category && (
               <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
@@ -126,17 +118,15 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
               })}
           </div>
 
-          {/* Description */}
           {prompt.description && (
             <div className="rounded-lg bg-muted/50 p-4">
               <p className="text-sm text-muted-foreground leading-relaxed">{prompt.description}</p>
             </div>
           )}
 
-          {/* Prompt Content */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Prompt Content</Label>
+              <span className="text-sm font-medium">Prompt Content</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -167,7 +157,6 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
             </div>
           </div>
 
-          {/* Timestamps */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
             <span>Created: {formatDate(prompt.created_at)}</span>
             <span>Updated: {formatDate(prompt.updated_at)}</span>
@@ -175,7 +164,6 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
         </div>
       </div>
 
-      {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(false)} />
@@ -197,8 +185,4 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
       )}
     </div>
   );
-}
-
-function Label({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <label className={className}>{children}</label>;
 }

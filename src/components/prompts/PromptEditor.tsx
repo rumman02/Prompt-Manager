@@ -52,10 +52,7 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Modal */}
       <div className="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto rounded-xl bg-card shadow-2xl border">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-6 py-4">
           <h2 className="text-lg font-semibold">
@@ -72,7 +69,6 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
             <Input
@@ -84,7 +80,6 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
             />
           </div>
 
-          {/* Content */}
           <div className="space-y-2">
             <Label htmlFor="content">Prompt Content *</Label>
             <Textarea
@@ -97,7 +92,6 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
             />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
@@ -109,7 +103,6 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
             />
           </div>
 
-          {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
             <Input
@@ -126,7 +119,6 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
             </datalist>
           </div>
 
-          {/* Tags */}
           <div className="space-y-2">
             <Label htmlFor="tags">Tags</Label>
             <Input
@@ -151,7 +143,6 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
           </div>
         </div>
 
-        {/* Footer */}
         <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t bg-card px-6 py-4">
           <Button variant="outline" onClick={onClose}>
             Cancel
