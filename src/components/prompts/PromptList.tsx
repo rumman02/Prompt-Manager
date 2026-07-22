@@ -1,6 +1,8 @@
+import { type ReactNode } from "react";
 import { PromptGrid } from "./PromptGrid";
 import { PromptListTable } from "./PromptListTable";
 import { EmptyPromptsState } from "./EmptyPromptsState";
+import { PageHeader } from "@/components/layout/PageHeader";
 import type { PromptRow } from "@/types";
 
 interface PromptListProps {
@@ -13,6 +15,8 @@ interface PromptListProps {
   onToggleFavorite?: (id: number) => void;
   showHeader?: boolean;
   headerTitle?: string;
+  headerIcon?: ReactNode;
+  headerSubtitle?: string;
   onLoadDemo: () => void;
 }
 
@@ -26,58 +30,78 @@ export function PromptList({
   onToggleFavorite,
   showHeader,
   headerTitle,
+  headerIcon,
+  headerSubtitle,
   onLoadDemo,
 }: PromptListProps) {
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full">
       {showHeader && headerTitle && (
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">{headerTitle}</h2>
-            <p className="text-sm text-muted-foreground">Browse your prompts</p>
-          </div>
-          {onViewModeChange && (
-            <div className="flex items-center gap-1 rounded-md border bg-muted/30 p-1">
-              <button
-                onClick={() => onViewModeChange("list")}
-                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                  viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
+        <PageHeader
+          icon={
+            headerIcon ?? (
+              <svg
+                className="h-5 w-5 text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
               >
-                List
-              </button>
-              <button
-                onClick={() => onViewModeChange("grid")}
-                className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                  viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Grid
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {prompts.length === 0 ? (
-        <EmptyPromptsState onLoadDemo={onLoadDemo} />
-      ) : viewMode === "grid" ? (
-        <PromptGrid
-          prompts={prompts}
-          onSelect={onSelect}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onToggleFavorite={onToggleFavorite}
-        />
-      ) : (
-        <PromptListTable
-          prompts={prompts}
-          onSelect={onSelect}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onToggleFavorite={onToggleFavorite}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                />
+              </svg>
+            )
+          }
+          title={headerTitle}
+          subtitle={headerSubtitle ?? "Browse your prompts"}
+          actions={
+            onViewModeChange ? (
+              <div className="flex items-center gap-1 rounded-md border bg-muted/30 p-1">
+                <button
+                  onClick={() => onViewModeChange("list")}
+                  className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                    viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  List
+                </button>
+                <button
+                  onClick={() => onViewModeChange("grid")}
+                  className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                    viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Grid
+                </button>
+              </div>
+            ) : undefined
+          }
         />
       )}
+      <div className="flex-1 overflow-auto p-6">
+        {prompts.length === 0 ? (
+          <EmptyPromptsState onLoadDemo={onLoadDemo} />
+        ) : viewMode === "grid" ? (
+          <PromptGrid
+            prompts={prompts}
+            onSelect={onSelect}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onToggleFavorite={onToggleFavorite}
+          />
+        ) : (
+          <PromptListTable
+            prompts={prompts}
+            onSelect={onSelect}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onToggleFavorite={onToggleFavorite}
+          />
+        )}
+      </div>
     </div>
   );
 }

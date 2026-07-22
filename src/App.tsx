@@ -241,7 +241,7 @@ function AppContent() {
             onCreatePrompt={handleCreatePrompt}
           />
         )}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto">
           {isEditorPageOpen && (
             <PromptEditorPage
               prompt={editingPrompt}
@@ -252,7 +252,7 @@ function AppContent() {
           )}
 
           {!isEditorPageOpen && activeView === "dashboard" && (
-            <div className="space-y-6">
+            <div className="p-6 space-y-6">
               <StatsCards stats={stats} />
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
                 <div className="lg:col-span-3">
@@ -287,6 +287,21 @@ function AppContent() {
               onToggleFavorite={handleToggleFavorite}
               showHeader
               headerTitle={selectedCategory ? `Prompts: ${selectedCategory}` : "All Prompts"}
+              headerIcon={
+                <svg
+                  className="h-5 w-5 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                  />
+                </svg>
+              }
               onLoadDemo={handleLoadDemoPrompts}
             />
           )}
@@ -308,7 +323,11 @@ function AppContent() {
             <TrashPage onRefresh={refresh} />
           )}
 
-          {!isEditorPageOpen && activeView === "settings" && <SettingsPage />}
+          {!isEditorPageOpen && activeView === "settings" && (
+            <div className="p-6">
+              <SettingsPage />
+            </div>
+          )}
         </main>
       </div>
 

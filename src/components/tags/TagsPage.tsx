@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/layout/PageHeader";
 import type { PromptRow } from "@/types";
 
 interface TagInfo {
@@ -127,22 +128,36 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">All Tags</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {filteredTags.length} tag{filteredTags.length !== 1 ? "s" : ""}
-            {searchQuery && ` matching "${searchQuery}"`}
-          </p>
-        </div>
-        <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    <div className="flex flex-col h-full">
+      <PageHeader
+        icon={
+          <svg
+            className="h-5 w-5 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"
+            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
           </svg>
-          Add Tags
-        </Button>
-      </div>
+        }
+        title="All Tags"
+        subtitle={`${filteredTags.length} tag${filteredTags.length !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
+        actions={
+          <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add Tags
+          </Button>
+        }
+      />
+      <div className="flex-1 overflow-auto p-6 space-y-6">
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
@@ -238,6 +253,7 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
           isLoading={isLoading}
         />
       )}
+      </div>
     </div>
   );
 }

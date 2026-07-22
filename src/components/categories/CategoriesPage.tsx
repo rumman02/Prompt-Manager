@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useCategories } from "@/hooks/useCategories";
 import type { CategoryCount } from "@/types";
 
@@ -67,22 +68,35 @@ export function CategoriesPage({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Categories</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {filteredCategories.length} categor{filteredCategories.length !== 1 ? "ies" : "y"}
-            {searchQuery && ` matching "${searchQuery}"`}
-          </p>
-        </div>
-        <Button onClick={() => setIsAddCategoryModalOpen(true)} className="gap-2">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    <div className="flex flex-col h-full">
+      <PageHeader
+        icon={
+          <svg
+            className="h-5 w-5 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
+            />
           </svg>
-          Add Category
-        </Button>
-      </div>
+        }
+        title="Categories"
+        subtitle={`${filteredCategories.length} categor${filteredCategories.length !== 1 ? "ies" : "y"}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
+        actions={
+          <Button onClick={() => setIsAddCategoryModalOpen(true)} className="gap-2">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add Category
+          </Button>
+        }
+      />
+      <div className="flex-1 overflow-auto p-6 space-y-6">
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
@@ -179,6 +193,7 @@ export function CategoriesPage({
           categories={categories}
         />
       )}
+      </div>
     </div>
   );
 }
