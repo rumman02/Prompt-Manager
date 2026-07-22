@@ -61,9 +61,26 @@ export function App() {
     await Promise.all([loadPrompts(), loadStats(), loadCategories()]);
   }, [loadPrompts, loadStats, loadCategories]);
 
+  const handleLoadDemoPrompts = async () => {
+    try {
+      await invoke("seed_demo_prompts");
+      await refresh();
+    } catch (e) {
+      console.error("Failed to load demo prompts:", e);
+    }
+  };
+
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    const handleLoadDemo = () => {
+      handleLoadDemoPrompts();
+    };
+    window.addEventListener("load-demo-prompts", handleLoadDemo);
+    return () => window.removeEventListener("load-demo-prompts", handleLoadDemo);
+  }, [handleLoadDemoPrompts]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -295,9 +312,14 @@ export function App() {
                     </div>
                     <h3 className="mt-4 text-lg font-medium">No categories yet</h3>
                     <p className="mt-1 text-sm text-muted-foreground">Create prompts with categories to see them here</p>
-                    <button onClick={handleCreatePrompt} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-                      Create your first prompt
-                    </button>
+                    <div className="mt-4 flex gap-3">
+                      <button onClick={handleCreatePrompt} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                        Create your first prompt
+                      </button>
+                      <button onClick={handleLoadDemoPrompts} className="inline-flex items-center gap-2 rounded-lg border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
+                        Load demo prompts
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

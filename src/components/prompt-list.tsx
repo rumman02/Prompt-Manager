@@ -103,7 +103,18 @@ export function PromptList({
                 </svg>
               </div>
               <h3 className="text-lg font-medium">No prompts yet</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Create your first prompt to get started</p>
+              <p className="mt-1 text-sm text-muted-foreground">Create your first prompt or load demo prompts</p>
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => {
+                    const event = new CustomEvent("load-demo-prompts");
+                    window.dispatchEvent(event);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  Load demo prompts
+                </button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -190,7 +201,18 @@ export function PromptList({
                 </svg>
               </div>
               <h3 className="text-lg font-medium">No prompts yet</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Create your first prompt to get started</p>
+              <p className="mt-1 text-sm text-muted-foreground">Create your first prompt or load demo prompts</p>
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => {
+                    const event = new CustomEvent("load-demo-prompts");
+                    window.dispatchEvent(event);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  Load demo prompts
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ use tauri::Manager;
 fn init_db(app_handle: tauri::AppHandle) -> Result<(), String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
     db.init().map_err(|e| e.to_string())?;
+    db.seed_demo_prompts().map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -108,6 +109,12 @@ fn get_category_counts(app_handle: tauri::AppHandle) -> Result<Vec<db::CategoryC
     db.get_category_counts().map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn seed_demo_prompts(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.seed_demo_prompts().map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -132,6 +139,7 @@ pub fn run() {
             get_categories_count,
             get_tags_count,
             get_category_counts,
+            seed_demo_prompts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
