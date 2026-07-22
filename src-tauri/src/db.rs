@@ -23,6 +23,20 @@ pub struct CategoryCount {
     pub count: i64,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PromptVersion {
+    pub id: i64,
+    pub prompt_id: i64,
+    pub version_number: i64,
+    pub title: String,
+    pub content: String,
+    pub category: Option<String>,
+    pub tags: Option<String>,
+    pub description: Option<String>,
+    pub message: Option<String>,
+    pub created_at: String,
+}
+
 pub struct Database {
     conn: Connection,
 }
@@ -114,6 +128,29 @@ impl Database {
             "ALTER TABLE prompts ADD COLUMN deleted_at DATETIME DEFAULT NULL",
             [],
         );
+
+        // Create prompt_versions table for version control
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS prompt_versions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                prompt_id INTEGER NOT NULL,
+                version_number INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                category TEXT,
+                tags TEXT,
+                description TEXT,
+                message TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_prompt_versions_prompt_id ON prompt_versions(prompt_id)",
+            [],
+        )?;
 
         Ok(())
     }
@@ -490,6 +527,90 @@ impl Database {
             "UPDATE prompts SET category = ?1, updated_at = CURRENT_TIMESTAMP WHERE category = ?2",
             rusqlite::params![new_name, old_name],
         )?;
+        Ok(())
+    }
+
+    // Version control methods
+    pub fn save_prompt_version(
+        &self,
+        prompt_id: i64,
+        title: &str,
+        content: &str,
+        category: Option<&str>,
+        tags: Option<&str>,
+        description: Option<&str>,
+        message: Option<&str>,
+    ) -> Result<PromptVersion> {
+        // Get the next version number for this prompt
+        let version_number: i64 = self.conn.query_row(
+            "SELECT COALESCE(MAX(version_number), 0) + 1 FROM prompt_versions WHERE prompt_id = ?1",
+            [prompt_id],
+            |row| row.get(0),
+        )?;
+
+        self.conn.execute(
+            "INSERT INTO prompt_versions (prompt_id, version_number, title, content, category, tags, description, message)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            rusqlite::params![prompt_id, version_number, title, content, category, tags, description, message],
+        )?;
+
+        let id = self.conn.last_insert_rowid();
+        self.get_prompt_version(id)
+    }
+
+    pub fn get_prompt_version(&self, id: i64) -> Result<PromptVersion> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, prompt_id, version_number, title, content, category, tags, description, message, created_at
+             FROM prompt_versions WHERE id = ?1",
+        )?;
+
+        let version = stmt.query_row([id], |row| {
+            Ok(PromptVersion {
+                id: row.get(0)?,
+                prompt_id: row.get(1)?,
+                version_number: row.get(2)?,
+                title: row.get(3)?,
+                content: row.get(4)?,
+                category: row.get(5)?,
+                tags: row.get(6)?,
+                description: row.get(7)?,
+                message: row.get(8)?,
+                created_at: row.get(9)?,
+            })
+        })?;
+        Ok(version)
+    }
+
+    pub fn get_prompt_versions(&self, prompt_id: i64) -> Result<Vec<PromptVersion>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, prompt_id, version_number, title, content, category, tags, description, message, created_at
+             FROM prompt_versions WHERE prompt_id = ?1 ORDER BY version_number DESC",
+        )?;
+
+        let versions = stmt
+            .query_map([prompt_id], |row| {
+                Ok(PromptVersion {
+                    id: row.get(0)?,
+                    prompt_id: row.get(1)?,
+                    version_number: row.get(2)?,
+                    title: row.get(3)?,
+                    content: row.get(4)?,
+                    category: row.get(5)?,
+                    tags: row.get(6)?,
+                    description: row.get(7)?,
+                    message: row.get(8)?,
+                    created_at: row.get(9)?,
+                })
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(versions)
+    }
+
+    pub fn delete_prompt_version(&self, id: i64) -> Result<()> {
+        self.conn
+            .execute("DELETE FROM prompt_versions WHERE id = ?1", [id])?;
         Ok(())
     }
 

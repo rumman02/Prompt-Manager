@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { forwardRef } from "react";
 
 interface FormFieldProps {
   label: string;
@@ -50,15 +51,20 @@ interface FormTextareaProps {
   className?: string;
 }
 
-export function FormTextarea({ id, value, onChange, placeholder, rows, className }: FormTextareaProps) {
-  return (
-    <Textarea
-      id={id}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={rows}
-      className={className}
-    />
-  );
-}
+export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
+  ({ id, value, onChange, placeholder, rows, className }, ref) => {
+    return (
+      <Textarea
+        ref={ref}
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className={className}
+      />
+    );
+  }
+);
+
+FormTextarea.displayName = "FormTextarea";

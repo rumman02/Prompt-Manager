@@ -1,5 +1,8 @@
 mod db;
 
+// Version control commands
+
+
 use db::Database;
 use tauri::Manager;
 
@@ -209,6 +212,48 @@ fn rename_category(
     db.rename_category(&old_name, &new_name).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn save_prompt_version(
+    app_handle: tauri::AppHandle,
+    prompt_id: i64,
+    title: String,
+    content: String,
+    category: Option<String>,
+    tags: Option<String>,
+    description: Option<String>,
+    message: Option<String>,
+) -> Result<db::PromptVersion, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.save_prompt_version(
+        prompt_id,
+        &title,
+        &content,
+        category.as_deref(),
+        tags.as_deref(),
+        description.as_deref(),
+        message.as_deref(),
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_prompt_versions(
+    app_handle: tauri::AppHandle,
+    prompt_id: i64,
+) -> Result<Vec<db::PromptVersion>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_prompt_versions(prompt_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_prompt_version(
+    app_handle: tauri::AppHandle,
+    id: i64,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.delete_prompt_version(id).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -249,6 +294,9 @@ pub fn run() {
             add_category,
             delete_category,
             rename_category,
+            save_prompt_version,
+            get_prompt_versions,
+            delete_prompt_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
