@@ -5,6 +5,7 @@ export interface PromptRow {
   category: string | null;
   tags: string | null;
   description: string | null;
+  is_favorite: boolean;
   created_at: string;
   updated_at: string;
 }

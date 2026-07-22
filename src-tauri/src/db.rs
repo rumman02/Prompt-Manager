@@ -11,6 +11,7 @@ pub struct Prompt {
     pub category: Option<String>,
     pub tags: Option<String>,
     pub description: Option<String>,
+    pub is_favorite: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -50,11 +51,18 @@ impl Database {
                 category TEXT,
                 tags TEXT,
                 description TEXT,
+                is_favorite INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )",
             [],
         )?;
+
+        // Add is_favorite column if it doesn't exist (migration)
+        let _ = self.conn.execute(
+            "ALTER TABLE prompts ADD COLUMN is_favorite INTEGER DEFAULT 0",
+            [],
+        );
 
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_prompts_category ON prompts(category)",
@@ -110,8 +118,9 @@ impl Database {
             category: row.get(3)?,
             tags: row.get(4)?,
             description: row.get(5)?,
-            created_at: row.get(6)?,
-            updated_at: row.get(7)?,
+            is_favorite: row.get(6)?,
+            created_at: row.get(7)?,
+            updated_at: row.get(8)?,
         })
     }
 
@@ -135,7 +144,7 @@ impl Database {
 
     pub fn get_all_prompts(&self) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, created_at, updated_at
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at
              FROM prompts ORDER BY updated_at DESC",
         )?;
 
@@ -149,7 +158,7 @@ impl Database {
 
     pub fn get_prompt(&self, id: i64) -> Result<Prompt> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, created_at, updated_at
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at
              FROM prompts WHERE id = ?1",
         )?;
 
@@ -212,7 +221,7 @@ impl Database {
 
     pub fn search_prompts(&self, query: &str) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT p.id, p.title, p.content, p.category, p.tags, p.description, p.created_at, p.updated_at
+            "SELECT p.id, p.title, p.content, p.category, p.tags, p.description, p.is_favorite, p.created_at, p.updated_at
              FROM prompts_fts fts
              JOIN prompts p ON p.id = fts.rowid
              WHERE prompts_fts MATCH ?1
@@ -229,7 +238,7 @@ impl Database {
 
     pub fn get_prompts_by_category(&self, category: &str) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, created_at, updated_at
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at
              FROM prompts WHERE category = ?1 ORDER BY updated_at DESC",
         )?;
 
@@ -299,6 +308,66 @@ impl Database {
             .collect();
 
         Ok(counts)
+    }
+
+    pub fn toggle_favorite(&self, id: i64) -> Result<bool> {
+        self.conn.execute(
+            "UPDATE prompts SET is_favorite = CASE WHEN is_favorite = 1 THEN 0 ELSE 1 END, updated_at = CURRENT_TIMESTAMP WHERE id = ?1",
+            [id],
+        )?;
+        let is_favorite: i64 = self.conn.query_row(
+            "SELECT is_favorite FROM prompts WHERE id = ?1",
+            [id],
+            |row| row.get(0),
+        )?;
+        Ok(is_favorite == 1)
+    }
+
+    pub fn get_active_prompts_count(&self) -> Result<i64> {
+        // Active = created within last 30 days or updated within last 30 days
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM prompts WHERE updated_at >= datetime('now', '-30 days')",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    }
+
+    pub fn get_avg_tokens_per_prompt(&self) -> Result<f64> {
+        // Approximate token count: ~4 chars per token (rough estimate)
+        let result: f64 = self.conn.query_row(
+            "SELECT COALESCE(AVG(LENGTH(content)), 0.0) FROM prompts",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(result / 4.0)
+    }
+
+    pub fn get_favorites_count(&self) -> Result<i64> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM prompts WHERE is_favorite = 1",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    }
+
+    pub fn get_new_this_week_count(&self) -> Result<i64> {
+        let count: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM prompts WHERE created_at >= datetime('now', '-7 days')",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    }
+
+    pub fn get_most_popular_category(&self) -> Result<Option<String>> {
+        let result: Option<String> = self.conn.query_row(
+            "SELECT category FROM prompts WHERE category IS NOT NULL GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(result)
     }
 
     pub fn seed_demo_prompts(&self) -> Result<()> {

@@ -110,6 +110,42 @@ fn get_category_counts(app_handle: tauri::AppHandle) -> Result<Vec<db::CategoryC
 }
 
 #[tauri::command]
+fn toggle_favorite(app_handle: tauri::AppHandle, id: i64) -> Result<bool, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.toggle_favorite(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_active_prompts_count(app_handle: tauri::AppHandle) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_active_prompts_count().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_avg_tokens_per_prompt(app_handle: tauri::AppHandle) -> Result<f64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_avg_tokens_per_prompt().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_favorites_count(app_handle: tauri::AppHandle) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_favorites_count().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_new_this_week_count(app_handle: tauri::AppHandle) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_new_this_week_count().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_most_popular_category(app_handle: tauri::AppHandle) -> Result<Option<String>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_most_popular_category().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn seed_demo_prompts(app_handle: tauri::AppHandle) -> Result<(), String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
     db.seed_demo_prompts().map_err(|e| e.to_string())
@@ -139,6 +175,12 @@ pub fn run() {
             get_categories_count,
             get_tags_count,
             get_category_counts,
+            toggle_favorite,
+            get_active_prompts_count,
+            get_avg_tokens_per_prompt,
+            get_favorites_count,
+            get_new_this_week_count,
+            get_most_popular_category,
             seed_demo_prompts,
         ])
         .run(tauri::generate_context!())

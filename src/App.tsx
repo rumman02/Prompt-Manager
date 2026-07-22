@@ -22,6 +22,11 @@ function AppContent() {
     totalPrompts: 0,
     totalCategories: 0,
     totalTags: 0,
+    activePrompts: 0,
+    avgTokensPerPrompt: 0,
+    favoritesCount: 0,
+    newThisWeek: 0,
+    popularCategory: null as string | null,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -43,16 +48,30 @@ function AppContent() {
 
   const loadStats = useCallback(async () => {
     try {
-      const [totalPrompts, totalCategories, totalTags] = await Promise.all([
+      const [totalPrompts, totalCategories, totalTags, activePrompts, avgTokensPerPrompt, favoritesCount, newThisWeek, popularCategory] = await Promise.all([
         invoke<number>("get_prompts_count"),
         invoke<number>("get_categories_count"),
         invoke<number>("get_tags_count"),
+        invoke<number>("get_active_prompts_count"),
+        invoke<number>("get_avg_tokens_per_prompt"),
+        invoke<number>("get_favorites_count"),
+        invoke<number>("get_new_this_week_count"),
+        invoke<string | null>("get_most_popular_category"),
       ]);
-      setStats({ totalPrompts, totalCategories, totalTags });
+      setStats({ totalPrompts, totalCategories, totalTags, activePrompts, avgTokensPerPrompt, favoritesCount, newThisWeek, popularCategory });
     } catch (e) {
       console.error("Failed to load stats:", e);
     }
   }, []);
+
+  const handleToggleFavorite = async (id: number) => {
+    try {
+      await invoke("toggle_favorite", { id });
+      await refresh();
+    } catch (e) {
+      console.error("Failed to toggle favorite:", e);
+    }
+  };
 
   const loadCategories = useCallback(async () => {
     try {
@@ -262,6 +281,7 @@ function AppContent() {
                     onSelect={setSelectedPrompt}
                     onEdit={handleEditPrompt}
                     onDelete={handleDeletePrompt}
+                    onToggleFavorite={handleToggleFavorite}
                     showHeader
                     headerTitle="Recent Prompts"
                   />
@@ -280,6 +300,7 @@ function AppContent() {
               onSelect={setSelectedPrompt}
               onEdit={handleEditPrompt}
               onDelete={handleDeletePrompt}
+              onToggleFavorite={handleToggleFavorite}
               showHeader
               headerTitle={selectedCategory ? `Prompts: ${selectedCategory}` : "All Prompts"}
             />
@@ -366,6 +387,7 @@ function AppContent() {
         onClose={() => setSelectedPrompt(null)}
         onEdit={handleEditPrompt}
         onDelete={handleDeletePrompt}
+        onToggleFavorite={handleToggleFavorite}
       />
 
       {/* Prompt Editor Modal */}
