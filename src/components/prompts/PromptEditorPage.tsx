@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { FormField, FormInput, FormTextarea } from "@/components/ui/form-field";
 import { TagPreview } from "@/components/ui/tag-preview";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
@@ -91,58 +90,75 @@ export function PromptEditorPage({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Top bar with breadcrumb and header */}
-      <div className="space-y-6 pb-4">
-        <Breadcrumb
-          items={[
-            { label: "Prompts", onClick: onBack },
-            { label: isEditing ? "Edit Prompt" : "Create New Prompt" },
-          ]}
-          onBack={onBack}
-        />
+      <PageHeader
+        icon={
+          <svg
+            className="h-5 w-5 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+            />
+          </svg>
+        }
+        title={isEditing ? "Edit Prompt" : "Create New Prompt"}
+        subtitle={
+          isEditing
+            ? "Update your prompt details below"
+            : "Fill in the details to create a new prompt"
+        }
+        actions={
+          <>
+            <div className="flex items-center gap-1 mr-2">
+              <Button
+                variant={showVersionSidebar ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowVersionSidebar(!showVersionSidebar)}
+                title="Toggle version history"
+              >
+                <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                History
+              </Button>
+              <Button
+                variant={showVariableSidebar ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowVariableSidebar(!showVariableSidebar)}
+                title="Toggle variables panel"
+              >
+                <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
+                </svg>
+                Variables
+              </Button>
+            </div>
+            <Button variant="outline" onClick={onBack}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isDisabled}>
+              {isEditing ? "Update Prompt" : "Create Prompt"}
+            </Button>
+          </>
+        }
+      />
 
-        <PageHeader
-          title={isEditing ? "Edit Prompt" : "Create New Prompt"}
-          description={
-            isEditing
-              ? "Update your prompt details below"
-              : "Fill in the details to create a new prompt"
-          }
-          actions={
-            <>
-              <div className="flex items-center gap-1 mr-2">
-                <Button
-                  variant={showVersionSidebar ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={() => setShowVersionSidebar(!showVersionSidebar)}
-                  title="Toggle version history"
-                >
-                  <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  History
-                </Button>
-                <Button
-                  variant={showVariableSidebar ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={() => setShowVariableSidebar(!showVariableSidebar)}
-                  title="Toggle variables panel"
-                >
-                  <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
-                  </svg>
-                  Variables
-                </Button>
-              </div>
-              <Button variant="outline" onClick={onBack}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={isDisabled}>
-                {isEditing ? "Update Prompt" : "Create Prompt"}
-              </Button>
-            </>
-          }
-        />
+      {/* Back button row */}
+      <div className="px-6 pt-4">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+          Back to Prompts
+        </button>
       </div>
 
       {/* Main editor area with sidebars */}
