@@ -226,16 +226,6 @@ export function PromptEditorPage({
               <TagPreview tags={tags} />
             </FormField>
           </div>
-
-          {/* Bottom action bar */}
-          <div className="flex items-center justify-end gap-3 border-t bg-muted/20 px-6 py-4">
-            <Button variant="outline" onClick={onBack}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isDisabled}>
-              {isEditing ? "Update Prompt" : "Create Prompt"}
-            </Button>
-          </div>
         </div>
 
         {/* Variables Sidebar */}
