@@ -151,6 +151,28 @@ fn seed_demo_prompts(app_handle: tauri::AppHandle) -> Result<(), String> {
     db.seed_demo_prompts().map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn add_category(app_handle: tauri::AppHandle, category: String) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.add_category(&category).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_category(app_handle: tauri::AppHandle, category: String) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.delete_category(&category).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn rename_category(
+    app_handle: tauri::AppHandle,
+    old_name: String,
+    new_name: String,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.rename_category(&old_name, &new_name).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -182,6 +204,9 @@ pub fn run() {
             get_new_this_week_count,
             get_most_popular_category,
             seed_demo_prompts,
+            add_category,
+            delete_category,
+            rename_category,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

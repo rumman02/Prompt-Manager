@@ -370,6 +370,42 @@ impl Database {
         Ok(result)
     }
 
+    pub fn add_category(&self, category: &str) -> Result<()> {
+        // Check if category already exists
+        let exists: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM prompts WHERE category = ?1)",
+            [category],
+            |row| row.get(0),
+        )?;
+
+        if !exists {
+            // Create a placeholder prompt with the new category
+            self.conn.execute(
+                "INSERT INTO prompts (title, content, category, tags, description)
+                 VALUES ('Untitled', '', ?1, NULL, NULL)",
+                rusqlite::params![category],
+            )?;
+        }
+
+        Ok(())
+    }
+
+    pub fn delete_category(&self, category: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE prompts SET category = NULL WHERE category = ?1",
+            [category],
+        )?;
+        Ok(())
+    }
+
+    pub fn rename_category(&self, old_name: &str, new_name: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE prompts SET category = ?1, updated_at = CURRENT_TIMESTAMP WHERE category = ?2",
+            rusqlite::params![new_name, old_name],
+        )?;
+        Ok(())
+    }
+
     pub fn seed_demo_prompts(&self) -> Result<()> {
         let count: i64 = self
             .conn
