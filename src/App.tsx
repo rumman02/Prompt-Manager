@@ -5,7 +5,7 @@ import { Header } from "@/components/layout";
 import { StatsCards } from "@/components/stats-cards";
 import { PromptList } from "@/components/prompts/PromptList";
 import { CategoryChart } from "@/components/category-chart";
-import { PromptEditor } from "@/components/prompts/PromptEditor";
+import { PromptEditorPage, type PromptFormData } from "@/components/prompts/PromptEditorPage";
 import { PromptViewer } from "@/components/prompts/PromptViewer";
 import { SearchBar } from "@/components/search-bar";
 import { SettingsPage } from "@/components/settings/SettingsPage";
@@ -35,8 +35,9 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<PromptRow | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isEditorPageOpen, setIsEditorPageOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<PromptRow | null>(null);
+  const [previousView, setPreviousView] = useState<ViewType>("prompts");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [activeView, setActiveView] = useState<ViewType>(initialView);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -159,13 +160,15 @@ function AppContent() {
 
   const handleCreatePrompt = () => {
     setEditingPrompt(null);
-    setIsEditorOpen(true);
+    setPreviousView(activeView);
+    setIsEditorPageOpen(true);
   };
 
   const handleEditPrompt = (prompt: PromptRow) => {
     setEditingPrompt(prompt);
     setSelectedPrompt(null);
-    setIsEditorOpen(true);
+    setPreviousView(activeView);
+    setIsEditorPageOpen(true);
   };
 
   const handleDeletePrompt = async (id: number) => {
@@ -178,13 +181,7 @@ function AppContent() {
     }
   };
 
-  const handleSavePrompt = async (data: {
-    title: string;
-    content: string;
-    category: string;
-    tags: string;
-    description: string;
-  }) => {
+  const handleSavePrompt = async (data: PromptFormData) => {
     try {
       if (editingPrompt) {
         await invoke("update_prompt", {
@@ -204,12 +201,18 @@ function AppContent() {
           description: data.description || null,
         });
       }
-      setIsEditorOpen(false);
+      setIsEditorPageOpen(false);
       setEditingPrompt(null);
       await refresh();
     } catch (e) {
       console.error("Failed to save prompt:", e);
     }
+  };
+
+  const handleEditorClose = () => {
+    setIsEditorPageOpen(false);
+    setEditingPrompt(null);
+    setActiveView(previousView);
   };
 
   const filteredPrompts = selectedCategory
@@ -239,7 +242,16 @@ function AppContent() {
         />
 
         <main className="flex-1 overflow-auto p-6">
-          {activeView === "dashboard" && (
+          {isEditorPageOpen && (
+            <PromptEditorPage
+              prompt={editingPrompt}
+              categories={categories.map((c) => c.category)}
+              onBack={handleEditorClose}
+              onSave={handleSavePrompt}
+            />
+          )}
+
+          {!isEditorPageOpen && activeView === "dashboard" && (
             <div className="space-y-6">
               <StatsCards stats={stats} />
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -263,7 +275,7 @@ function AppContent() {
             </div>
           )}
 
-          {activeView === "prompts" && (
+          {!isEditorPageOpen && activeView === "prompts" && (
             <PromptList
               prompts={filteredPrompts}
               viewMode={viewMode}
@@ -277,7 +289,7 @@ function AppContent() {
             />
           )}
 
-          {activeView === "categories" && (
+          {!isEditorPageOpen && activeView === "categories" && (
             <CategoriesPage
               selectedCategory={selectedCategory}
               onCategorySelect={setSelectedCategory}
@@ -286,15 +298,15 @@ function AppContent() {
             />
           )}
 
-          {activeView === "tags" && (
+          {!isEditorPageOpen && activeView === "tags" && (
             <TagsPage onRefresh={refresh} />
           )}
 
-          {activeView === "trash" && (
+          {!isEditorPageOpen && activeView === "trash" && (
             <TrashPage onRefresh={refresh} />
           )}
 
-          {activeView === "settings" && <SettingsPage />}
+          {!isEditorPageOpen && activeView === "settings" && <SettingsPage />}
         </main>
       </div>
 
@@ -304,17 +316,6 @@ function AppContent() {
         onEdit={handleEditPrompt}
         onDelete={handleDeletePrompt}
         onToggleFavorite={handleToggleFavorite}
-      />
-
-      <PromptEditor
-        open={isEditorOpen}
-        onClose={() => {
-          setIsEditorOpen(false);
-          setEditingPrompt(null);
-        }}
-        onSave={handleSavePrompt}
-        prompt={editingPrompt}
-        categories={categories.map((c) => c.category)}
       />
     </div>
   );
