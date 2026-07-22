@@ -4,16 +4,12 @@ import { Button } from "@/components/ui/button";
 interface HeaderProps {
   searchQuery: string;
   onSearch: (query: string) => void;
-  viewMode: "list" | "grid";
-  onViewModeChange: (mode: "list" | "grid") => void;
   onCreatePrompt: () => void;
 }
 
 export function Header({
   searchQuery,
   onSearch,
-  viewMode,
-  onViewModeChange,
   onCreatePrompt,
 }: HeaderProps) {
   return (
@@ -46,24 +42,6 @@ export function Header({
           onChange={onSearch}
           placeholder="Search prompts..."
         />
-        <div className="flex items-center gap-1 rounded-md border bg-muted/30 p-1">
-          <button
-            onClick={() => onViewModeChange("list")}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-              viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            List
-          </button>
-          <button
-            onClick={() => onViewModeChange("grid")}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-              viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Grid
-          </button>
-        </div>
         <Button onClick={onCreatePrompt} className="gap-2">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

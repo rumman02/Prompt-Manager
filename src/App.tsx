@@ -238,8 +238,6 @@ function AppContent() {
           <Header
             searchQuery={searchQuery}
             onSearch={handleSearch}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
             onCreatePrompt={handleCreatePrompt}
           />
         )}
@@ -256,11 +254,12 @@ function AppContent() {
           {!isEditorPageOpen && activeView === "dashboard" && (
             <div className="space-y-6">
               <StatsCards stats={stats} />
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+                <div className="lg:col-span-3">
                   <PromptList
                     prompts={filteredPrompts.slice(0, 8)}
                     viewMode={viewMode}
+                    onViewModeChange={setViewMode}
                     onSelect={setSelectedPrompt}
                     onEdit={handleEditPrompt}
                     onDelete={handleDeletePrompt}
@@ -281,6 +280,7 @@ function AppContent() {
             <PromptList
               prompts={filteredPrompts}
               viewMode={viewMode}
+              onViewModeChange={setViewMode}
               onSelect={setSelectedPrompt}
               onEdit={handleEditPrompt}
               onDelete={handleDeletePrompt}
