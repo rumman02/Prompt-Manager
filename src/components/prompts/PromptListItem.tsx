@@ -14,7 +14,7 @@ export function PromptListItem({ prompt, onSelect, onEdit, onDelete, onToggleFav
   const stats = getContentStats(prompt.content);
   return (
     <div
-      className="group grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+      className="group grid grid-cols-[1fr_8rem_auto_10rem_6rem] gap-4 items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
       onClick={() => onSelect(prompt)}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -95,7 +95,7 @@ export function PromptListItem({ prompt, onSelect, onEdit, onDelete, onToggleFav
           </div>
         </TooltipContent>
       </Tooltip>
-      <span className="w-24 text-right text-xs text-muted-foreground">
+      <span className="text-right text-xs text-muted-foreground">
         {formatDate(prompt.updated_at)}
       </span>
     </div>
