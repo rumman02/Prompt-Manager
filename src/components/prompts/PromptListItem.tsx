@@ -1,4 +1,5 @@
-import { formatDate, truncate } from "@/lib/utils";
+import { formatDate, getContentStats, truncate } from "@/lib/utils";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import type { PromptRow } from "@/types";
 
 interface PromptListItemProps {
@@ -10,9 +11,10 @@ interface PromptListItemProps {
 }
 
 export function PromptListItem({ prompt, onSelect, onEdit, onDelete, onToggleFavorite }: PromptListItemProps) {
+  const stats = getContentStats(prompt.content);
   return (
     <div
-      className="group grid grid-cols-[1fr_auto_auto] gap-4 items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+      className="group grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
       onClick={() => onSelect(prompt)}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -71,6 +73,26 @@ export function PromptListItem({ prompt, onSelect, onEdit, onDelete, onToggleFav
           </svg>
         </button>
       </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="w-40 flex items-center justify-center cursor-default">
+            <div className="flex flex-col items-center text-xs text-muted-foreground leading-tight">
+              <span className="font-medium text-foreground">
+                ~{stats.tokens} tokens
+              </span>
+              <span>{stats.words}w · {stats.sentences}s · {stats.paragraphs}p</span>
+            </div>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <span>~{stats.tokens} tokens</span>
+            <span>{stats.words} Words</span>
+            <span>{stats.sentences} Sentences</span>
+            <span>{stats.paragraphs} Paragraphs</span>
+          </div>
+        </TooltipContent>
+      </Tooltip>
       <span className="w-24 text-right text-xs text-muted-foreground">
         {formatDate(prompt.updated_at)}
       </span>

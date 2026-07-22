@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { formatDate, truncate } from "@/lib/utils";
+import { formatDate, getContentStats, truncate } from "@/lib/utils";
 import type { PromptRow } from "@/types";
 
 interface PromptCardProps {
@@ -11,6 +11,7 @@ interface PromptCardProps {
 }
 
 export function PromptCard({ prompt, onSelect, onEdit, onDelete, onToggleFavorite }: PromptCardProps) {
+  const stats = getContentStats(prompt.content);
   return (
     <Card
       className="cursor-pointer border-0 shadow-sm transition-all hover:shadow-md hover:border-primary/30 group"
@@ -73,6 +74,12 @@ export function PromptCard({ prompt, onSelect, onEdit, onDelete, onToggleFavorit
           </div>
         )}
         <p className="mt-3 text-xs text-muted-foreground">{formatDate(prompt.updated_at)}</p>
+        <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/80">
+          <span>~{stats.tokens} tokens</span>
+          <span>{stats.words} words</span>
+          <span>{stats.sentences} sentences</span>
+          <span>{stats.paragraphs} paragraphs</span>
+        </div>
       </CardContent>
     </Card>
   );

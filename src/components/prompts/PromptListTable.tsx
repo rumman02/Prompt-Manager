@@ -1,4 +1,5 @@
 import { PromptListItem } from "./PromptListItem";
+import { getContentStats } from "@/lib/utils";
 import type { PromptRow } from "@/types";
 
 interface PromptListTableProps {
@@ -12,9 +13,10 @@ interface PromptListTableProps {
 export function PromptListTable({ prompts, onSelect, onEdit, onDelete, onToggleFavorite }: PromptListTableProps) {
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
-      <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         <span>Title</span>
         <span className="w-32 text-center">Category</span>
+        <span className="w-40 text-center">Content</span>
         <span className="w-24 text-right">Updated</span>
       </div>
       <div className="divide-y">

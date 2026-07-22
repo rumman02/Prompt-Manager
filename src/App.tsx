@@ -13,6 +13,7 @@ import { TagsPage } from "@/components/tags/TagsPage";
 import { TrashPage } from "@/components/trash/TrashPage";
 import { CategoriesPage } from "@/components/categories/CategoriesPage";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { PromptRow, CategoryCount } from "@/types";
 
 function AppContent() {
@@ -324,7 +325,9 @@ function AppContent() {
 export function App() {
   return (
     <SettingsProvider>
-      <AppContent />
+      <TooltipProvider>
+        <AppContent />
+      </TooltipProvider>
     </SettingsProvider>
   );
 }
