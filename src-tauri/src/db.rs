@@ -14,6 +14,7 @@ pub struct Prompt {
     pub is_favorite: bool,
     pub created_at: String,
     pub updated_at: String,
+    pub deleted_at: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -53,7 +54,8 @@ impl Database {
                 description TEXT,
                 is_favorite INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                deleted_at DATETIME DEFAULT NULL
             )",
             [],
         )?;
@@ -107,6 +109,12 @@ impl Database {
             [],
         )?;
 
+        // Add deleted_at column if it doesn't exist (migration)
+        let _ = self.conn.execute(
+            "ALTER TABLE prompts ADD COLUMN deleted_at DATETIME DEFAULT NULL",
+            [],
+        );
+
         Ok(())
     }
 
@@ -121,6 +129,7 @@ impl Database {
             is_favorite: row.get(6)?,
             created_at: row.get(7)?,
             updated_at: row.get(8)?,
+            deleted_at: row.get(9)?,
         })
     }
 
@@ -144,8 +153,8 @@ impl Database {
 
     pub fn get_all_prompts(&self) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at
-             FROM prompts ORDER BY updated_at DESC",
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+             FROM prompts WHERE deleted_at IS NULL ORDER BY updated_at DESC",
         )?;
 
         let prompts = stmt
@@ -158,8 +167,8 @@ impl Database {
 
     pub fn get_prompt(&self, id: i64) -> Result<Prompt> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at
-             FROM prompts WHERE id = ?1",
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+             FROM prompts WHERE id = ?1 AND deleted_at IS NULL",
         )?;
 
         let prompt = stmt.query_row([id], Self::row_to_prompt)?;
@@ -214,17 +223,95 @@ impl Database {
     }
 
     pub fn delete_prompt(&self, id: i64) -> Result<()> {
+        // Soft delete: set deleted_at timestamp
+        self.conn
+            .execute("UPDATE prompts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?1 AND deleted_at IS NULL", [id])?;
+        Ok(())
+    }
+
+    pub fn restore_prompt(&self, id: i64) -> Result<()> {
+        self.conn
+            .execute("UPDATE prompts SET deleted_at = NULL WHERE id = ?1", [id])?;
+        Ok(())
+    }
+
+    pub fn permanently_delete_prompt(&self, id: i64) -> Result<()> {
+        // Delete from FTS index first
+        self.conn.execute(
+            "INSERT INTO prompts_fts(prompts_fts, rowid, title, content, description)
+             VALUES ('delete', ?1, '', '', '')",
+            [id],
+        )?;
         self.conn
             .execute("DELETE FROM prompts WHERE id = ?1", [id])?;
         Ok(())
     }
 
+    pub fn get_trashed_prompts(&self) -> Result<Vec<Prompt>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+             FROM prompts WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC",
+        )?;
+
+        let prompts = stmt
+            .query_map([], Self::row_to_prompt)?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(prompts)
+    }
+
+    pub fn get_trash_count(&self) -> Result<i64> {
+        let count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM prompts WHERE deleted_at IS NOT NULL", [], |row| row.get(0))?;
+        Ok(count)
+    }
+
+    pub fn purge_expired_prompts(&self, days: i64) -> Result<i64> {
+        // Permanently delete prompts that have been in trash longer than specified days
+        let mut stmt = self.conn.prepare(
+            "SELECT id FROM prompts WHERE deleted_at IS NOT NULL AND deleted_at < datetime('now', ?1)",
+        )?;
+
+        let ids: Vec<i64> = stmt
+            .query_map([format!("-{} days", days)], |row| row.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        let count = ids.len() as i64;
+        for id in ids {
+            self.permanently_delete_prompt(id)?;
+        }
+
+        Ok(count)
+    }
+
+    pub fn empty_trash(&self) -> Result<i64> {
+        // Get all trashed prompt IDs
+        let mut stmt = self.conn.prepare(
+            "SELECT id FROM prompts WHERE deleted_at IS NOT NULL",
+        )?;
+
+        let ids: Vec<i64> = stmt
+            .query_map([], |row| row.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        let count = ids.len() as i64;
+        for id in ids {
+            self.permanently_delete_prompt(id)?;
+        }
+
+        Ok(count)
+    }
+
     pub fn search_prompts(&self, query: &str) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT p.id, p.title, p.content, p.category, p.tags, p.description, p.is_favorite, p.created_at, p.updated_at
+            "SELECT p.id, p.title, p.content, p.category, p.tags, p.description, p.is_favorite, p.created_at, p.updated_at, p.deleted_at
              FROM prompts_fts fts
              JOIN prompts p ON p.id = fts.rowid
-             WHERE prompts_fts MATCH ?1
+             WHERE prompts_fts MATCH ?1 AND p.deleted_at IS NULL
              ORDER BY rank",
         )?;
 
@@ -238,8 +325,8 @@ impl Database {
 
     pub fn get_prompts_by_category(&self, category: &str) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at
-             FROM prompts WHERE category = ?1 ORDER BY updated_at DESC",
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+             FROM prompts WHERE category = ?1 AND deleted_at IS NULL ORDER BY updated_at DESC",
         )?;
 
         let prompts = stmt
@@ -253,7 +340,7 @@ impl Database {
     pub fn get_categories(&self) -> Result<Vec<String>> {
         let mut stmt = self
             .conn
-            .prepare("SELECT DISTINCT category FROM prompts WHERE category IS NOT NULL ORDER BY category")?;
+            .prepare("SELECT DISTINCT category FROM prompts WHERE category IS NOT NULL AND deleted_at IS NULL ORDER BY category")?;
 
         let categories = stmt
             .query_map([], |row| row.get::<_, String>(0))?
@@ -266,13 +353,13 @@ impl Database {
     pub fn get_prompts_count(&self) -> Result<i64> {
         let count: i64 = self
             .conn
-            .query_row("SELECT COUNT(*) FROM prompts", [], |row| row.get(0))?;
+            .query_row("SELECT COUNT(*) FROM prompts WHERE deleted_at IS NULL", [], |row| row.get(0))?;
         Ok(count)
     }
 
     pub fn get_categories_count(&self) -> Result<i64> {
         let count: i64 = self.conn.query_row(
-            "SELECT COUNT(DISTINCT category) FROM prompts WHERE category IS NOT NULL",
+            "SELECT COUNT(DISTINCT category) FROM prompts WHERE category IS NOT NULL AND deleted_at IS NULL",
             [],
             |row| row.get(0),
         )?;
@@ -281,7 +368,7 @@ impl Database {
 
     pub fn get_tags_count(&self) -> Result<i64> {
         let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM prompts WHERE tags IS NOT NULL AND tags != ''",
+            "SELECT COUNT(*) FROM prompts WHERE tags IS NOT NULL AND tags != '' AND deleted_at IS NULL",
             [],
             |row| row.get(0),
         )?;
@@ -292,7 +379,7 @@ impl Database {
         let mut stmt = self.conn.prepare(
             "SELECT category, COUNT(*) as count
              FROM prompts
-             WHERE category IS NOT NULL
+             WHERE category IS NOT NULL AND deleted_at IS NULL
              GROUP BY category
              ORDER BY count DESC",
         )?;
@@ -326,7 +413,7 @@ impl Database {
     pub fn get_active_prompts_count(&self) -> Result<i64> {
         // Active = created within last 30 days or updated within last 30 days
         let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM prompts WHERE updated_at >= datetime('now', '-30 days')",
+            "SELECT COUNT(*) FROM prompts WHERE updated_at >= datetime('now', '-30 days') AND deleted_at IS NULL",
             [],
             |row| row.get(0),
         )?;
@@ -336,7 +423,7 @@ impl Database {
     pub fn get_avg_tokens_per_prompt(&self) -> Result<f64> {
         // Approximate token count: ~4 chars per token (rough estimate)
         let result: f64 = self.conn.query_row(
-            "SELECT COALESCE(AVG(LENGTH(content)), 0.0) FROM prompts",
+            "SELECT COALESCE(AVG(LENGTH(content)), 0.0) FROM prompts WHERE deleted_at IS NULL",
             [],
             |row| row.get(0),
         )?;
@@ -345,7 +432,7 @@ impl Database {
 
     pub fn get_favorites_count(&self) -> Result<i64> {
         let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM prompts WHERE is_favorite = 1",
+            "SELECT COUNT(*) FROM prompts WHERE is_favorite = 1 AND deleted_at IS NULL",
             [],
             |row| row.get(0),
         )?;
@@ -354,7 +441,7 @@ impl Database {
 
     pub fn get_new_this_week_count(&self) -> Result<i64> {
         let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM prompts WHERE created_at >= datetime('now', '-7 days')",
+            "SELECT COUNT(*) FROM prompts WHERE created_at >= datetime('now', '-7 days') AND deleted_at IS NULL",
             [],
             |row| row.get(0),
         )?;
@@ -363,7 +450,7 @@ impl Database {
 
     pub fn get_most_popular_category(&self) -> Result<Option<String>> {
         let result: Option<String> = self.conn.query_row(
-            "SELECT category FROM prompts WHERE category IS NOT NULL GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1",
+            "SELECT category FROM prompts WHERE category IS NOT NULL AND deleted_at IS NULL GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1",
             [],
             |row| row.get(0),
         )?;

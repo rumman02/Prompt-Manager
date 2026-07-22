@@ -180,16 +180,16 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(false)} />
           <div className="relative z-10 w-full max-w-sm rounded-xl bg-card p-6 shadow-2xl border">
-            <h3 className="text-lg font-semibold">Delete Prompt</h3>
+            <h3 className="text-lg font-semibold">Move to Trash</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Are you sure you want to delete "{prompt.title}"? This action cannot be undone.
+              Are you sure you want to move "{prompt.title}" to trash? You can restore it from the Trash page.
             </p>
             <div className="mt-5 flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
                 Cancel
               </Button>
               <Button variant="destructive" onClick={handleDelete}>
-                Delete
+                Move to Trash
               </Button>
             </div>
           </div>

@@ -71,6 +71,42 @@ fn search_prompts(app_handle: tauri::AppHandle, query: String) -> Result<Vec<db:
 }
 
 #[tauri::command]
+fn restore_prompt(app_handle: tauri::AppHandle, id: i64) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.restore_prompt(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn permanently_delete_prompt(app_handle: tauri::AppHandle, id: i64) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.permanently_delete_prompt(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_trashed_prompts(app_handle: tauri::AppHandle) -> Result<Vec<db::Prompt>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_trashed_prompts().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_trash_count(app_handle: tauri::AppHandle) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_trash_count().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn purge_expired_prompts(app_handle: tauri::AppHandle, days: i64) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.purge_expired_prompts(days).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn empty_trash(app_handle: tauri::AppHandle) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.empty_trash().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn get_prompts_by_category(
     app_handle: tauri::AppHandle,
     category: String,
@@ -191,6 +227,12 @@ pub fn run() {
             update_prompt,
             delete_prompt,
             search_prompts,
+            restore_prompt,
+            permanently_delete_prompt,
+            get_trashed_prompts,
+            get_trash_count,
+            purge_expired_prompts,
+            empty_trash,
             get_prompts_by_category,
             get_categories,
             get_prompts_count,

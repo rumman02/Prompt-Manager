@@ -8,6 +8,7 @@ export interface PromptRow {
   is_favorite: boolean;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface CategoryCount {

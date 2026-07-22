@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 
 export type ThemeMode = "light" | "dark" | "system";
-export type LandingPage = "dashboard" | "prompts" | "categories" | "tags";
+export type LandingPage = "dashboard" | "prompts" | "categories" | "tags" | "trash";
 
 export interface Settings {
   accentColor: string;

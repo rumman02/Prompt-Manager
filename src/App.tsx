@@ -9,6 +9,7 @@ import { PromptViewer } from "@/components/prompt-viewer";
 import { SearchBar } from "@/components/search-bar";
 import { SettingsPage } from "@/components/settings-page";
 import { TagsPage } from "@/components/tags-page";
+import { TrashPage } from "@/components/trash-page";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import type { PromptRow, CategoryCount } from "@/types";
 
 function AppContent() {
   const { settings } = useSettings();
-  const views: ViewType[] = ["dashboard", "prompts", "categories", "tags", "settings"];
+  const views: ViewType[] = ["dashboard", "prompts", "categories", "tags", "trash", "settings"];
   const initialView = views.includes(settings.landingPage) ? settings.landingPage : "dashboard";
 
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
@@ -143,9 +144,27 @@ function AppContent() {
     }
   };
 
+  // Auto-purge expired trash on app load
+  const purgeExpiredTrash = useCallback(async () => {
+    try {
+      const days = settings.trashTimeout;
+      const unit = settings.trashTimeoutUnit;
+      let daysNumber = days;
+      if (unit === "weeks") daysNumber = days * 7;
+      if (unit === "months") daysNumber = days * 30;
+      const purged = await invoke<number>("purge_expired_prompts", { days: daysNumber });
+      if (purged > 0) {
+        console.log(`Purged ${purged} expired prompts from trash`);
+      }
+    } catch (e) {
+      console.error("Failed to purge expired trash:", e);
+    }
+  }, [settings.trashTimeout, settings.trashTimeoutUnit]);
+
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    purgeExpiredTrash();
+  }, [refresh, purgeExpiredTrash]);
 
   useEffect(() => {
     const handleLoadDemo = () => {
@@ -569,6 +588,10 @@ function AppContent() {
 
           {activeView === "tags" && (
             <TagsPage onRefresh={refresh} />
+          )}
+
+          {activeView === "trash" && (
+            <TrashPage onRefresh={refresh} />
           )}
 
           {activeView === "settings" && <SettingsPage />}
