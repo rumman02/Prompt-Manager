@@ -234,14 +234,15 @@ function AppContent() {
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header
-          searchQuery={searchQuery}
-          onSearch={handleSearch}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onCreatePrompt={handleCreatePrompt}
-        />
-
+        {!isEditorPageOpen && activeView === "dashboard" && (
+          <Header
+            searchQuery={searchQuery}
+            onSearch={handleSearch}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onCreatePrompt={handleCreatePrompt}
+          />
+        )}
         <main className="flex-1 overflow-auto p-6">
           {isEditorPageOpen && (
             <PromptEditorPage
