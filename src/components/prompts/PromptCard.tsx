@@ -55,7 +55,7 @@ export function PromptCard({ prompt, onSelect, onEdit, onDelete, onToggleFavorit
           </div>
         </div>
         {prompt.category && (
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
             {prompt.category}
           </span>
         )}

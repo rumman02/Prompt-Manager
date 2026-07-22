@@ -14,7 +14,7 @@ export function PromptListItem({ prompt, onSelect, onEdit, onDelete, onToggleFav
   const stats = getContentStats(prompt.content);
   return (
     <div
-      className="group grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+      className="group grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
       onClick={() => onSelect(prompt)}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -37,12 +37,14 @@ export function PromptListItem({ prompt, onSelect, onEdit, onDelete, onToggleFav
           </p>
         </div>
       </div>
-      <div className="w-32 flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center">
         {prompt.category && (
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
             {prompt.category}
           </span>
         )}
+      </div>
+      <div className="w-auto flex items-center gap-1 shrink-0">
         {onToggleFavorite && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleFavorite(prompt.id); }}
