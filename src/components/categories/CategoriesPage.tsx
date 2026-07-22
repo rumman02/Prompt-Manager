@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { SearchBar } from "@/components/search-bar";
+import { Input } from "@/components/ui/input";
 import { useCategories } from "@/hooks/useCategories";
 import type { CategoryCount } from "@/types";
 
@@ -88,57 +89,43 @@ export function CategoriesPage({
         title="Categories"
         subtitle={`${filteredCategories.length} categor${filteredCategories.length !== 1 ? "ies" : "y"}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
-          <Button onClick={() => setIsAddCategoryModalOpen(true)} className="gap-2">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Add Category
-          </Button>
+          <div className="flex items-center gap-3">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search categories..."
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Sort by:</span>
+              <div className="flex rounded-md border bg-muted/30 p-1">
+                <button
+                  onClick={() => setSortBy("name")}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    sortBy === "name" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Name
+                </button>
+                <button
+                  onClick={() => setSortBy("count")}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    sortBy === "count" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Count
+                </button>
+              </div>
+            </div>
+            <Button onClick={() => setIsAddCategoryModalOpen(true)} className="gap-2">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add Category
+            </Button>
+          </div>
         }
       />
-      <div className="flex-1 overflow-auto p-6 space-y-6">
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          </svg>
-          <Input
-            placeholder="Search categories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Sort by:</span>
-          <div className="flex rounded-md border bg-muted/30 p-1">
-            <button
-              onClick={() => setSortBy("name")}
-              className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                sortBy === "name" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Name
-            </button>
-            <button
-              onClick={() => setSortBy("count")}
-              className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                sortBy === "count" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Count
-            </button>
-          </div>
-        </div>
-      </div>
-
+      <div className="flex-1 overflow-auto p-6">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredCategories.map((cat) => (
           <CategoryCard

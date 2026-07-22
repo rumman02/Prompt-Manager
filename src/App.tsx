@@ -302,7 +302,10 @@ function AppContent() {
                   />
                 </svg>
               }
+              searchQuery={searchQuery}
+              onSearch={handleSearch}
               onLoadDemo={handleLoadDemoPrompts}
+              onCreatePrompt={handleCreatePrompt}
             />
           )}
 
