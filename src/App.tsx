@@ -1,15 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Sidebar } from "@/components/sidebar";
+import { Sidebar, type ViewType } from "@/components/sidebar";
 import { StatsCards } from "@/components/stats-cards";
 import { PromptList } from "@/components/prompt-list";
 import { CategoryChart } from "@/components/category-chart";
 import { PromptEditor } from "@/components/prompt-editor";
 import { PromptViewer } from "@/components/prompt-viewer";
 import { SearchBar } from "@/components/search-bar";
+import { SettingsPage } from "@/components/settings-page";
+import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import type { PromptRow, CategoryCount } from "@/types";
 
-export function App() {
+function AppContent() {
+  const { settings } = useSettings();
+  const views: ViewType[] = ["dashboard", "prompts", "categories", "tags", "settings"];
+  const initialView = views.includes(settings.landingPage) ? settings.landingPage : "dashboard";
+
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [categories, setCategories] = useState<CategoryCount[]>([]);
   const [stats, setStats] = useState({
@@ -23,7 +29,7 @@ export function App() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<PromptRow | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [activeView, setActiveView] = useState<"dashboard" | "prompts" | "categories" | "tags">("dashboard");
+  const [activeView, setActiveView] = useState<ViewType>(initialView);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const loadPrompts = useCallback(async () => {
@@ -349,6 +355,8 @@ export function App() {
               </div>
             </div>
           )}
+
+          {activeView === "settings" && <SettingsPage />}
         </main>
       </div>
 
@@ -372,5 +380,13 @@ export function App() {
         categories={categories.map((c) => c.category)}
       />
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 }
