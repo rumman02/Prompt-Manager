@@ -199,7 +199,7 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
           </svg>
         }
-        title="All Tags"
+        title="Tags"
         subtitle={`${filteredTags.length} tag${filteredTags.length !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
           <div className="flex items-center gap-3">
@@ -208,47 +208,6 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
               onChange={setSearchQuery}
               placeholder="Search tags..."
             />
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Sort by:</span>
-              <div className="flex rounded-md border bg-muted/30 p-1">
-                <button
-                  onClick={() => setSortBy("name")}
-                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                    sortBy === "name" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Name
-                </button>
-                <button
-                  onClick={() => setSortBy("count")}
-                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                    sortBy === "count" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Count
-                </button>
-              </div>
-            </div>
-            <div className="flex rounded-md border bg-muted/30 p-1" aria-label="View mode">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`rounded px-2 py-1 transition-colors ${viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                title="Grid view"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`rounded px-2 py-1 transition-colors ${viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                title="List view"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
-              </button>
-            </div>
             <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -333,14 +292,6 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
             <p className="mt-1 text-sm text-muted-foreground">
               {searchQuery ? `No tags match "${searchQuery}"` : "Add tags to your prompts to see them here"}
             </p>
-            {!searchQuery && (
-              <Button onClick={() => setIsAddModalOpen(true)} className="mt-4 gap-2">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Add Tags
-              </Button>
-            )}
           </CardContent>
         </Card>
       )}

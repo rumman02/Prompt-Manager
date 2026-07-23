@@ -158,27 +158,6 @@ export function CategoriesPage({
               onChange={setSearchQuery}
               placeholder="Search categories..."
             />
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Sort by:</span>
-              <div className="flex rounded-md border bg-muted/30 p-1">
-                <button
-                  onClick={() => setSortBy("name")}
-                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                    sortBy === "name" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Name
-                </button>
-                <button
-                  onClick={() => setSortBy("count")}
-                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                    sortBy === "count" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Count
-                </button>
-              </div>
-            </div>
             <Button onClick={() => setIsAddCategoryModalOpen(true)} className="gap-2">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

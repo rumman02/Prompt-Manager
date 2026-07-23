@@ -47,7 +47,7 @@ export function Sidebar({
       <div className="h-8 shrink-0" data-tauri-drag-region />
 
       {/* Logo area — excluded from drag region (contains interactive collapse button) */}
-      <div className="flex h-16 items-center justify-between border-b px-4" data-tauri-drag-region="false">
+      <div className="flex h-16 items-center justify-between px-4" data-tauri-drag-region="false">
         {!collapsed && (
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -108,7 +108,7 @@ export function Sidebar({
       </nav>
 
       {/* Settings */}
-      <div className="border-t p-3">
+      <div className="p-3">
         <button
           onClick={() => onViewChange("settings")}
           className={cn(
@@ -130,3 +130,4 @@ export function Sidebar({
     </aside>
   );
 }
+

@@ -9,7 +9,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-col border-b bg-card shrink-0">
+    <div className="flex flex-col bg-card shrink-0">
       {/* Top strip — spans full width, draggable, sits under the macOS traffic lights */}
       <div className="h-8 shrink-0" data-tauri-drag-region />
 
@@ -33,3 +33,4 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
     </div>
   );
 }
+

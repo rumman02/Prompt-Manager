@@ -20,7 +20,7 @@ interface PromptListProps {
   headerTitle?: string;
   headerIcon?: ReactNode;
   headerSubtitle?: string;
-  onLoadDemo: () => void;
+  onLoadDemo?: () => void;
   searchQuery?: string;
   onSearch?: (query: string) => void;
   onCreatePrompt?: () => void;
@@ -72,7 +72,7 @@ export function PromptList({
           title={headerTitle}
           subtitle={headerSubtitle ?? "Browse your prompts"}
           actions={
-            onViewModeChange ? (
+            (onSearch || onCreatePrompt || onViewModeChange) ? (
               <div className="flex items-center gap-3">
                 {onSearch && (
                   <SearchBar
@@ -84,31 +84,33 @@ export function PromptList({
                   />
                 )}
                 {onCreatePrompt && (
-                  <Button onClick={onCreatePrompt} size="sm" className="gap-1.5">
+                  <Button onClick={onCreatePrompt} className="gap-2">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
                     Add Prompt
                   </Button>
                 )}
-                <div className="flex items-center gap-1 rounded-md border bg-muted/30 p-1">
-                  <button
-                    onClick={() => onViewModeChange("list")}
-                    className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                      viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    List
-                  </button>
-                  <button
-                    onClick={() => onViewModeChange("grid")}
-                    className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                      viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Grid
-                  </button>
-                </div>
+                {onViewModeChange && (
+                  <div className="flex items-center gap-1 rounded-md border bg-muted/30 p-1">
+                    <button
+                      onClick={() => onViewModeChange("list")}
+                      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                        viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      List
+                    </button>
+                    <button
+                      onClick={() => onViewModeChange("grid")}
+                      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                        viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Grid
+                    </button>
+                  </div>
+                )}
               </div>
             ) : undefined
           }

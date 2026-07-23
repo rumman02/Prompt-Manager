@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/search-bar";
 
 export function AgentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const agentCount: number = 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -25,8 +26,8 @@ export function AgentsPage() {
             />
           </svg>
         }
-        title="All Agents"
-        subtitle="No agents yet"
+        title="Agents"
+        subtitle={`${agentCount} agent${agentCount !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
           <div className="flex items-center gap-3">
             <SearchBar

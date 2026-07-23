@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 interface EmptyPromptsStateProps {
-  onLoadDemo: () => void;
+  onLoadDemo?: () => void;
 }
 
 export function EmptyPromptsState({ onLoadDemo }: EmptyPromptsStateProps) {
@@ -15,14 +15,16 @@ export function EmptyPromptsState({ onLoadDemo }: EmptyPromptsStateProps) {
         </div>
         <h3 className="text-lg font-medium">No prompts yet</h3>
         <p className="mt-1 text-sm text-muted-foreground">Create your first prompt or load demo prompts</p>
-        <div className="mt-4 flex gap-3">
-          <button
-            onClick={onLoadDemo}
-            className="inline-flex items-center gap-2 rounded-lg border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            Load demo prompts
-          </button>
-        </div>
+        {onLoadDemo && (
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={onLoadDemo}
+              className="inline-flex items-center gap-2 rounded-lg border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Load demo prompts
+            </button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

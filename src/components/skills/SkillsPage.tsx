@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/search-bar";
 
 export function SkillsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const skillCount: number = 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -25,8 +26,8 @@ export function SkillsPage() {
             />
           </svg>
         }
-        title="All Skills"
-        subtitle="No skills yet"
+        title="Skills"
+        subtitle={`${skillCount} skill${skillCount !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
           <div className="flex items-center gap-3">
             <SearchBar
