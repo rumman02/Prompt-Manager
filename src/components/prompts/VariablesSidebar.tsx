@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
-import { useResizable } from "@/hooks/useResizable";
 
 interface VariablesSidebarProps {
   content: string;
@@ -10,6 +9,10 @@ interface VariablesSidebarProps {
   /** When collapsed, the panel shrinks to a slim icon-only bar (like the main sidebar). */
   collapsed: boolean;
   onToggle: () => void;
+  /** Shared resize state from the parent so width persists across panel swaps. */
+  width: number;
+  onResizeStart: (e: React.MouseEvent) => void;
+  isResizing: boolean;
 }
 
 /** A variable detected in the prompt content (read-only, derived). */
@@ -26,7 +29,15 @@ interface CustomVariable {
   description: string;
 }
 
-export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggle }: VariablesSidebarProps) {
+export function VariablesSidebar({
+  content,
+  onInsertVariable,
+  collapsed,
+  onToggle,
+  width,
+  onResizeStart,
+  isResizing,
+}: VariablesSidebarProps) {
   const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
   const [newName, setNewName] = useState("");
   const [newDefault, setNewDefault] = useState("");
@@ -35,13 +46,6 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDefault, setEditDefault] = useState("");
   const [editDescription, setEditDescription] = useState("");
-
-  const { width, onResizeStart, isResizing } = useResizable({
-    initial: 256,
-    min: 200,
-    max: 480,
-    side: "right",
-  });
 
   // Extract variables from content using regex pattern {{variableName}}
   const extractedVariables = useMemo(() => {
@@ -146,11 +150,13 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
 
   return (
     <div
-      className={cn("flex h-full shrink-0 flex-col border-l bg-card", isResizing && "select-none")}
+      className={cn("flex h-full shrink-0 flex-row border-l bg-card", isResizing && "select-none")}
       style={{ width }}
     >
-      {/* Drag handle on the inner (left) edge — only while expanded. */}
+      {/* Drag handle on the inner (left) edge — full-height vertical strip. */}
       <ResizeHandle side="right" onMouseDown={onResizeStart} isActive={isResizing} />
+      {/* Panel content column — min-w-0 so the handle keeps its strip. */}
+      <div className="flex flex-1 min-w-0 flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
@@ -448,6 +454,7 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

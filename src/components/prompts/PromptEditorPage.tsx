@@ -5,7 +5,10 @@ import { FormField, FormInput, FormTextarea } from "@/components/ui/form-field";
 import { TagPreview } from "@/components/ui/tag-preview";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
 import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
+import { useResizable } from "@/hooks/useResizable";
 import type { PromptRow, PromptVersion } from "@/types";
+
+type RightPanel = "history" | "variables";
 
 export interface PromptFormData {
   title: string;
@@ -33,9 +36,32 @@ export function PromptEditorPage({
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
-  const [isVersionSidebarCollapsed, setIsVersionSidebarCollapsed] = useState(false);
-  const [isVariableSidebarCollapsed, setIsVariableSidebarCollapsed] = useState(false);
+  const [activePanel, setActivePanel] = useState<RightPanel>("history");
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  // Free-mode max width: the panel can grow up to ~60% of the available editor
+  // width (measured live), so it adapts to the window instead of a hard 480px cap.
+  const [maxPanelWidth, setMaxPanelWidth] = useState(480);
+  useEffect(() => {
+    const el = editorContainerRef.current;
+    if (!el) return;
+    const update = () => setMaxPanelWidth(Math.max(320, Math.round(el.clientWidth * 0.6)));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Shared resize state for the single right-side panel slot — width persists
+  // when toggling between History and Variables so the panel doesn't jump.
+  const { width, onResizeStart, isResizing } = useResizable({
+    initial: 256,
+    min: 200,
+    max: maxPanelWidth,
+    side: "right",
+  });
 
   useEffect(() => {
     if (prompt) {
@@ -114,6 +140,45 @@ export function PromptEditorPage({
         }
         actions={
           <>
+            {/* Right-panel selector — only one panel visible at a time on the right. */}
+            <div className="flex items-center rounded-md border bg-background p-0.5">
+              <button
+                onClick={() => {
+                  setActivePanel("history");
+                  setIsRightPanelCollapsed(false);
+                }}
+                title="Show version history"
+                className={
+                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors " +
+                  (activePanel === "history" && !isRightPanelCollapsed
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                History
+              </button>
+              <button
+                onClick={() => {
+                  setActivePanel("variables");
+                  setIsRightPanelCollapsed(false);
+                }}
+                title="Show variables"
+                className={
+                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors " +
+                  (activePanel === "variables" && !isRightPanelCollapsed
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
+                </svg>
+                Variables
+              </button>
+            </div>
             <Button variant="outline" onClick={onBack}>
               Cancel
             </Button>
@@ -137,23 +202,9 @@ export function PromptEditorPage({
         </button>
       </div>
 
-      {/* Main editor area with sidebars */}
-      <div className="flex flex-1 min-h-0 rounded-xl border bg-card">
-        {/* Version History Sidebar */}
-        <VersionHistorySidebar
-          promptId={prompt?.id ?? null}
-          title={title}
-          content={content}
-          category={category}
-          tags={tags}
-          description={description}
-          onRestore={handleRestoreVersion}
-          isEditing={isEditing}
-          collapsed={isVersionSidebarCollapsed}
-          onToggle={() => setIsVersionSidebarCollapsed((v) => !v)}
-        />
-
-        {/* Main editor content */}
+      {/* Main editor area — content fills all space; right panel is the only sidebar. */}
+      <div ref={editorContainerRef} className="flex flex-1 min-h-0 rounded-xl border bg-card">
+        {/* Main editor content — flex-1 so it expands when no panel is docked on the left. */}
         <div className="flex flex-1 flex-col min-w-0">
           <div className="flex-1 p-6 space-y-6 overflow-auto">
             <FormField label="Title *" htmlFor="title">
@@ -220,13 +271,34 @@ export function PromptEditorPage({
           </div>
         </div>
 
-        {/* Variables Sidebar */}
-        <VariablesSidebar
-          content={content}
-          onInsertVariable={handleInsertVariable}
-          collapsed={isVariableSidebarCollapsed}
-          onToggle={() => setIsVariableSidebarCollapsed((v) => !v)}
-        />
+        {/* Single right-side panel slot — History or Variables, one at a time. */}
+        {activePanel === "history" ? (
+          <VersionHistorySidebar
+            promptId={prompt?.id ?? null}
+            title={title}
+            content={content}
+            category={category}
+            tags={tags}
+            description={description}
+            onRestore={handleRestoreVersion}
+            isEditing={isEditing}
+            collapsed={isRightPanelCollapsed}
+            onToggle={() => setIsRightPanelCollapsed((v) => !v)}
+            width={width}
+            onResizeStart={onResizeStart}
+            isResizing={isResizing}
+          />
+        ) : (
+          <VariablesSidebar
+            content={content}
+            onInsertVariable={handleInsertVariable}
+            collapsed={isRightPanelCollapsed}
+            onToggle={() => setIsRightPanelCollapsed((v) => !v)}
+            width={width}
+            onResizeStart={onResizeStart}
+            isResizing={isResizing}
+          />
+        )}
       </div>
     </div>
   );
