@@ -188,6 +188,15 @@ function AppContent() {
     }
   };
 
+  const handleDuplicatePrompt = async (id: number) => {
+    try {
+      await invoke("duplicate_prompt", { id });
+      await refresh();
+    } catch (e) {
+      console.error("Failed to duplicate prompt:", e);
+    }
+  };
+
   const handleSavePrompt = async (data: PromptFormData) => {
     try {
       if (editingPrompt) {
@@ -271,6 +280,7 @@ function AppContent() {
                     onSelect={setSelectedPrompt}
                     onEdit={handleEditPrompt}
                     onDelete={handleDeletePrompt}
+                    onDuplicate={handleDuplicatePrompt}
                     onToggleFavorite={handleToggleFavorite}
                     showHeader
                     headerTitle="Recent Prompts"
@@ -292,6 +302,7 @@ function AppContent() {
               onSelect={setSelectedPrompt}
               onEdit={handleEditPrompt}
               onDelete={handleDeletePrompt}
+              onDuplicate={handleDuplicatePrompt}
               onToggleFavorite={handleToggleFavorite}
               showHeader
               headerTitle={selectedCategory ? `Prompts: ${selectedCategory}` : "All Prompts"}

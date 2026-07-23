@@ -14,6 +14,7 @@ interface PromptListProps {
   onSelect: (prompt: PromptRow) => void;
   onEdit: (prompt: PromptRow) => void;
   onDelete: (id: number) => void;
+  onDuplicate: (id: number) => void;
   onToggleFavorite?: (id: number) => void;
   showHeader?: boolean;
   headerTitle?: string;
@@ -34,6 +35,7 @@ export function PromptList({
   onSelect,
   onEdit,
   onDelete,
+  onDuplicate,
   onToggleFavorite,
   showHeader,
   headerTitle,
@@ -121,6 +123,7 @@ export function PromptList({
             onSelect={onSelect}
             onEdit={onEdit}
             onDelete={onDelete}
+            onDuplicate={onDuplicate}
             onToggleFavorite={onToggleFavorite}
           />
         ) : (
@@ -129,6 +132,7 @@ export function PromptList({
             onSelect={onSelect}
             onEdit={onEdit}
             onDelete={onDelete}
+            onDuplicate={onDuplicate}
             onToggleFavorite={onToggleFavorite}
           />
         )}

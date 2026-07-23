@@ -188,6 +188,18 @@ impl Database {
         self.get_prompt(id)
     }
 
+    pub fn duplicate_prompt(&self, id: i64) -> Result<Prompt> {
+        let original = self.get_prompt(id)?;
+        let new_title = format!("{} (Copy)", original.title);
+        self.create_prompt(
+            &new_title,
+            &original.content,
+            original.category.as_deref(),
+            original.tags.as_deref(),
+            original.description.as_deref(),
+        )
+    }
+
     pub fn get_all_prompts(&self) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at

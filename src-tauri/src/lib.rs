@@ -14,6 +14,12 @@ fn init_db(app_handle: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn duplicate_prompt(app_handle: tauri::AppHandle, id: i64) -> Result<db::Prompt, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.duplicate_prompt(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn create_prompt(
     app_handle: tauri::AppHandle,
     title: String,
@@ -284,6 +290,7 @@ pub fn run() {
             get_categories_count,
             get_tags_count,
             get_category_counts,
+            duplicate_prompt,
             toggle_favorite,
             get_active_prompts_count,
             get_avg_tokens_per_prompt,

@@ -1,4 +1,6 @@
 export { PromptCard } from "./PromptCard";
+export { PromptActionsMenu } from "./PromptActionsMenu";
+export type { PromptActionsMenuHandle } from "./PromptActionsMenu";
 export { PromptListItem } from "./PromptListItem";
 export { PromptGrid } from "./PromptGrid";
 export { PromptListTable } from "./PromptListTable";

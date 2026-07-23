@@ -55,6 +55,10 @@ export function usePrompts() {
     await invoke("delete_prompt", { id });
   }, []);
 
+  const duplicatePrompt = useCallback(async (id: number) => {
+    await invoke("duplicate_prompt", { id });
+  }, []);
+
   const searchPrompts = useCallback(async (query: string) => {
     const result = await invoke<PromptRow[]>("search_prompts", { query });
     setPrompts(result);
@@ -76,6 +80,7 @@ export function usePrompts() {
     createPrompt,
     updatePrompt,
     deletePrompt,
+    duplicatePrompt,
     searchPrompts,
     getPromptsByCategory,
     toggleFavorite,
