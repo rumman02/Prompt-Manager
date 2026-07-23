@@ -4,7 +4,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { NAV_ITEMS } from "@/constants/nav";
 import type { CategoryCount } from "@/types";
 
-export type ViewType = "dashboard" | "prompts" | "categories" | "tags" | "trash" | "settings";
+export type ViewType = "dashboard" | "prompts" | "agents" | "skills" | "favorites" | "categories" | "tags" | "trash" | "settings";
 
 interface SidebarProps {
   collapsed: boolean;

@@ -12,13 +12,16 @@ import { SettingsPage } from "@/components/settings/SettingsPage";
 import { TagsPage } from "@/components/tags/TagsPage";
 import { TrashPage } from "@/components/trash/TrashPage";
 import { CategoriesPage } from "@/components/categories/CategoriesPage";
+import { AgentsPage } from "@/components/agents";
+import { SkillsPage } from "@/components/skills";
+import { FavoritesPage } from "@/components/favorites";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { PromptRow, CategoryCount } from "@/types";
 
 function AppContent() {
   const { settings } = useSettings();
-  const views: ViewType[] = ["dashboard", "prompts", "categories", "tags", "trash", "settings"];
+  const views: ViewType[] = ["dashboard", "prompts", "agents", "skills", "favorites", "categories", "tags", "trash", "settings"];
   const initialView = views.includes(settings.landingPage) ? settings.landingPage : "dashboard";
 
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
@@ -327,6 +330,28 @@ function AppContent() {
               onLoadDemo={handleLoadDemoPrompts}
               autoFocusSearch={pendingSearchFocus}
               onSearchFocused={() => setPendingSearchFocus(false)}
+            />
+          )}
+
+          {!isEditorPageOpen && activeView === "agents" && (
+            <AgentsPage />
+          )}
+
+          {!isEditorPageOpen && activeView === "skills" && (
+            <SkillsPage />
+          )}
+
+          {!isEditorPageOpen && activeView === "favorites" && (
+            <FavoritesPage
+              prompts={filteredPrompts}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onSelect={setSelectedPrompt}
+              onEdit={handleEditPrompt}
+              onDelete={handleDeletePrompt}
+              onDuplicate={handleDuplicatePrompt}
+              onToggleFavorite={handleToggleFavorite}
+              onLoadDemo={handleLoadDemoPrompts}
             />
           )}
 
