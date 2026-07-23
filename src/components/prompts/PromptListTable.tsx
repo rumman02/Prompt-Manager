@@ -12,15 +12,15 @@ interface PromptListTableProps {
 
 export function PromptListTable({ prompts, onSelect, onEdit, onDelete, onDuplicate, onToggleFavorite }: PromptListTableProps) {
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      <div className="grid grid-cols-[1fr_8rem_10rem_6rem_auto] gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <div className="rounded-lg border bg-card overflow-hidden grid grid-cols-[1fr_8rem_10rem_6rem_auto] gap-x-4 auto-rows-auto">
+      <div className="grid col-span-5 grid-cols-subgrid border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         <span>Title</span>
         <span className="text-center">Category</span>
         <span className="text-center">Content</span>
         <span className="text-right">Updated</span>
         <span className="text-right">Actions</span>
       </div>
-      <div className="divide-y">
+      <div className="grid col-span-5 grid-cols-subgrid divide-y contents">
         {prompts.map((prompt) => (
           <PromptListItem
             key={prompt.id}

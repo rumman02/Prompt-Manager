@@ -29,7 +29,7 @@ export function PromptListItem({
 
   return (
     <div
-      className="group grid grid-cols-[1fr_8rem_10rem_6rem_auto] gap-4 items-start px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+      className="group grid col-span-5 grid-cols-subgrid gap-x-4 items-start px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
       onClick={() => onSelect(prompt)}
       onContextMenu={(e) => actionsRef.current?.openContextMenu(e)}
     >
@@ -80,7 +80,7 @@ export function PromptListItem({
         {formatDate(prompt.updated_at)}
       </span>
 
-      {/* actions — flush-right, single 3-dot button */}
+      {/* actions — flush-right, single 3-dot button (button itself fades in on hover) */}
       <PromptActionsMenu
         ref={actionsRef}
         prompt={prompt}
@@ -88,7 +88,7 @@ export function PromptListItem({
         onDelete={onDelete}
         onDuplicate={onDuplicate}
         onToggleFavorite={onToggleFavorite}
-        className="flex items-start justify-end pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="flex items-start justify-end"
       />
     </div>
   );

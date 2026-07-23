@@ -226,10 +226,10 @@ function DefaultActions({
     <button
       ref={triggerRef as React.RefObject<HTMLButtonElement>}
       onClick={onTriggerClick}
-      className="flex h-7 w-7 items-center justify-center rounded-md text-foreground/60 hover:bg-accent hover:text-foreground transition-colors"
+      className="flex h-8 w-8 shrink-0 items-center justify-center overflow-visible rounded-md text-foreground/80 hover:bg-accent hover:text-foreground transition-colors"
       title="More options"
     >
-      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
         <path d={ICON.dots} />
       </svg>
     </button>
