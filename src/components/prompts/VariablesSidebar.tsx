@@ -1,10 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
+import { useResizable } from "@/hooks/useResizable";
 
 interface VariablesSidebarProps {
   content: string;
   onInsertVariable: (variable: string) => void;
+  /** When collapsed, the panel shrinks to a slim icon-only bar (like the main sidebar). */
+  collapsed: boolean;
+  onToggle: () => void;
 }
 
 interface VariableInfo {
@@ -12,9 +17,16 @@ interface VariableInfo {
   count: number;
 }
 
-export function VariablesSidebar({ content, onInsertVariable }: VariablesSidebarProps) {
+export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggle }: VariablesSidebarProps) {
   const [customVariables, setCustomVariables] = useState<string[]>([]);
   const [newVariable, setNewVariable] = useState("");
+
+  const { width, onResizeStart, isResizing } = useResizable({
+    initial: 256,
+    min: 200,
+    max: 480,
+    side: "right",
+  });
 
   // Extract variables from content using regex pattern {variableName}
   const extractedVariables = useMemo(() => {
@@ -55,8 +67,32 @@ export function VariablesSidebar({ content, onInsertVariable }: VariablesSidebar
   const isExtracted = (name: string) => extractedVariables.some((v) => v.name === name);
   const getUsageCount = (name: string) => extractedVariables.find((v) => v.name === name)?.count || 0;
 
+  // Collapsed state: a slim icon-only bar mirroring the main sidebar's
+  // collapsed mode. Clicking re-expands; the count badge stays visible.
+  if (collapsed) {
+    return (
+      <div className="flex h-full w-14 shrink-0 flex-col items-center border-l bg-card py-3">
+        <button
+          onClick={onToggle}
+          title="Expand variables"
+          className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
+          </svg>
+          <span className="text-[10px] font-medium leading-none">{allVariables.length}</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-full w-64 flex-col border-l bg-card">
+    <div
+      className={cn("flex h-full shrink-0 flex-col border-l bg-card", isResizing && "select-none")}
+      style={{ width }}
+    >
+      {/* Drag handle on the inner (left) edge — only while expanded. */}
+      <ResizeHandle side="right" onMouseDown={onResizeStart} isActive={isResizing} />
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
@@ -65,9 +101,20 @@ export function VariablesSidebar({ content, onInsertVariable }: VariablesSidebar
           </svg>
           <span className="text-sm font-semibold">Variables</span>
         </div>
-        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-          {allVariables.length}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+            {allVariables.length}
+          </span>
+          <button
+            onClick={onToggle}
+            title="Collapse variables"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Add custom variable */}

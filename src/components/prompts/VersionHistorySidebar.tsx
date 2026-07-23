@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { cn, formatDate } from "@/lib/utils";
+import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
+import { useResizable } from "@/hooks/useResizable";
 import type { PromptVersion } from "@/types";
 
 interface VersionHistorySidebarProps {
@@ -13,6 +15,9 @@ interface VersionHistorySidebarProps {
   description: string;
   onRestore: (version: PromptVersion) => void;
   isEditing: boolean;
+  /** When collapsed, the panel shrinks to a slim icon-only bar (like the main sidebar). */
+  collapsed: boolean;
+  onToggle: () => void;
 }
 
 export function VersionHistorySidebar({
@@ -24,7 +29,15 @@ export function VersionHistorySidebar({
   description,
   onRestore,
   isEditing,
+  collapsed,
+  onToggle,
 }: VersionHistorySidebarProps) {
+  const { width, onResizeStart, isResizing } = useResizable({
+    initial: 256,
+    min: 200,
+    max: 480,
+    side: "left",
+  });
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
@@ -82,8 +95,30 @@ export function VersionHistorySidebar({
     onRestore(version);
   };
 
+  // Collapsed state: a slim icon-only bar mirroring the main sidebar's
+  // collapsed mode. Clicking re-expands; the count badge stays visible.
+  if (collapsed) {
+    return (
+      <div className="flex h-full w-14 shrink-0 flex-col items-center border-r bg-card py-3">
+        <button
+          onClick={onToggle}
+          title="Expand versions"
+          className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-[10px] font-medium leading-none">{versions.length}</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-card">
+    <div
+      className={cn("flex h-full shrink-0 flex-col border-r bg-card", isResizing && "select-none")}
+      style={{ width }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
@@ -92,9 +127,20 @@ export function VersionHistorySidebar({
           </svg>
           <span className="text-sm font-semibold">Versions</span>
         </div>
-        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-          {versions.length}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+            {versions.length}
+          </span>
+          <button
+            onClick={onToggle}
+            title="Collapse versions"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Save new version */}
@@ -207,6 +253,8 @@ export function VersionHistorySidebar({
           </div>
         )}
       </div>
+      {/* Drag handle on the inner (right) edge — only while expanded. */}
+      <ResizeHandle side="left" onMouseDown={onResizeStart} isActive={isResizing} />
     </div>
   );
 }

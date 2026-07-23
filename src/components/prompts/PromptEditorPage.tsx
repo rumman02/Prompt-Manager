@@ -33,8 +33,8 @@ export function PromptEditorPage({
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
-  const [showVersionSidebar, setShowVersionSidebar] = useState(true);
-  const [showVariableSidebar, setShowVariableSidebar] = useState(true);
+  const [isVersionSidebarCollapsed, setIsVersionSidebarCollapsed] = useState(false);
+  const [isVariableSidebarCollapsed, setIsVariableSidebarCollapsed] = useState(false);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -114,30 +114,6 @@ export function PromptEditorPage({
         }
         actions={
           <>
-            <div className="flex items-center gap-1 mr-2">
-              <Button
-                variant={showVersionSidebar ? "secondary" : "outline"}
-                size="sm"
-                onClick={() => setShowVersionSidebar(!showVersionSidebar)}
-                title="Toggle version history"
-              >
-                <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                History
-              </Button>
-              <Button
-                variant={showVariableSidebar ? "secondary" : "outline"}
-                size="sm"
-                onClick={() => setShowVariableSidebar(!showVariableSidebar)}
-                title="Toggle variables panel"
-              >
-                <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
-                </svg>
-                Variables
-              </Button>
-            </div>
             <Button variant="outline" onClick={onBack}>
               Cancel
             </Button>
@@ -164,18 +140,18 @@ export function PromptEditorPage({
       {/* Main editor area with sidebars */}
       <div className="flex flex-1 min-h-0 rounded-xl border bg-card">
         {/* Version History Sidebar */}
-        {showVersionSidebar && (
-          <VersionHistorySidebar
-            promptId={prompt?.id ?? null}
-            title={title}
-            content={content}
-            category={category}
-            tags={tags}
-            description={description}
-            onRestore={handleRestoreVersion}
-            isEditing={isEditing}
-          />
-        )}
+        <VersionHistorySidebar
+          promptId={prompt?.id ?? null}
+          title={title}
+          content={content}
+          category={category}
+          tags={tags}
+          description={description}
+          onRestore={handleRestoreVersion}
+          isEditing={isEditing}
+          collapsed={isVersionSidebarCollapsed}
+          onToggle={() => setIsVersionSidebarCollapsed((v) => !v)}
+        />
 
         {/* Main editor content */}
         <div className="flex flex-1 flex-col min-w-0">
@@ -245,12 +221,12 @@ export function PromptEditorPage({
         </div>
 
         {/* Variables Sidebar */}
-        {showVariableSidebar && (
-          <VariablesSidebar
-            content={content}
-            onInsertVariable={handleInsertVariable}
-          />
-        )}
+        <VariablesSidebar
+          content={content}
+          onInsertVariable={handleInsertVariable}
+          collapsed={isVariableSidebarCollapsed}
+          onToggle={() => setIsVariableSidebarCollapsed((v) => !v)}
+        />
       </div>
     </div>
   );
