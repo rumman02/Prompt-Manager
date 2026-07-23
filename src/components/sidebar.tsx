@@ -104,34 +104,23 @@ export function Sidebar({
           ))}
         </div>
 
-        {/* Categories */}
-        {!collapsed && categories.length > 0 && (
-          <div className="space-y-1">
-            <div className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Categories
-            </div>
-            {categories.map((cat) => (
-              <button
-                key={cat.category}
-                onClick={() => {
-                  onCategorySelect(cat.category);
-                  onViewChange("prompts");
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                  selectedCategory === cat.category
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <div className="h-2 w-2 rounded-full bg-current opacity-60" />
-                <span className="truncate flex-1 text-left">{cat.category}</span>
-                <span className="text-xs opacity-60">{cat.count}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </nav>
+
+      {/* Bottom Action */}
+      <div className="p-3 border-t">
+        <button
+          onClick={onCreatePrompt}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15",
+            collapsed && "px-2"
+          )}
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          {!collapsed && <span>New Prompt</span>}
+        </button>
+      </div>
 
       {/* Settings */}
       <div className="border-t p-3">
@@ -151,22 +140,6 @@ export function Sidebar({
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           {!collapsed && <span>Settings</span>}
-        </button>
-      </div>
-
-      {/* Bottom Action */}
-      <div className="p-3 border-t">
-        <button
-          onClick={onCreatePrompt}
-          className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15",
-            collapsed && "px-2"
-          )}
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          {!collapsed && <span>New Prompt</span>}
         </button>
       </div>
     </aside>
