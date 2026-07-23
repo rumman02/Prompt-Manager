@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,20 +131,21 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
       )}
 
       {trashedPrompts.length > 0 ? (
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-lg border bg-card overflow-hidden grid grid-cols-[1fr_8rem_7rem_6rem_auto] gap-x-4 auto-rows-auto">
+          <div className="grid col-span-5 grid-cols-subgrid border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             <span>Title</span>
-            <span className="w-32 text-center">Category</span>
-            <span className="w-28 text-center">Days Left</span>
-            <span className="w-24 text-right">Deleted</span>
+            <span className="text-center">Category</span>
+            <span className="text-center">Days Left</span>
+            <span className="text-right">Deleted</span>
+            <span className="text-right">Actions</span>
           </div>
-          <div className="divide-y">
+          <div className="grid col-span-5 grid-cols-subgrid divide-y contents">
             {trashedPrompts.map((prompt) => {
               const daysLeft = getDaysRemaining(prompt.deleted_at);
               return (
                 <div
                   key={prompt.id}
-                  className="group grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+                  className="group grid col-span-5 grid-cols-subgrid gap-x-4 items-start px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() => setSelectedPrompt(prompt)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -159,20 +161,30 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
                       </p>
                     </div>
                   </div>
-                  <div className="w-32 flex items-center justify-center">
-                    {prompt.category && (
-                      <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  <div className="flex items-center justify-center">
+                    {prompt.category ? (
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
                         {prompt.category}
                       </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">—</span>
                     )}
                   </div>
-                  <div className="w-28 flex items-center justify-center">
+                  <div className="flex items-center justify-center">
                     <span className={`text-xs font-medium ${daysLeft !== null && daysLeft <= 3 ? "text-destructive" : "text-muted-foreground"}`}>
                       {daysLeft !== null ? `${daysLeft}d` : "-"}
                     </span>
                   </div>
-                  <div className="w-24 text-right text-xs text-muted-foreground">
+                  <span className="text-right text-xs text-muted-foreground">
                     {prompt.deleted_at ? formatDate(prompt.deleted_at) : "-"}
+                  </span>
+
+                  {/* per-row actions — flush-right, fades in on hover */}
+                  <div className="flex items-start justify-end">
+                    <TrashRowActions
+                      onRestore={() => handleRestore(prompt.id)}
+                      onDelete={() => handlePermanentDelete(prompt.id)}
+                    />
                   </div>
                 </div>
               );
@@ -202,6 +214,150 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
         />
       )}
       </div>
+    </div>
+  );
+}
+
+/* ─── per-row ⋯ actions menu (restore / delete permanently) ─── */
+
+function TrashRowActions({
+  onRestore,
+  onDelete,
+}: {
+  onRestore: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    setAnchor(null);
+  }, []);
+
+  /* close on outside click or Escape */
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        closeMenu();
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMenu();
+    };
+    /* rAF so the opening click doesn't immediately close it */
+    const raf = requestAnimationFrame(() => {
+      document.addEventListener("mousedown", onDocClick);
+      document.addEventListener("keydown", onKey);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, closeMenu]);
+
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (open) {
+      closeMenu();
+      return;
+    }
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      setAnchor({ x: rect.right, y: rect.bottom });
+      setOpen(true);
+    }
+  };
+
+  const stop: React.MouseEventHandler = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  /* menu positioning: prefer right-aligned under the trigger, flip if it overflows */
+  const menuStyle = ((): React.CSSProperties => {
+    if (!anchor) return {};
+    const W = 176; // 11rem
+    const H = 104; // approx menu height (2 items + divider + padding)
+    let left = anchor.x - W; // right-align to trigger
+    let top = anchor.y + 4;
+    // clamp horizontally
+    if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
+    if (left < 8) left = 8;
+    // flip up if overflowing bottom of viewport
+    if (top + H > window.innerHeight - 8) top = anchor.y - H - 4;
+    return { position: "fixed", left, top, zIndex: 100, minWidth: W };
+  })();
+
+  return (
+    <div className="shrink-0">
+      <button
+        ref={triggerRef}
+        onClick={handleTriggerClick}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-foreground transition-all"
+        title="Actions"
+      >
+        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+        </svg>
+      </button>
+
+      {open &&
+        anchor &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={menuStyle}
+            onMouseDown={stop}
+            className="rounded-lg border bg-popover p-1 text-popover-foreground shadow-xl"
+          >
+            <button
+              onClick={(e) => {
+                stop(e);
+                closeMenu();
+                onRestore();
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-muted focus:bg-muted transition-colors"
+            >
+              <svg
+                className="h-3.5 w-3.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+              Restore
+            </button>
+            <div className="my-1 h-px bg-border" />
+            <button
+              onClick={(e) => {
+                stop(e);
+                closeMenu();
+                onDelete();
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10 focus:bg-destructive/10 transition-colors"
+            >
+              <svg
+                className="h-3.5 w-3.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+              Delete Permanently
+            </button>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

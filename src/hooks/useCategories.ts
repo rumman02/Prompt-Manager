@@ -22,5 +22,9 @@ export function useCategories() {
     await invoke("delete_category", { category });
   }, []);
 
-  return { categories, loadCategories, addCategory, deleteCategory };
+  const renameCategory = useCallback(async (oldName: string, newName: string) => {
+    await invoke("rename_category", { oldName, newName });
+  }, []);
+
+  return { categories, loadCategories, addCategory, deleteCategory, renameCategory };
 }
