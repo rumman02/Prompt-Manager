@@ -217,7 +217,11 @@ function AppContent() {
       setEditingPrompt(null);
       await refresh();
     } catch (e) {
+      // Re-throw so the editor page can surface the failure as an inline
+      // error banner — a silent console.error-only handler is what made
+      // "clicking Create Prompt does nothing" impossible to diagnose.
       console.error("Failed to save prompt:", e);
+      throw e;
     }
   };
 

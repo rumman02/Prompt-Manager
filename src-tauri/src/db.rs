@@ -90,44 +90,44 @@ impl Database {
             [],
         )?;
 
-        self.conn.execute(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS prompts_fts USING fts5(
-                title, content, description, content=prompts, content_rowid=id
-            )",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE TRIGGER IF NOT EXISTS prompts_ai AFTER INSERT ON prompts BEGIN
-                INSERT INTO prompts_fts(rowid, title, content, description)
-                VALUES (new.id, new.title, new.content, new.description);
-            END",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE TRIGGER IF NOT EXISTS prompts_ad AFTER DELETE ON prompts BEGIN
-                INSERT INTO prompts_fts(prompts_fts, rowid, title, content, description)
-                VALUES ('delete', old.id, old.title, old.content, old.description);
-            END",
-            [],
-        )?;
-
-        self.conn.execute(
-            "CREATE TRIGGER IF NOT EXISTS prompts_au AFTER UPDATE ON prompts BEGIN
-                INSERT INTO prompts_fts(prompts_fts, rowid, title, content, description)
-                VALUES ('delete', old.id, old.title, old.content, old.description);
-                INSERT INTO prompts_fts(rowid, title, content, description)
-                VALUES (new.id, new.title, new.content, new.description);
-            END",
-            [],
-        )?;
+        // Remove the legacy FTS5 full-text index and its triggers.
+        //
+        // `prompts_fts` + prompts_ai/ad/au triggers were an FTS5 experiment that
+        // is not used by any read path (search_prompts uses LIKE on `prompts`),
+        // but every INSERT/UPDATE/DELETE on `prompts` still fired the triggers,
+        // which write into an FTS5 virtual table. FTS5 forbids that ("unsafe use
+        // of virtual table"), and rusqlite's bundled FTS5 surfaces it as
+        // "disk I/O error" (SQLITE_IOERR) — the error that blocked prompt
+        // creation. Dropping both table and triggers removes the failure while
+        // keeping search (LIKE-based) intact.
+        self.conn.execute("DROP TRIGGER IF EXISTS prompts_ai", [])?;
+        self.conn.execute("DROP TRIGGER IF EXISTS prompts_ad", [])?;
+        self.conn.execute("DROP TRIGGER IF EXISTS prompts_au", [])?;
+        self.conn.execute("DROP TABLE IF EXISTS prompts_fts", [])?;
 
         // Add deleted_at column if it doesn't exist (migration)
         let _ = self.conn.execute(
             "ALTER TABLE prompts ADD COLUMN deleted_at DATETIME DEFAULT NULL",
             [],
         );
+
+        // Rename `collection` -> `category` if the old name still exists.
+        //
+        // An earlier schema used `collection` for this column; the codebase now
+        // calls it `category`. Without this migration, the INSERT in create_prompt
+        // ("INSERT INTO prompts (title, content, category, ...)") fails with
+        // "table prompts has no column named category" — the error that blocked
+        // prompt creation. PRAGMA table_info is stable across SQLite versions,
+        // unlike parsing `.schema` output.
+        let has_collection: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('prompts') WHERE name = 'collection')",
+            [],
+            |row| row.get(0),
+        )?;
+        if has_collection {
+            self.conn
+                .execute("ALTER TABLE prompts RENAME COLUMN collection TO category", [])?;
+        }
 
         // Create prompt_versions table for version control
         self.conn.execute(
@@ -312,12 +312,23 @@ impl Database {
     }
 
     pub fn permanently_delete_prompt(&self, id: i64) -> Result<()> {
-        // Delete from FTS index first
-        self.conn.execute(
-            "INSERT INTO prompts_fts(prompts_fts, rowid, title, content, description)
-             VALUES ('delete', ?1, '', '', '')",
-            [id],
+        // prompts_fts (the legacy FTS5 full-text index) is dropped in init() because
+        // its triggers fired on every write to `prompts` and FTS5 surfaced that as
+        // "disk I/O error" (SQLITE_IOERR), silently blocking prompt creation. The
+        // table may still exist on databases that pre-date the migration, so only
+        // write to it when present; either way, always remove the row itself.
+        let fts_exists: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'prompts_fts')",
+            [],
+            |row| row.get(0),
         )?;
+        if fts_exists {
+            let _ = self.conn.execute(
+                "INSERT INTO prompts_fts(prompts_fts, rowid, title, content, description)
+                 VALUES ('delete', ?1, '', '', '')",
+                [id],
+            );
+        }
         self.conn
             .execute("DELETE FROM prompts WHERE id = ?1", [id])?;
         Ok(())

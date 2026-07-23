@@ -22,7 +22,7 @@ interface PromptEditorPageProps {
   prompt: PromptRow | null;
   categories: string[];
   onBack: () => void;
-  onSave: (data: PromptFormData) => void;
+  onSave: (data: PromptFormData) => Promise<void>;
 }
 
 export function PromptEditorPage({
@@ -38,6 +38,7 @@ export function PromptEditorPage({
   const [description, setDescription] = useState("");
   const [activePanel, setActivePanel] = useState<RightPanel>("history");
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
@@ -79,9 +80,14 @@ export function PromptEditorPage({
     }
   }, [prompt]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim() || !content.trim()) return;
-    onSave({ title, content, category, tags, description });
+    setSaveError(null);
+    try {
+      await onSave({ title, content, category, tags, description });
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const handleRestoreVersion = useCallback((version: PromptVersion) => {
@@ -188,6 +194,27 @@ export function PromptEditorPage({
           </>
         }
       />
+
+      {/* Inline error banner — surfaces backend/invoke failures that were
+          previously swallowed by console.error-only handlers. */}
+      {saveError && (
+        <div
+          role="alert"
+          className="mx-6 mt-4 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <div className="flex-1">
+            <span className="font-medium">Failed to save:</span> {saveError}
+          </div>
+          <button onClick={() => setSaveError(null)} className="text-destructive/70 hover:text-destructive" aria-label="Dismiss error">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Back button row */}
       <div className="px-6 pt-4">
