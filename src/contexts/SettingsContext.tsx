@@ -45,13 +45,38 @@ function loadSettings(): Settings {
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
 
-function hexToHsl(hex: string): { h: number; s: number; l: number } {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  return {
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  };
+}
 
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
+function rgbToLin(c: number): number {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+
+// Relative luminance per WCAG 2.1
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }): number {
+  return 0.2126 * rgbToLin(r) + 0.7152 * rgbToLin(g) + 0.0722 * rgbToLin(b);
+}
+
+function contrastRatio(l1: number, l2: number): number {
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const { r, g, b } = hexToRgb(hex);
+  const r1 = r / 255;
+  const g1 = g / 255;
+  const b1 = b / 255;
+
+  const max = Math.max(r1, g1, b1);
+  const min = Math.min(r1, g1, b1);
   let h = 0;
   let s = 0;
   const l = (max + min) / 2;
@@ -60,14 +85,14 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      case r1:
+        h = ((g1 - b1) / d + (g1 < b1 ? 6 : 0)) / 6;
         break;
-      case g:
-        h = ((b - r) / d + 2) / 6;
+      case g1:
+        h = ((b1 - r1) / d + 2) / 6;
         break;
-      case b:
-        h = ((r - g) / d + 4) / 6;
+      case b1:
+        h = ((r1 - g1) / d + 4) / 6;
         break;
     }
   }
@@ -121,8 +146,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     root.style.setProperty("--primary", `${h} ${s}% ${l}%`);
 
-    // Auto-adjust primary-foreground for contrast
-    const foregroundL = l > 50 ? 4.9 : 98;
+    // Auto-adjust primary-foreground for contrast. Default to white text for legibility
+    // against the accent; only use dark text when the accent is genuinely light (high
+    // luminance) such that white would be unreadable against it.
+    const primaryLum = relativeLuminance(hexToRgb(settings.accentColor));
+    const foregroundL = primaryLum > 0.55 ? 4.9 : 98;
     root.style.setProperty("--primary-foreground", `${h} ${s > 0 ? 40 : 0}% ${foregroundL}%`);
   }, [settings.accentColor]);
 

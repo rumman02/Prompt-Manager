@@ -107,7 +107,7 @@ export function SettingsPage() {
                   title={preset.name}
                 >
                   {settings.accentColor === preset.value && (
-                    <svg className="h-3.5 w-3.5 text-white drop-shadow-md" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                    <svg className="h-3.5 w-3.5 drop-shadow-md" style={{ color: "#fff" }} fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                   )}
