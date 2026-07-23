@@ -272,6 +272,17 @@ fn delete_prompt_version(
     db.delete_prompt_version(id).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn rename_prompt_version(
+    app_handle: tauri::AppHandle,
+    id: i64,
+    message: Option<String>,
+) -> Result<db::PromptVersion, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.rename_prompt_version(id, message.as_deref())
+        .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -318,6 +329,7 @@ pub fn run() {
             save_prompt_version,
             get_prompt_versions,
             delete_prompt_version,
+            rename_prompt_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

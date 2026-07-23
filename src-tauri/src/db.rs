@@ -687,6 +687,16 @@ impl Database {
         Ok(())
     }
 
+    /// Rename a version's label. Reuses the `message` column as the
+    /// editable label (NULL/empty clears it).
+    pub fn rename_prompt_version(&self, id: i64, message: Option<&str>) -> Result<PromptVersion> {
+        self.conn.execute(
+            "UPDATE prompt_versions SET message = ?1 WHERE id = ?2",
+            rusqlite::params![message, id],
+        )?;
+        self.get_prompt_version(id)
+    }
+
     pub fn seed_demo_prompts(&self) -> Result<()> {
         let count: i64 = self
             .conn

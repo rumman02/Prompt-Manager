@@ -18,6 +18,7 @@ import { SkillsPage } from "@/components/skills";
 import { FavoritesPage } from "@/components/favorites";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "sonner";
 import type { PromptRow, CategoryCount } from "@/types";
 
 function AppContent() {
@@ -237,6 +238,7 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
+      <Toaster theme={settings.theme === "dark" ? "dark" : "light"} position="bottom-right" richColors />
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
