@@ -5,11 +5,19 @@ interface SearchBarProps {
   value: string;
   onChange: (query: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
+  onFocus?: () => void;
 }
 
-export function SearchBar({ value, onChange, placeholder = "Search..." }: SearchBarProps) {
+export function SearchBar({ value, onChange, placeholder = "Search...", autoFocus = false, onFocus }: SearchBarProps) {
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -45,7 +53,10 @@ export function SearchBar({ value, onChange, placeholder = "Search..." }: Search
         ref={inputRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
+        onFocus={() => {
+          setFocused(true);
+          onFocus?.();
+        }}
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
         className="pl-9 pr-16 h-9 text-sm"

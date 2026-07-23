@@ -42,6 +42,7 @@ function AppContent() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [activeView, setActiveView] = useState<ViewType>(initialView);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [pendingSearchFocus, setPendingSearchFocus] = useState(false);
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -145,6 +146,11 @@ function AppContent() {
     }
   };
 
+  const handleDashboardSearchFocus = () => {
+    setPendingSearchFocus(true);
+    setActiveView("prompts");
+  };
+
   const handleCategorySelect = async (category: string | null) => {
     setSelectedCategory(category);
     if (category) {
@@ -239,6 +245,8 @@ function AppContent() {
             searchQuery={searchQuery}
             onSearch={handleSearch}
             onCreatePrompt={handleCreatePrompt}
+            onSearchFocus={handleDashboardSearchFocus}
+            isSearchInteractive={false}
           />
         )}
         <main className="flex-1 overflow-auto">
@@ -304,8 +312,10 @@ function AppContent() {
               }
               searchQuery={searchQuery}
               onSearch={handleSearch}
-              onLoadDemo={handleLoadDemoPrompts}
               onCreatePrompt={handleCreatePrompt}
+              onLoadDemo={handleLoadDemoPrompts}
+              autoFocusSearch={pendingSearchFocus}
+              onSearchFocused={() => setPendingSearchFocus(false)}
             />
           )}
 

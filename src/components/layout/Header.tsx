@@ -5,12 +5,16 @@ interface HeaderProps {
   searchQuery: string;
   onSearch: (query: string) => void;
   onCreatePrompt: () => void;
+  onSearchFocus?: () => void;
+  isSearchInteractive?: boolean;
 }
 
 export function Header({
   searchQuery,
   onSearch,
   onCreatePrompt,
+  onSearchFocus,
+  isSearchInteractive = true,
 }: HeaderProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
@@ -39,8 +43,9 @@ export function Header({
       <div className="flex items-center gap-4">
         <SearchBar
           value={searchQuery}
-          onChange={onSearch}
+          onChange={isSearchInteractive ? onSearch : () => {}}
           placeholder="Search prompts..."
+          onFocus={onSearchFocus}
         />
         <Button onClick={onCreatePrompt} className="gap-2">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

@@ -344,16 +344,16 @@ impl Database {
     }
 
     pub fn search_prompts(&self, query: &str) -> Result<Vec<Prompt>> {
+        let search_pattern = format!("%{}%", query);
         let mut stmt = self.conn.prepare(
-            "SELECT p.id, p.title, p.content, p.category, p.tags, p.description, p.is_favorite, p.created_at, p.updated_at, p.deleted_at
-             FROM prompts_fts fts
-             JOIN prompts p ON p.id = fts.rowid
-             WHERE prompts_fts MATCH ?1 AND p.deleted_at IS NULL
-             ORDER BY rank",
+            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+             FROM prompts
+             WHERE deleted_at IS NULL AND title LIKE ?1
+             ORDER BY title ASC",
         )?;
 
         let prompts = stmt
-            .query_map([query], Self::row_to_prompt)?
+            .query_map([search_pattern], Self::row_to_prompt)?
             .filter_map(|r| r.ok())
             .collect();
 

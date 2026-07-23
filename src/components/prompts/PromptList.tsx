@@ -23,6 +23,8 @@ interface PromptListProps {
   searchQuery?: string;
   onSearch?: (query: string) => void;
   onCreatePrompt?: () => void;
+  autoFocusSearch?: boolean;
+  onSearchFocused?: () => void;
 }
 
 export function PromptList({
@@ -41,6 +43,8 @@ export function PromptList({
   searchQuery,
   onSearch,
   onCreatePrompt,
+  autoFocusSearch,
+  onSearchFocused,
 }: PromptListProps) {
   return (
     <div className="flex flex-col h-full">
@@ -73,6 +77,8 @@ export function PromptList({
                     value={searchQuery ?? ""}
                     onChange={onSearch}
                     placeholder="Search prompts..."
+                    autoFocus={autoFocusSearch}
+                    onFocus={onSearchFocused}
                   />
                 )}
                 {onCreatePrompt && (
