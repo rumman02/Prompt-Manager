@@ -85,7 +85,9 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
 
   const getDaysRemaining = (deletedAt: string | null): number | null => {
     if (!deletedAt) return null;
-    const deleted = new Date(deletedAt);
+    // Stored as naive UTC (see formatDate); parse as UTC so the day count isn't
+    // skewed by the user's local offset.
+    const deleted = new Date(deletedAt.endsWith("Z") || deletedAt.includes("T") ? deletedAt : deletedAt + "Z");
     const now = new Date();
     const daysInTrash = Math.floor((now.getTime() - deleted.getTime()) / (1000 * 60 * 60 * 24));
     const daysRemaining = 30 - daysInTrash;

@@ -6,7 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
+  // SQLite CURRENT_TIMESTAMP stores UTC as a naive string ("YYYY-MM-DD HH:MM:SS")
+  // with no timezone suffix. `new Date("... 23:26:52")` parses that as LOCAL time,
+  // silently shifting the instant by the user's UTC offset (e.g. a version saved
+  // "now" shows "6h ago" in UTC+6). Append "Z" so it is parsed as UTC, then compute
+  // the relative time against the user's local Date.now().
+  const date = new Date(dateStr.endsWith("Z") || dateStr.includes("T") ? dateStr : dateStr + "Z");
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
