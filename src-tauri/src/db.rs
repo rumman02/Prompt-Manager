@@ -57,6 +57,23 @@ impl Database {
         Ok(Self { conn })
     }
 
+    /// Create a Database backed by an explicit path. Prefer `new()` (which uses
+    /// the app data dir); this exists so tests can point at a temp file without
+    /// needing a live `AppHandle`.
+    pub fn new_for_path(path: &std::path::Path) -> Result<Self> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).ok();
+        }
+        let conn = Connection::open(path)?;
+        Ok(Self { conn })
+    }
+
+    /// Run the production schema setup (`init()`). Exposed separately so tests
+    /// can initialize a temp DB without an `AppHandle`.
+    pub fn init_schema(&self) -> Result<()> {
+        self.init()
+    }
+
     pub fn init(&self) -> Result<()> {
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS prompts (
@@ -312,23 +329,13 @@ impl Database {
     }
 
     pub fn permanently_delete_prompt(&self, id: i64) -> Result<()> {
-        // prompts_fts (the legacy FTS5 full-text index) is dropped in init() because
-        // its triggers fired on every write to `prompts` and FTS5 surfaced that as
-        // "disk I/O error" (SQLITE_IOERR), silently blocking prompt creation. The
-        // table may still exist on databases that pre-date the migration, so only
-        // write to it when present; either way, always remove the row itself.
-        let fts_exists: bool = self.conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'prompts_fts')",
-            [],
-            |row| row.get(0),
-        )?;
-        if fts_exists {
-            let _ = self.conn.execute(
-                "INSERT INTO prompts_fts(prompts_fts, rowid, title, content, description)
-                 VALUES ('delete', ?1, '', '', '')",
-                [id],
-            );
-        }
+        // The legacy `prompts_fts` FTS5 table and its triggers are dropped in init()
+        // (they fired on every write to `prompts` and surfaced FTS5's "disk I/O
+        // error" / SQLITE_IOERR, silently blocking prompt creation). init() runs on
+        // every app start, so the table is gone by the time this is called — no
+        // FTS sync needed here. Keeping this as a plain DELETE means empty_trash's
+        // loop can't be aborted by a broken FTS write on databases that pre-date
+        // the migration.
         self.conn
             .execute("DELETE FROM prompts WHERE id = ?1", [id])?;
         Ok(())
@@ -375,22 +382,24 @@ impl Database {
     }
 
     pub fn empty_trash(&self) -> Result<i64> {
-        // Get all trashed prompt IDs
-        let mut stmt = self.conn.prepare(
-            "SELECT id FROM prompts WHERE deleted_at IS NOT NULL",
-        )?;
-
-        let ids: Vec<i64> = stmt
-            .query_map([], |row| row.get(0))?
-            .filter_map(|r| r.ok())
-            .collect();
-
-        let count = ids.len() as i64;
-        for id in ids {
-            self.permanently_delete_prompt(id)?;
-        }
-
-        Ok(count)
+        // Atomic bulk delete of every soft-deleted prompt.
+        //
+        // The previous implementation deleted rows one-by-one inside a loop.
+        // That aborted on the first failure (e.g. a stray row referencing a
+        // now-missing parent under a non-cascading FK) and left the trash in a
+        // partially-emptied state. Doing a single DELETE inside an explicit
+        // transaction is all-or-nothing: either every trashed row is removed and
+        // the count is reported, or the transaction rolls back and the original
+        // rusqlite error propagates to the command layer (which maps it to a
+        // String and rejects the invoke() promise, surfacing it to the user).
+        //
+        // prompt_versions has ON DELETE CASCADE on prompt_id, and agents has
+        // ON DELETE SET NULL, so a top-level DELETE FROM prompts correctly
+        // handles related rows without touching the unrelated `skills` table.
+        let tx = self.conn.unchecked_transaction()?;
+        let n = tx.execute("DELETE FROM prompts WHERE deleted_at IS NOT NULL", [])?;
+        tx.commit()?;
+        Ok(n as i64)
     }
 
     pub fn search_prompts(&self, query: &str) -> Result<Vec<Prompt>> {

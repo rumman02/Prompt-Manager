@@ -1,9 +1,9 @@
-mod db;
+pub mod db;
 
 // Version control commands
 
 
-use db::Database;
+pub use db::Database;
 use tauri::Manager;
 
 fn init_db(app_handle: tauri::AppHandle) -> Result<(), String> {

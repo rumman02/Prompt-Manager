@@ -15,6 +15,9 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
   const [trashedPrompts, setTrashedPrompts] = useState<PromptRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPrompt, setSelectedPrompt] = useState<PromptRow | null>(null);
+  const [emptyTrashBusy, setEmptyTrashBusy] = useState(false);
+  const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
+  const [emptyTrashError, setEmptyTrashError] = useState<string | null>(null);
 
   const loadTrashedPrompts = async () => {
     try {
@@ -51,15 +54,32 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
     }
   };
 
-  const handleEmptyTrash = async () => {
+  const handleEmptyTrash = () => {
+    // Open a real confirmation modal instead of window.confirm().
+    //
+    // window.confirm() is *not implemented* in Tauri v2's Wry webview: it
+    // returns undefined (it does not throw), so the old code's `ok` was always
+    // undefined and `if (!ok) return` always bailed out — making the button
+    // silently do nothing. The app already uses a custom confirm modal pattern
+    // (see PromptViewer's showDeleteConfirm), so we reuse that here.
     if (trashedPrompts.length === 0) return;
-    if (!confirm(`Permanently delete all ${trashedPrompts.length} trashed prompts? This cannot be undone.`)) return;
+    setEmptyTrashError(null);
+    setShowEmptyConfirm(true);
+  };
+
+  const confirmEmptyTrash = async () => {
+    setShowEmptyConfirm(false);
+    setEmptyTrashBusy(true);
     try {
       await invoke("empty_trash");
-      setTrashedPrompts([]);
-      setSelectedPrompt(null);
+      await loadTrashedPrompts();
+      onRefresh();
     } catch (e) {
-      console.error("Failed to empty trash:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[EmptyTrash] failed:", e);
+      setEmptyTrashError(`Failed to empty trash: ${msg}`);
+    } finally {
+      setEmptyTrashBusy(false);
     }
   };
 
@@ -106,16 +126,38 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
         }
         actions={
           trashedPrompts.length > 0 ? (
-            <Button variant="destructive" onClick={handleEmptyTrash} className="gap-2">
+            <Button variant="destructive" onClick={handleEmptyTrash} disabled={emptyTrashBusy} className="gap-2">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
               </svg>
-              Empty Trash
+              {emptyTrashBusy ? "Emptying…" : "Empty Trash"}
             </Button>
           ) : undefined
         }
       />
       <div className="flex-1 overflow-auto p-6 space-y-6">
+
+      {emptyTrashError && (
+        <div className="rounded-lg border bg-destructive/10 border-destructive/30 px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-destructive mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <span className="text-sm text-destructive">{emptyTrashError}</span>
+            </div>
+            <button
+              onClick={() => setEmptyTrashError(null)}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-destructive/70 hover:bg-destructive/20 transition-colors"
+              aria-label="Dismiss error"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {trashedPrompts.length > 0 && (
         <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 px-4 py-3">
@@ -212,6 +254,27 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
           onRestore={handleRestore}
           onPermanentDelete={handlePermanentDelete}
         />
+      )}
+
+      {showEmptyConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowEmptyConfirm(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-xl bg-card p-6 shadow-2xl border">
+            <h3 className="text-lg font-semibold">Empty Trash</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Permanently delete all {trashedPrompts.length} trashed prompt
+              {trashedPrompts.length !== 1 ? "s" : ""}? This cannot be undone.
+            </p>
+            <div className="mt-5 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowEmptyConfirm(false)} disabled={emptyTrashBusy}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmEmptyTrash} disabled={emptyTrashBusy} className="gap-2">
+                {emptyTrashBusy ? "Emptying…" : "Empty Trash"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </div>
