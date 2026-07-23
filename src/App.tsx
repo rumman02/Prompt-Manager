@@ -1,13 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sidebar, type ViewType } from "@/components/sidebar";
-import { Header } from "@/components/layout";
 import { StatsCards } from "@/components/stats-cards";
 import { PromptList } from "@/components/prompts/PromptList";
-import { CategoryChart } from "@/components/category-chart";
 import { PromptEditorPage, type PromptFormData } from "@/components/prompts/PromptEditorPage";
 import { PromptViewer } from "@/components/prompts/PromptViewer";
-import { SearchBar } from "@/components/search-bar";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { TagsPage } from "@/components/tags/TagsPage";
 import { TrashPage } from "@/components/trash/TrashPage";
@@ -27,14 +24,13 @@ function AppContent() {
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [categories, setCategories] = useState<CategoryCount[]>([]);
   const [stats, setStats] = useState({
+    totalAgents: 0,
+    totalSkills: 0,
     totalPrompts: 0,
     totalCategories: 0,
-    totalTags: 0,
-    activePrompts: 0,
-    avgTokensPerPrompt: 0,
     favoritesCount: 0,
-    newThisWeek: 0,
-    popularCategory: null as string | null,
+    tagsCount: 0,
+    trashCount: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -45,7 +41,6 @@ function AppContent() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [activeView, setActiveView] = useState<ViewType>(initialView);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [pendingSearchFocus, setPendingSearchFocus] = useState(false);
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -58,17 +53,16 @@ function AppContent() {
 
   const loadStats = useCallback(async () => {
     try {
-      const [totalPrompts, totalCategories, totalTags, activePrompts, avgTokensPerPrompt, favoritesCount, newThisWeek, popularCategory] = await Promise.all([
+      const [totalAgents, totalSkills, totalPrompts, totalCategories, favoritesCount, tagsCount, trashCount] = await Promise.all([
+        invoke<number>("get_agents_count"),
+        invoke<number>("get_skills_count"),
         invoke<number>("get_prompts_count"),
         invoke<number>("get_categories_count"),
-        invoke<number>("get_tags_count"),
-        invoke<number>("get_active_prompts_count"),
-        invoke<number>("get_avg_tokens_per_prompt"),
         invoke<number>("get_favorites_count"),
-        invoke<number>("get_new_this_week_count"),
-        invoke<string | null>("get_most_popular_category"),
+        invoke<number>("get_tags_count"),
+        invoke<number>("get_trash_count"),
       ]);
-      setStats({ totalPrompts, totalCategories, totalTags, activePrompts, avgTokensPerPrompt, favoritesCount, newThisWeek, popularCategory });
+      setStats({ totalAgents, totalSkills, totalPrompts, totalCategories, favoritesCount, tagsCount, trashCount });
     } catch (e) {
       console.error("Failed to load stats:", e);
     }
@@ -147,11 +141,6 @@ function AppContent() {
     } else {
       refresh();
     }
-  };
-
-  const handleDashboardSearchFocus = () => {
-    setPendingSearchFocus(true);
-    setActiveView("prompts");
   };
 
   const handleCategorySelect = async (category: string | null) => {
@@ -248,19 +237,9 @@ function AppContent() {
         categories={categories}
         selectedCategory={selectedCategory}
         onCategorySelect={handleCategorySelect}
-        onCreatePrompt={handleCreatePrompt}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        {!isEditorPageOpen && activeView === "dashboard" && (
-          <Header
-            searchQuery={searchQuery}
-            onSearch={handleSearch}
-            onCreatePrompt={handleCreatePrompt}
-            onSearchFocus={handleDashboardSearchFocus}
-            isSearchInteractive={false}
-          />
-        )}
         <main className="flex-1 overflow-auto">
           {isEditorPageOpen && (
             <PromptEditorPage
@@ -274,26 +253,19 @@ function AppContent() {
           {!isEditorPageOpen && activeView === "dashboard" && (
             <div className="p-6 space-y-6">
               <StatsCards stats={stats} />
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-                <div className="lg:col-span-3">
-                  <PromptList
-                    prompts={filteredPrompts.slice(0, 8)}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    onSelect={setSelectedPrompt}
-                    onEdit={handleEditPrompt}
-                    onDelete={handleDeletePrompt}
-                    onDuplicate={handleDuplicatePrompt}
-                    onToggleFavorite={handleToggleFavorite}
-                    showHeader
-                    headerTitle="Recent Prompts"
-                    onLoadDemo={handleLoadDemoPrompts}
-                  />
-                </div>
-                <div>
-                  <CategoryChart categories={categories} />
-                </div>
-              </div>
+              <PromptList
+                prompts={filteredPrompts.slice(0, 8)}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                onSelect={setSelectedPrompt}
+                onEdit={handleEditPrompt}
+                onDelete={handleDeletePrompt}
+                onDuplicate={handleDuplicatePrompt}
+                onToggleFavorite={handleToggleFavorite}
+                showHeader
+                headerTitle="Recent Prompts"
+                onLoadDemo={handleLoadDemoPrompts}
+              />
             </div>
           )}
 
@@ -328,8 +300,6 @@ function AppContent() {
               onSearch={handleSearch}
               onCreatePrompt={handleCreatePrompt}
               onLoadDemo={handleLoadDemoPrompts}
-              autoFocusSearch={pendingSearchFocus}
-              onSearchFocused={() => setPendingSearchFocus(false)}
             />
           )}
 

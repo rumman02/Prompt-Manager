@@ -152,6 +152,33 @@ impl Database {
             [],
         )?;
 
+        // Create agents table
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS agents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                prompt_id INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE SET NULL
+            )",
+            [],
+        )?;
+
+        // Create skills table
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS skills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                content TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )?;
+
         Ok(())
     }
 
@@ -504,6 +531,20 @@ impl Database {
             |row| row.get(0),
         )?;
         Ok(result)
+    }
+
+    pub fn get_agents_count(&self) -> Result<i64> {
+        let count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM agents", [], |row| row.get(0))?;
+        Ok(count)
+    }
+
+    pub fn get_skills_count(&self) -> Result<i64> {
+        let count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM skills", [], |row| row.get(0))?;
+        Ok(count)
     }
 
     pub fn add_category(&self, category: &str) -> Result<()> {

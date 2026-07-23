@@ -8,18 +8,17 @@ interface StatsCardsProps {
 
 export function StatsCards({ stats }: StatsCardsProps) {
   const values = [
+    stats.totalAgents,
+    stats.totalSkills,
     stats.totalPrompts,
-    stats.activePrompts,
-    Math.round(stats.avgTokensPerPrompt),
-    stats.favoritesCount,
     stats.totalCategories,
-    stats.totalTags,
-    stats.newThisWeek,
-    stats.popularCategory || "—",
+    stats.favoritesCount,
+    stats.tagsCount,
+    stats.trashCount,
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
       {STAT_CONFIGS.map((config, index) => (
         <Card key={config.title} className="border-0 shadow-sm">
           <CardContent className="flex items-center gap-4 p-5">

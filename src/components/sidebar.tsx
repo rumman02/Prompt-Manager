@@ -14,7 +14,6 @@ interface SidebarProps {
   categories: CategoryCount[];
   selectedCategory: string | null;
   onCategorySelect: (category: string | null) => void;
-  onCreatePrompt: () => void;
 }
 
 export function Sidebar({
@@ -25,7 +24,6 @@ export function Sidebar({
   categories,
   selectedCategory,
   onCategorySelect,
-  onCreatePrompt,
 }: SidebarProps) {
   useEffect(() => {
     const fetchTrashCount = async () => {
@@ -108,22 +106,6 @@ export function Sidebar({
         </div>
 
       </nav>
-
-      {/* Bottom Action */}
-      <div className="p-3 border-t">
-        <button
-          onClick={onCreatePrompt}
-          className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15",
-            collapsed && "px-2"
-          )}
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          {!collapsed && <span>New Prompt</span>}
-        </button>
-      </div>
 
       {/* Settings */}
       <div className="border-t p-3">

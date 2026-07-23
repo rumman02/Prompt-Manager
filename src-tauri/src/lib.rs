@@ -191,6 +191,18 @@ fn get_most_popular_category(app_handle: tauri::AppHandle) -> Result<Option<Stri
 }
 
 #[tauri::command]
+fn get_agents_count(app_handle: tauri::AppHandle) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_agents_count().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_skills_count(app_handle: tauri::AppHandle) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_skills_count().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn seed_demo_prompts(app_handle: tauri::AppHandle) -> Result<(), String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
     db.seed_demo_prompts().map_err(|e| e.to_string())
@@ -297,6 +309,8 @@ pub fn run() {
             get_favorites_count,
             get_new_this_week_count,
             get_most_popular_category,
+            get_agents_count,
+            get_skills_count,
             seed_demo_prompts,
             add_category,
             delete_category,
