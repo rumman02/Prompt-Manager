@@ -45,6 +45,9 @@ export function Sidebar({
         collapsed ? "w-16" : "w-64"
       )}
     >
+      {/* Traffic light spacer — draggable, keeps logo/collapse clear of macOS window controls */}
+      <div className="h-8 shrink-0" data-tauri-drag-region />
+
       {/* Logo area */}
       <div className="flex h-16 items-center justify-between border-b px-4">
         {!collapsed && (

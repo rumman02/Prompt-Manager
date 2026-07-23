@@ -9,7 +9,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) {
   return (
-    <div className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
+    <div className="flex h-24 items-center justify-between border-b bg-card px-6 shrink-0 pt-8" data-tauri-drag-region>
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
           {icon}

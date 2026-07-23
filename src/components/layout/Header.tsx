@@ -17,7 +17,7 @@ export function Header({
   isSearchInteractive = true,
 }: HeaderProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
+    <header className="flex h-24 items-center justify-between border-b bg-card px-6 shrink-0 pt-8" data-tauri-drag-region>
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
           <svg
@@ -40,7 +40,7 @@ export function Header({
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4" data-tauri-drag-region="false">
         <SearchBar
           value={searchQuery}
           onChange={isSearchInteractive ? onSearch : () => {}}
