@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { cn, formatDate } from "@/lib/utils";
 import { NAV_ITEMS } from "@/constants/nav";
 import type { CategoryCount } from "@/types";
@@ -14,6 +12,15 @@ interface SidebarProps {
   categories: CategoryCount[];
   selectedCategory: string | null;
   onCategorySelect: (category: string | null) => void;
+  counts: {
+    prompts: number;
+    agents: number;
+    skills: number;
+    favorites: number;
+    categories: number;
+    tags: number;
+    trash: number;
+  };
 }
 
 export function Sidebar({
@@ -24,17 +31,20 @@ export function Sidebar({
   categories,
   selectedCategory,
   onCategorySelect,
+  counts,
 }: SidebarProps) {
-  useEffect(() => {
-    const fetchTrashCount = async () => {
-      try {
-        await invoke<number>("get_trash_count");
-      } catch {
-        // Ignore errors
-      }
-    };
-    fetchTrashCount();
-  }, []);
+  const countFor = (id: string): number | null => {
+    switch (id) {
+      case "prompts": return counts.prompts;
+      case "agents": return counts.agents;
+      case "skills": return counts.skills;
+      case "favorites": return counts.favorites;
+      case "categories": return counts.categories;
+      case "tags": return counts.tags;
+      case "trash": return counts.trash;
+      default: return null;
+    }
+  };
 
   return (
     <aside
@@ -100,7 +110,18 @@ export function Sidebar({
               <svg className="h-[18px] w-[18px] flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
               </svg>
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && (
+                <span className="flex-1 text-left">{item.label}</span>
+              )}
+              {!collapsed && (() => {
+                const n = countFor(item.id);
+                if (n === null || n < 0) return null;
+                return (
+                  <span className="ml-auto inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                    {n}
+                  </span>
+                );
+              })()}
             </button>
           ))}
         </div>

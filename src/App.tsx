@@ -245,6 +245,15 @@ function AppContent() {
         categories={categories}
         selectedCategory={selectedCategory}
         onCategorySelect={handleCategorySelect}
+        counts={{
+          prompts: stats.totalPrompts,
+          agents: stats.totalAgents,
+          skills: stats.totalSkills,
+          favorites: stats.favoritesCount,
+          categories: stats.totalCategories,
+          tags: stats.tagsCount,
+          trash: stats.trashCount,
+        }}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
