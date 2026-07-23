@@ -279,14 +279,14 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
         )
       ) : (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
               <svg className="h-7 w-7 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
               </svg>
             </div>
-            <h3 className="mt-4 text-lg font-medium">
+            <h3 className="text-lg font-medium">
               {searchQuery ? "No tags found" : "No tags yet"}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
