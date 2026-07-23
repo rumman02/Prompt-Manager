@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
@@ -12,14 +12,29 @@ interface VariablesSidebarProps {
   onToggle: () => void;
 }
 
-interface VariableInfo {
+/** A variable detected in the prompt content (read-only, derived). */
+interface DetectedVariable {
   name: string;
   count: number;
 }
 
+/** A variable the user added manually, with optional metadata. */
+interface CustomVariable {
+  id: string;
+  name: string;
+  default: string;
+  description: string;
+}
+
 export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggle }: VariablesSidebarProps) {
-  const [customVariables, setCustomVariables] = useState<string[]>([]);
-  const [newVariable, setNewVariable] = useState("");
+  const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
+  const [newName, setNewName] = useState("");
+  const [newDefault, setNewDefault] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [showAddFields, setShowAddFields] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDefault, setEditDefault] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const { width, onResizeStart, isResizing } = useResizable({
     initial: 256,
@@ -28,9 +43,9 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
     side: "right",
   });
 
-  // Extract variables from content using regex pattern {variableName}
+  // Extract variables from content using regex pattern {{variableName}}
   const extractedVariables = useMemo(() => {
-    const regex = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
+    const regex = /\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g;
     const matches: Record<string, number> = {};
     let match;
     while ((match = regex.exec(content)) !== null) {
@@ -38,31 +53,74 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
       matches[varName] = (matches[varName] || 0) + 1;
     }
     return Object.entries(matches)
-      .map(([name, count]): VariableInfo => ({ name, count }))
+      .map(([name, count]): DetectedVariable => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [content]);
 
   const allVariables = useMemo(() => {
-    const extracted = extractedVariables.map((v) => v.name);
-    const combined = [...new Set([...extracted, ...customVariables])];
+    const custom = customVariables.map((v) => v.name);
+    const combined = [...new Set([...extractedVariables.map((v) => v.name), ...custom])];
     return combined.sort();
   }, [extractedVariables, customVariables]);
 
   const handleAddVariable = () => {
-    const trimmed = newVariable.trim().replace(/[^a-zA-Z0-9_]/g, "_");
-    if (trimmed && !customVariables.includes(trimmed)) {
-      setCustomVariables([...customVariables, trimmed]);
-      setNewVariable("");
+    const trimmed = newName.trim().replace(/[^a-zA-Z0-9_]/g, "_");
+    if (trimmed && !customVariables.some((v) => v.name === trimmed)) {
+      setCustomVariables([
+        ...customVariables,
+        {
+          id: `${trimmed}-${Date.now()}`,
+          name: trimmed,
+          default: newDefault.trim(),
+          description: newDescription.trim(),
+        },
+      ]);
+      setNewName("");
+      setNewDefault("");
+      setNewDescription("");
+      setShowAddFields(false);
     }
   };
 
-  const handleRemoveCustomVariable = (name: string) => {
-    setCustomVariables(customVariables.filter((v) => v !== name));
+  const handleRemoveCustomVariable = (id: string) => {
+    setCustomVariables(customVariables.filter((v) => v.id !== id));
+  };
+
+  const handleUpdateCustomVariable = (id: string) => {
+    setCustomVariables(
+      customVariables.map((v) =>
+        v.id === id
+          ? { ...v, default: editDefault.trim(), description: editDescription.trim() }
+          : v
+      )
+    );
+    setEditingId(null);
   };
 
   const handleInsert = (name: string) => {
-    onInsertVariable(`{${name}}`);
+    onInsertVariable(`{{${name}}}`);
   };
+
+  const startEditing = (v: CustomVariable) => {
+    setEditingId(v.id);
+    setEditDefault(v.default);
+    setEditDescription(v.description);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditDefault("");
+    setEditDescription("");
+  };
+
+  const resetAddForm = () => {
+    setShowAddFields(false);
+    setNewName("");
+    setNewDefault("");
+    setNewDescription("");
+  };
+
+  const canAdd = newName.trim().length > 0;
 
   const isExtracted = (name: string) => extractedVariables.some((v) => v.name === name);
   const getUsageCount = (name: string) => extractedVariables.find((v) => v.name === name)?.count || 0;
@@ -119,29 +177,87 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
 
       {/* Add custom variable */}
       <div className="border-b p-3 space-y-2">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newVariable}
-            onChange={(e) => setNewVariable(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAddVariable()}
-            placeholder="Add variable..."
-            className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={handleAddVariable}
-            disabled={!newVariable.trim()}
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-          </Button>
-        </div>
+        {!showAddFields ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  setShowAddFields(true);
+                }
+              }}
+              placeholder="Add variable..."
+              className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setShowAddFields(true)}
+              disabled={!canAdd}
+              title="Add variable"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2 rounded-md border border-input bg-background p-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-foreground">New variable</span>
+              <button
+                onClick={resetAddForm}
+                className="text-muted-foreground hover:text-foreground"
+                title="Cancel"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && canAdd) handleAddVariable();
+              }}
+              placeholder="Variable name"
+              className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <input
+              type="text"
+              value={newDefault}
+              onChange={(e) => setNewDefault(e.target.value)}
+              placeholder="Default value (optional)"
+              className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <input
+              type="text"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && canAdd) handleAddVariable();
+              }}
+              placeholder="Description (optional)"
+              className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={handleAddVariable}
+              disabled={!canAdd}
+            >
+              Add variable
+            </Button>
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
-          Use {"{variable_name}"} syntax in your prompt
+          Use {"{{variable_name}}"} syntax in your prompt
         </p>
       </div>
 
@@ -153,7 +269,7 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
               <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
             </svg>
             <p className="mt-2 text-xs text-muted-foreground">
-              No variables found. Add custom ones or use {"{variable}"} syntax.
+              No variables found. Add custom ones or use {"{{variable}}"} syntax.
             </p>
           </div>
         ) : (
@@ -197,48 +313,106 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
             )}
 
             {/* Custom variables section */}
-            {customVariables.filter((v) => !isExtracted(v)).length > 0 && (
+            {customVariables.filter((v) => !isExtracted(v.name)).length > 0 && (
               <>
                 <div className="px-2 py-1.5 mt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Custom
                 </div>
                 {customVariables
-                  .filter((v) => !isExtracted(v))
-                  .map((name) => (
-                    <div
-                      key={name}
-                      className="group flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
-                        <code className="text-xs font-mono text-foreground truncate">
-                          {name}
-                        </code>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleInsert(name)}
-                          title="Insert variable"
-                        >
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                          </svg>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                          onClick={() => handleRemoveCustomVariable(name)}
-                          title="Remove variable"
-                        >
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </Button>
-                      </div>
+                  .filter((v) => !isExtracted(v.name))
+                  .map((v) => (
+                    <div key={v.id} className="rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50">
+                      {editingId === v.id ? (
+                        <div className="space-y-2 pt-0.5">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
+                            <code className="text-xs font-mono text-foreground truncate">
+                              {v.name}
+                            </code>
+                          </div>
+                          <input
+                            type="text"
+                            value={editDefault}
+                            onChange={(e) => setEditDefault(e.target.value)}
+                            placeholder="Default value (optional)"
+                            className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          />
+                          <input
+                            type="text"
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleUpdateCustomVariable(v.id);
+                            }}
+                            placeholder="Description (optional)"
+                            className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          />
+                          <div className="flex items-center gap-1.5">
+                            <Button size="sm" className="h-6 px-2 text-xs" onClick={() => handleUpdateCustomVariable(v.id)}>
+                              Save
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={cancelEditing}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="group flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
+                              <code className="text-xs font-mono text-foreground truncate">
+                                {v.name}
+                              </code>
+                            </div>
+                            {v.default && (
+                              <p className="ml-4 mt-0.5 truncate text-[11px] text-muted-foreground">
+                                default: {v.default}
+                              </p>
+                            )}
+                            {v.description && (
+                              <p className="ml-4 truncate text-[11px] text-muted-foreground">
+                                {v.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleInsert(v.name)}
+                              title="Insert variable"
+                            >
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                              </svg>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                              onClick={() => startEditing(v)}
+                              title="Edit variable"
+                            >
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                              </svg>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                              onClick={() => handleRemoveCustomVariable(v.id)}
+                              title="Remove variable"
+                            >
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
               </>
@@ -263,7 +437,7 @@ export function VariablesSidebar({ content, onInsertVariable, collapsed, onToggl
                     : "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20"
                 )}
               >
-                {`{${name}}`}
+                {`{{${name}}}`}
               </button>
             ))}
             {allVariables.length > 8 && (

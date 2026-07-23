@@ -171,7 +171,7 @@ export function PromptEditorPage({
                 id="content"
                 value={content}
                 onChange={setContent}
-                placeholder="Write your prompt here... Use {variable_name} for variables."
+                placeholder="Write your prompt here... Use {{variable_name}} for variables."
                 rows={12}
                 className="font-mono text-sm leading-relaxed resize-y min-h-[200px]"
                 ref={contentTextareaRef}
