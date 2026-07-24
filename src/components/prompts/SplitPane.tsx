@@ -14,7 +14,7 @@ import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
 /// this component is controlled — it reports intent via callbacks and renders
 /// whatever tree it's handed.
 
-export type ViewId = "edit" | "preview" | "variables" | "history";
+export type ViewId = "edit" | "preview" | "variables" | "history" | "meta";
 export type Orientation = "h" | "v";
 
 /** A leaf: a pane showing one view. */
@@ -86,6 +86,11 @@ const VIEWS: { id: ViewId; label: string; icon: string }[] = [
     id: "history",
     label: "History",
     icon: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z",
+  },
+  {
+    id: "meta",
+    label: "Meta",
+    icon: "M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z M6 6h.008v.008H6V6z",
   },
 ];
 

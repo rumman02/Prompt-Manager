@@ -47,7 +47,7 @@ export interface DateFormatOption {
 // Split-pane layout persisted across editor sessions. Mirrors the LayoutNode
 // shape in prompts/SplitPane.tsx; kept here as plain data so it can live in
 // the Settings blob without a circular import.
-export type LayoutViewId = "edit" | "preview" | "variables" | "history";
+export type LayoutViewId = "edit" | "preview" | "variables" | "history" | "meta";
 export type LayoutOrientation = "h" | "v";
 export interface LayoutPane {
   kind: "pane";

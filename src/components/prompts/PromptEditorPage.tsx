@@ -334,7 +334,12 @@ export function PromptEditorPage({
                 </div>
               </div>
 
-              <div className="mt-6 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-4">
+            </div>
+          );
+        case "meta":
+          return (
+            <div className="min-h-0 overflow-auto px-6 py-5">
+              <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-4">
                 <div className="text-eyebrow mb-3">Details</div>
                 <div className="space-y-4">
                   <div className="space-y-1">
