@@ -5,6 +5,9 @@ interface HighlightedTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextA
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  /** When true, the editor fills its container height (VS Code-style) instead
+   *  of growing with content via resize-y. The textarea scrolls internally. */
+  fill?: boolean;
   ref?: Ref<HTMLTextAreaElement>;
 }
 
@@ -30,7 +33,7 @@ function hashHue(name: string): number {
  * padding. Any inline padding changes a span's width and would break the pixel
  * alignment between the backdrop overlay and the textarea on top of it.
  */
-export const HighlightedTextarea = ({ value, onChange, className, ref, ...rest }: HighlightedTextareaProps) => {
+export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...rest }: HighlightedTextareaProps) => {
   const backdropRef = useRef<HTMLPreElement>(null);
 
   const handleScroll = useCallback(() => {
@@ -76,18 +79,27 @@ export const HighlightedTextarea = ({ value, onChange, className, ref, ...rest }
   // grows/shrinks the whole control (and the panel scrolls to absorb it)
   // instead of being capped by a fixed parent height.
   return (
-    <div className={cn("code-zone relative w-full overflow-auto rounded-[6px] border border-code-border bg-code-bg", className)}>
-      <div className="grid">
+    <div
+      className={cn(
+        "code-zone relative w-full rounded-[6px] border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))]",
+        fill ? "h-full overflow-hidden" : "overflow-auto",
+        className,
+      )}
+    >
+      <div className={cn("grid", fill && "h-full")}>
         {/* highlight backdrop — same cell as the textarea, scrolls with it */}
         <pre
           ref={backdropRef}
           aria-hidden
-          className="pointer-events-none m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-transparent [grid-area:1/1]"
+          className={cn(
+            "pointer-events-none m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-transparent [grid-area:1/1]",
+            fill && "h-full overflow-hidden",
+          )}
         >
           {renderHighlighted}
         </pre>
-        {/* actual input, layered on top. resize-y grows the textarea, which
-            grows the shared grid row and thus the wrapper itself. */}
+        {/* actual input, layered on top. In fill mode it fills the container
+            and scrolls internally; otherwise resize-y grows the textarea. */}
         <textarea
           {...rest}
           ref={ref}
@@ -95,7 +107,10 @@ export const HighlightedTextarea = ({ value, onChange, className, ref, ...rest }
           onScroll={handleScroll}
           onChange={(e) => onChange(e.target.value)}
           spellCheck={false}
-          className="code-zone m-0 w-full resize-y whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground [grid-area:1/1]"
+          className={cn(
+            "code-zone m-0 w-full whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground [grid-area:1/1]",
+            fill ? "resize-none h-full overflow-auto" : "resize-y",
+          )}
         />
       </div>
     </div>

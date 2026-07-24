@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { FormField, FormInput } from "@/components/ui/form-field";
+import { FormInput } from "@/components/ui/form-field";
 import { TagPreview } from "@/components/ui/tag-preview";
 import { HighlightedTextarea } from "@/components/prompts/HighlightedTextarea";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
@@ -308,87 +308,79 @@ export function PromptEditorPage({
       switch (view) {
         case "edit":
           return (
-            <div className="min-h-0 overflow-auto px-6 py-5">
-              <div className="space-y-1">
-                <FieldLabel htmlFor="title">Title</FieldLabel>
-                <FormInput
-                  id="title"
-                  value={title}
-                  onChange={setTitle}
-                  placeholder="Enter prompt title..."
-                  className="text-lead h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
-                />
-              </div>
-
-              <div className="mt-5">
-                <FieldLabel htmlFor="content">Prompt Content</FieldLabel>
-                <div className="mt-1">
-                  <HighlightedTextarea
-                    id="content"
-                    value={content}
-                    onChange={setContent}
-                    placeholder={"Write your prompt here. Markdown is supported (headings, bold, lists, code, links…).\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
-                    className="min-h-[260px]"
-                    ref={contentTextareaRef}
-                  />
-                </div>
-              </div>
-
+            <div className="h-full p-4">
+              <HighlightedTextarea
+                id="content"
+                value={content}
+                onChange={setContent}
+                placeholder={"Write your prompt here. Markdown is supported (headings, bold, lists, code, links…).\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
+                fill
+                className="h-full"
+                ref={contentTextareaRef}
+              />
             </div>
           );
         case "meta":
           return (
             <div className="min-h-0 overflow-auto px-6 py-5">
-              <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-4">
-                <div className="text-eyebrow mb-3">Details</div>
-                <div className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <FieldLabel htmlFor="title">Title</FieldLabel>
+                  <FormInput
+                    id="title"
+                    value={title}
+                    onChange={setTitle}
+                    placeholder="Enter prompt title..."
+                    className="text-lead h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <FieldLabel htmlFor="description">Description</FieldLabel>
+                  <FormInput
+                    id="description"
+                    value={description}
+                    onChange={setDescription}
+                    placeholder="Brief description of this prompt..."
+                    className="h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1">
-                    <FieldLabel htmlFor="description">Description</FieldLabel>
+                    <FieldLabel htmlFor="category">Category</FieldLabel>
                     <FormInput
-                      id="description"
-                      value={description}
-                      onChange={setDescription}
-                      placeholder="Brief description of this prompt..."
-                      className="text-meta border-transparent bg-transparent px-2 py-1.5 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                      id="category"
+                      value={category}
+                      onChange={setCategory}
+                      placeholder="e.g. Writing, Coding…"
+                      list="category-suggestions"
+                      className="h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                    />
+                    <datalist id="category-suggestions">
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="tags">Tags</FieldLabel>
+                    <FormInput
+                      id="tags"
+                      value={tags}
+                      onChange={setTags}
+                      placeholder="comma, separated, tags"
+                      className="h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
                     />
                   </div>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-1">
-                      <FieldLabel htmlFor="category">Category</FieldLabel>
-                      <FormInput
-                        id="category"
-                        value={category}
-                        onChange={setCategory}
-                        placeholder="e.g. Writing, Coding…"
-                        list="category-suggestions"
-                        className="text-meta border-transparent bg-transparent px-2 py-1.5 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
-                      />
-                      <datalist id="category-suggestions">
-                        {categories.map((cat) => (
-                          <option key={cat} value={cat} />
-                        ))}
-                      </datalist>
-                    </div>
-
-                    <div className="space-y-1">
-                      <FieldLabel htmlFor="tags">Tags</FieldLabel>
-                      <FormInput
-                        id="tags"
-                        value={tags}
-                        onChange={setTags}
-                        placeholder="comma, separated, tags"
-                        className="text-meta border-transparent bg-transparent px-2 py-1.5 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
-                      />
-                    </div>
-                  </div>
-
-                  {tags.trim() && (
-                    <div className="pt-1">
-                      <TagPreview tags={tags} />
-                    </div>
-                  )}
                 </div>
+
+                {tags.trim() && (
+                  <div className="pt-1">
+                    <TagPreview tags={tags} />
+                  </div>
+                )}
               </div>
             </div>
           );
