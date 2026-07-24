@@ -9,7 +9,6 @@ import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
 import { PreviewPanel } from "@/components/prompts/PreviewPanel";
 import {
   SplitPane,
-  OrientationToggle,
   makePane,
   makeSplit,
   makeSplitEven,
@@ -216,23 +215,16 @@ export function PromptEditorPage({
   const [layout, setLayout] = useState<LayoutNode>(
     settings.editorLayout ?? DEFAULT_LAYOUT,
   );
-  const [orientation, setOrientation] = useState<"h" | "v">(
-    settings.editorSplitOrientation ?? "h",
-  );
-
-  // Persist layout + orientation whenever they change (debounced via rAF so a
-  // long resize drag doesn't thrash localStorage every frame).
+  // Persist layout whenever it changes (debounced via rAF so a long resize drag
+  // doesn't thrash localStorage every frame).
   const rafScheduled = useRef(false);
   const persistLayout = useCallback(
-    (nextLayout: LayoutNode, nextOrientation: "h" | "v") => {
+    (nextLayout: LayoutNode) => {
       if (rafScheduled.current) return;
       rafScheduled.current = true;
       requestAnimationFrame(() => {
         rafScheduled.current = false;
-        updateSettings({
-          editorLayout: nextLayout,
-          editorSplitOrientation: nextOrientation,
-        });
+        updateSettings({ editorLayout: nextLayout });
       });
     },
     [updateSettings],
@@ -319,38 +311,31 @@ export function PromptEditorPage({
     (path: number[], view: ViewId) => {
       const next = switchView(layout, path, view);
       setLayout(next);
-      persistLayout(next, orientation);
+      persistLayout(next);
     },
-    [layout, orientation, persistLayout],
+    [layout, persistLayout],
   );
   const handleSplitPane = useCallback(
-    (path: number[]) => {
+    (path: number[], orientation: "h" | "v") => {
       const next = splitPane(layout, path, orientation);
       setLayout(next);
-      persistLayout(next, orientation);
+      persistLayout(next);
     },
-    [layout, orientation, persistLayout],
+    [layout, persistLayout],
   );
   const handleClosePane = useCallback(
     (path: number[]) => {
       const next = closePane(layout, path);
       setLayout(next);
-      persistLayout(next, orientation);
+      persistLayout(next);
     },
-    [layout, orientation, persistLayout],
+    [layout, persistLayout],
   );
   const handleResize = useCallback(
     (path: number[], sizes: number[]) => {
       const next = resizeSplit(layout, path, sizes);
       setLayout(next);
-      persistLayout(next, orientation);
-    },
-    [layout, orientation, persistLayout],
-  );
-  const handleOrientationChange = useCallback(
-    (o: "h" | "v") => {
-      setOrientation(o);
-      persistLayout(layout, o);
+      persistLayout(next);
     },
     [layout, persistLayout],
   );
@@ -533,12 +518,6 @@ export function PromptEditorPage({
           </>
         }
       />
-
-      {/* Orientation toggle — lives in the header-adjacent strip, not buried in
-          settings. It controls the orientation of the *next* split. */}
-      <div className="flex shrink-0 items-center justify-end border-b border-border bg-card px-3 py-1.5">
-        <OrientationToggle orientation={orientation} onChange={handleOrientationChange} />
-      </div>
 
       {saveError && (
         <div

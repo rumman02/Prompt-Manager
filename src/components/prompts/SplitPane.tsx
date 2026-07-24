@@ -8,7 +8,8 @@ import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
 /// leaf holds one of the four views (edit/preview/variables/history); each
 /// internal node is a row or column of children with a resize handle between
 /// neighbors. The user splits a pane (cloning its view into a new sibling) or
-/// closes a pane, and toggles the orientation that *new* splits use.
+/// closes a pane, choosing the split orientation (vertical/horizontal)
+/// per-click.
 ///
 /// The layout is owned by the parent (PromptEditorPage) and persisted there;
 /// this component is controlled — it reports intent via callbacks and renders
@@ -62,7 +63,7 @@ interface PaneTabStripProps {
   view: ViewId;
   canClose: boolean;
   onSwitch: (view: ViewId) => void;
-  onSplit: () => void;
+  onSplitPane: (orientation: Orientation) => void;
   onClose: () => void;
 }
 
@@ -94,7 +95,13 @@ const VIEWS: { id: ViewId; label: string; icon: string }[] = [
   },
 ];
 
-function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStripProps) {
+function PaneTabStrip({
+  view,
+  canClose,
+  onSwitch,
+  onSplitPane,
+  onClose,
+}: PaneTabStripProps) {
   return (
     <div
       role="tablist"
@@ -130,16 +137,7 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
         );
       })}
       <div className="ml-auto flex items-center gap-0.5 pb-[3px]">
-        <button
-          onClick={onSplit}
-          title="Split pane"
-          aria-label="Split pane"
-          className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors duration-150 hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-        >
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-          </svg>
-        </button>
+        <OrientationToggle onSplit={onSplitPane} />
         {canClose && (
           <button
             onClick={onClose}
@@ -160,11 +158,10 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
 // ─── Orientation toggle (top-level control) ─────────────────────────────────
 
 interface OrientationToggleProps {
-  orientation: Orientation;
-  onChange: (o: Orientation) => void;
+  onSplit: (orientation: Orientation) => void;
 }
 
-export function OrientationToggle({ orientation, onChange }: OrientationToggleProps) {
+export function OrientationToggle({ onSplit }: OrientationToggleProps) {
   const options: { id: Orientation; label: string; icon: ReactNode }[] = [
     {
       id: "h",
@@ -191,23 +188,19 @@ export function OrientationToggle({ orientation, onChange }: OrientationTogglePr
     <div
       role="group"
       aria-label="Split orientation"
-      className="inline-flex h-8 items-center gap-0.5 rounded-[10px] border border-border bg-muted p-1 shadow-macos-inset"
+      className="inline-flex items-center gap-0.5"
     >
       {options.map((o) => {
-        const active = o.id === orientation;
         return (
           <button
             key={o.id}
-            onClick={() => onChange(o.id)}
+            onClick={() => onSplit(o.id)}
             title={o.label}
             aria-label={o.label}
-            aria-pressed={active}
             className={cn(
-              "flex h-6 w-6 items-center justify-center rounded-[6px] transition-all duration-150",
+              "flex h-7 w-7 items-center justify-center rounded-[6px] transition-all duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-              active
-                ? "bg-background text-foreground shadow-macos-button"
-                : "text-muted-foreground hover:text-foreground",
+              "text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
             {o.icon}
@@ -228,7 +221,7 @@ interface SplitPaneProps {
   renderPane: (view: ViewId) => ReactNode;
   /** Mutations, fired upward to the parent which owns + persists the layout. */
   onSwitchView: (path: number[], view: ViewId) => void;
-  onSplitPane: (path: number[]) => void;
+  onSplitPane: (path: number[], orientation: Orientation) => void;
   onClosePane: (path: number[]) => void;
   onResize: (path: number[], sizes: number[]) => void;
 }
@@ -264,7 +257,7 @@ interface NodeProps {
   paneCount: number;
   renderPane: (view: ViewId) => ReactNode;
   onSwitchView: (path: number[], view: ViewId) => void;
-  onSplitPane: (path: number[]) => void;
+  onSplitPane: (path: number[], orientation: Orientation) => void;
   onClosePane: (path: number[]) => void;
   onResize: (path: number[], sizes: number[]) => void;
 }
@@ -286,7 +279,7 @@ function Node({
           view={node.view}
           canClose={paneCount > 1}
           onSwitch={(view) => onSwitchView(path, view)}
-          onSplit={() => onSplitPane(path)}
+          onSplitPane={(orientation) => onSplitPane(path, orientation)}
           onClose={() => onClosePane(path)}
         />
         <div className="flex-1 overflow-auto border-t border-border">{renderPane(node.view)}</div>
@@ -341,7 +334,7 @@ interface SplitChildProps {
   paneCount: number;
   renderPane: (view: ViewId) => ReactNode;
   onSwitchView: (path: number[], view: ViewId) => void;
-  onSplitPane: (path: number[]) => void;
+  onSplitPane: (path: number[], orientation: Orientation) => void;
   onClosePane: (path: number[]) => void;
   onResize: (path: number[], sizes: number[]) => void;
   onHandleDrag: (delta: number) => void;
