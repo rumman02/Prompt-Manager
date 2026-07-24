@@ -150,7 +150,7 @@ export function VersionHistorySidebar({
         <button
           onClick={onToggle}
           title="Expand versions"
-          className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
         >
           <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.history} />
@@ -176,16 +176,16 @@ export function VersionHistorySidebar({
             <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d={ICON.history} />
             </svg>
-            <span className="text-sm font-semibold">History</span>
+            <span className="text-sm font-semibold text-[hsl(var(--foreground))]">History</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+            <span className="rounded-full bg-[hsl(var(--secondary))] px-2 py-0.5 text-xs font-medium text-[hsl(var(--secondary-foreground))]">
               {versions.length}
             </span>
             <button
               onClick={onToggle}
               title="Collapse history"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d={ICON.collapse} />
@@ -206,7 +206,7 @@ export function VersionHistorySidebar({
             />
             <button
               type="button"
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--secondary))] px-3 py-1.5 text-sm font-medium text-[hsl(var(--secondary-foreground))] transition-colors hover:bg-[hsl(var(--secondary))]/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
               onClick={handleSaveVersion}
               disabled={!title.trim() || !content.trim()}
             >
@@ -225,29 +225,35 @@ export function VersionHistorySidebar({
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : versions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <svg className="h-10 w-10 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-              </svg>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {isEditing ? "No versions saved yet. Save your first version above." : "No version history available."}
+            <div className="flex flex-col items-start gap-2 py-6 px-4 text-left">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[hsl(var(--secondary))] text-[hsl(var(--muted-foreground))]">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))]">
+                {isEditing
+                  ? "No versions yet. Save your first snapshot above, and every future change will be listed here for a one-click restore."
+                  : "Versions appear here once you save this prompt and edit it again — each saved change becomes a snapshot you can restore with one click."}
               </p>
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-[hsl(var(--border))]">
               {versions.map((version) => (
                 <div
                   key={version.id}
-                  className="group relative px-3 py-3 transition-colors hover:bg-muted/50"
+                  className="group relative px-3 py-3.5 transition-colors hover:bg-[hsl(var(--secondary))]"
                 >
+                  {/* hover accent bar — makes entries easy to scan as the list grows */}
+                  <span className="pointer-events-none absolute inset-y-2 left-0 w-[2px] rounded-r bg-[hsl(var(--accent-2-h)_var(--accent-2-s)_var(--accent-2-l))] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
                   {/* Header row — always visible */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-primary">
+                        <span className="text-xs font-semibold text-[hsl(var(--accent-2-h)_var(--accent-2-s)_var(--accent-2-l))]">
                           v{version.version_number}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-[hsl(var(--muted-foreground))]">
                           {formatDate(version.created_at)}
                         </span>
                       </div>
@@ -299,11 +305,11 @@ export function VersionHistorySidebar({
 
                     {/* Action toolbar — revealed on hover (group-hover) over the row */}
                     {renamingId !== version.id && (
-                      <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-border/60 bg-card/80 p-0.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                      <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-[hsl(var(--border))]/60 bg-[hsl(var(--card))]/80 p-0.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                         <button
                           onClick={() => setViewing(version)}
                           title="View"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.view} />
@@ -312,7 +318,7 @@ export function VersionHistorySidebar({
                         <button
                           onClick={() => handleRestore(version)}
                           title="Restore"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.restore} />
@@ -321,7 +327,7 @@ export function VersionHistorySidebar({
                         <button
                           onClick={() => startRename(version)}
                           title="Rename"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.rename} />
@@ -330,7 +336,7 @@ export function VersionHistorySidebar({
                         <button
                           onClick={() => setPendingDeleteId(version.id)}
                           title="Delete"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--destructive))]/10 hover:text-[hsl(var(--destructive))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.trash} />

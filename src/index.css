@@ -3,50 +3,128 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── PromptHub palette: warm paper + ink, one accent (accent = user-configurable --primary) ── */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --background: 43 22% 96%;       /* #f6f5f0 warm paper */
+    --foreground: 46 12% 13%;       /* #222019 ink */
+    --card: 40 33% 98%;             /* #fdfcf8 near-white surface */
+    --card-foreground: 46 12% 13%;
+    --popover: 40 33% 98%;
+    --popover-foreground: 46 12% 13%;
+    --primary: 222 31% 21%;         /* accent slot — overridden at runtime by SettingsContext */
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 43 14% 92%;        /* faint paper tint for pills/badges */
+    --secondary-foreground: 46 12% 35%;
+    --muted: 43 14% 92%;            /* faint paper surface (distinct from its text) */
+    --muted-foreground: 46 10% 42%; /* readable text ON a muted surface */
+    --accent: 43 14% 92%;
+    --accent-foreground: 46 12% 13%;
+    --destructive: 0 62% 48%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 43 14% 89%;           /* #e4e1d6 */
+    --input: 43 14% 89%;
+    --ring: 46 12% 13%;
     --radius: 0.5rem;
+
+    /* named roles so accents stop competing for attention */
+    --text-secondary: 46 10% 32%;   /* metadata values (category, tags) — lighter than primary */
+    --accent-2-h: 32;                /* secondary accent (version labels) — warm amber, fixed */
+    --accent-2-s: 85%;
+    --accent-2-l: 45%;
+
+    /* code-zone + variable tokens. Hue per-variable is set in JS via --token-hue;
+       these theme tokens drive saturation/bg/fg/border so theming stays centralized. */
+    --code-bg: 40 18% 97%;
+    --code-border: 43 14% 89%;
+    --code-accent: var(--primary);
+    --token-sat: 70%;
+    --token-bg-l: 92%;
+    --token-fg-l: 28%;
+    --token-border-l: 78%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 72% 51%;
+    --background: 220 12% 7%;        /* #0f1115 deep ink */
+    --foreground: 40 12% 90%;        /* #e7e4db */
+    --card: 220 11% 11%;            /* #16191f */
+    --card-foreground: 40 12% 90%;
+    --popover: 220 11% 11%;
+    --popover-foreground: 40 12% 90%;
+    --primary: 210 40% 98%;         /* accent slot — lightened at runtime by SettingsContext */
+    --primary-foreground: 222 31% 13%;
+    --secondary: 220 9% 18%;
+    --secondary-foreground: 215 10% 75%;
+    --muted: 220 9% 18%;            /* surface */
+    --muted-foreground: 215 10% 62%; /* readable text ON a muted surface */
+    --accent: 220 9% 18%;
+    --accent-foreground: 40 12% 90%;
+    --destructive: 0 62% 55%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 220 9% 20%;           /* #23272f */
+    --input: 220 9% 20%;
+    --ring: 212 15% 80%;
+
+    --text-secondary: 40 10% 68%;
+    --accent-2-h: 32;
+    --accent-2-s: 75%;
+    --accent-2-l: 62%;
+
+    --code-bg: 220 12% 9%;
+    --code-border: 220 9% 20%;
+    --code-accent: var(--primary);
+    --token-sat: 55%;
+    --token-bg-l: 18%;
+    --token-fg-l: 84%;
+    --token-border-l: 30%;
   }
+}
+
+/* ── Typography: UI face (chrome) + code face (content editor) ── */
+@layer base {
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+  }
+}
+
+.font-code,
+.code-zone {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-feature-settings: "liga" 0;
+}
+
+/* ── Type scale ── */
+.text-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--muted-foreground));
+}
+.text-lead {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: hsl(var(--foreground));
+}
+.text-meta {
+  color: hsl(var(--text-secondary));
+}
+
+/* code-zone focus ring — applied to the wrapper when the textarea is focused */
+.code-zone:focus-within {
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.35);
+  border-color: hsl(var(--code-accent) / 0.7);
+}
+
+/* variable tokens — per-name hue via --token-hue; border via inset box-shadow
+   (NOT inline padding) so the overlay stays pixel-synced with the textarea */
+.var-token {
+  --hue: var(--token-hue, 220deg);
+  white-space: nowrap;
+  border-radius: 3px;
+  color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
+  background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.55);
+  box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l));
 }
 
 @layer base {

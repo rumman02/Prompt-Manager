@@ -18,7 +18,7 @@ export function TagPreview({ tags, className }: TagPreviewProps) {
       {parsed.map((tag, i) => (
         <span
           key={i}
-          className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
+          className="inline-flex items-center rounded-md bg-[hsl(var(--secondary))] px-2 py-0.5 text-[11px] font-medium text-[hsl(var(--secondary-foreground))] ring-1 ring-inset ring-[hsl(var(--border))]"
         >
           {tag}
         </span>

@@ -1,12 +1,22 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { FormField, FormInput, FormTextarea } from "@/components/ui/form-field";
+import { FormField, FormInput } from "@/components/ui/form-field";
 import { TagPreview } from "@/components/ui/tag-preview";
+import { HighlightedTextarea } from "@/components/prompts/HighlightedTextarea";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
 import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
 import { useResizable } from "@/hooks/useResizable";
 import type { PromptRow, PromptVersion } from "@/types";
+
+// micro-label used above each field for a consistent, tracked-out technical feel
+function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
+  return (
+    <label htmlFor={htmlFor} className="text-eyebrow block">
+      {children}
+    </label>
+  );
+}
 
 type RightPanel = "history" | "variables";
 
@@ -146,8 +156,9 @@ export function PromptEditorPage({
         }
         actions={
           <>
-            {/* Right-panel selector — only one panel visible at a time on the right. */}
-            <div className="flex items-center rounded-md border bg-background p-0.5">
+            {/* Right-panel selector — tertiary control: ghost-weight, de-emphasized
+                so it never competes with the primary Create/Update action. */}
+            <div className="flex items-center gap-0.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-0.5">
               <button
                 onClick={() => {
                   setActivePanel("history");
@@ -155,10 +166,10 @@ export function PromptEditorPage({
                 }}
                 title="Show version history"
                 className={
-                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors " +
+                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 " +
                   (activePanel === "history" && !isRightPanelCollapsed
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:text-foreground")
+                    ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
+                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]")
                 }
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -173,10 +184,10 @@ export function PromptEditorPage({
                 }}
                 title="Show variables"
                 className={
-                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors " +
+                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 " +
                   (activePanel === "variables" && !isRightPanelCollapsed
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:text-foreground")
+                    ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
+                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]")
                 }
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -185,7 +196,8 @@ export function PromptEditorPage({
                 Variables
               </button>
             </div>
-            <Button variant="outline" onClick={onBack}>
+            {/* secondary then primary — primary reads as the heavier, confident action */}
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]">
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isDisabled}>
@@ -233,68 +245,91 @@ export function PromptEditorPage({
       <div ref={editorContainerRef} className="flex flex-1 min-h-0 rounded-xl border bg-card">
         {/* Main editor content — flex-1 so it expands when no panel is docked on the left. */}
         <div className="flex flex-1 flex-col min-w-0">
-          <div className="flex-1 p-6 space-y-6 overflow-auto">
-            <FormField label="Title *" htmlFor="title">
+          <div className="flex-1 overflow-auto px-6 py-5">
+            {/* ── Title — tightened, the artifact's name ── */}
+            <div className="space-y-1">
+              <FieldLabel htmlFor="title">Title</FieldLabel>
               <FormInput
                 id="title"
                 value={title}
                 onChange={setTitle}
                 placeholder="Enter prompt title..."
-                className="text-base"
+                className="text-lead h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
               />
-            </FormField>
-
-            <FormField label="Prompt Content *" htmlFor="content">
-              <FormTextarea
-                id="content"
-                value={content}
-                onChange={setContent}
-                placeholder="Write your prompt here... Use {{variable_name}} for variables."
-                rows={12}
-                className="font-mono text-sm leading-relaxed resize-y min-h-[200px]"
-                ref={contentTextareaRef}
-              />
-            </FormField>
-
-            <FormField label="Description" htmlFor="description">
-              <FormTextarea
-                id="description"
-                value={description}
-                onChange={setDescription}
-                placeholder="Brief description of this prompt..."
-                rows={3}
-              />
-            </FormField>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <FormField label="Category" htmlFor="category">
-                <FormInput
-                  id="category"
-                  value={category}
-                  onChange={setCategory}
-                  placeholder="e.g., Writing, Coding, Marketing..."
-                  list="category-suggestions"
-                />
-                <datalist id="category-suggestions">
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
-              </FormField>
-
-              <FormField label="Tags" htmlFor="tags">
-                <FormInput
-                  id="tags"
-                  value={tags}
-                  onChange={setTags}
-                  placeholder="Comma-separated tags (e.g., creative, short, formal)"
-                />
-              </FormField>
             </div>
 
-            <FormField label="Tag Preview" htmlFor="">
-              <TagPreview tags={tags} />
-            </FormField>
+            {/* ── Prompt Content — the instrument: monospace code zone with live
+                {{variable}} highlighting. Gets the dominant vertical room. ── */}
+            <div className="mt-5">
+              <FieldLabel htmlFor="content">Prompt Content</FieldLabel>
+              <div className="mt-1">
+                <HighlightedTextarea
+                  id="content"
+                  value={content}
+                  onChange={setContent}
+                  placeholder={"Write your prompt here...\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
+                  rows={14}
+                  className="min-h-[260px]"
+                  ref={contentTextareaRef}
+                />
+              </div>
+            </div>
+
+            {/* ── Metadata band — Description / Category / Tags grouped as a
+                distinct row, separated by a subtle divider + faint tint. ── */}
+            <div className="mt-6 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-4">
+              <div className="text-eyebrow mb-3">
+                Details
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <FieldLabel htmlFor="description">Description</FieldLabel>
+                  <FormInput
+                    id="description"
+                    value={description}
+                    onChange={setDescription}
+                    placeholder="Brief description of this prompt..."
+                    className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="category">Category</FieldLabel>
+                    <FormInput
+                      id="category"
+                      value={category}
+                      onChange={setCategory}
+                      placeholder="e.g. Writing, Coding…"
+                      list="category-suggestions"
+                      className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                    />
+                    <datalist id="category-suggestions">
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="tags">Tags</FieldLabel>
+                    <FormInput
+                      id="tags"
+                      value={tags}
+                      onChange={setTags}
+                      placeholder="comma, separated, tags"
+                      className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                    />
+                  </div>
+                </div>
+
+                {tags.trim() && (
+                  <div className="pt-1">
+                    <TagPreview tags={tags} />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
