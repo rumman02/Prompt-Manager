@@ -282,6 +282,28 @@ fn rename_prompt_version(
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn save_prompt_variable(
+    app_handle: tauri::AppHandle,
+    prompt_id: i64,
+    name: String,
+    value: String,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.upsert_prompt_variable(prompt_id, &name, &value)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_prompt_variables(
+    app_handle: tauri::AppHandle,
+    prompt_id: i64,
+) -> Result<Vec<(String, String)>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_prompt_variables(prompt_id)
+        .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -329,6 +351,8 @@ pub fn run() {
             get_prompt_versions,
             delete_prompt_version,
             rename_prompt_version,
+            save_prompt_variable,
+            get_prompt_variables,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

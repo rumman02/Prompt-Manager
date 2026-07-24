@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
@@ -13,6 +13,16 @@ interface VariablesSidebarProps {
   width: number;
   onResizeStart: (e: React.MouseEvent) => void;
   isResizing: boolean;
+  /** The prompt being edited, or null when creating a new prompt (no values to persist yet). */
+  promptId: number | null;
+  /** Saved variable values for this prompt, keyed by variable name. */
+  variableValues: Record<string, string>;
+  /** Persist a single variable's value (called on debounced typing + blur). */
+  onSaveVariable: (name: string, value: string) => void;
+  /** Which variable row is currently expanded (accordion). Parent owns this so
+      it resets when toggling panels. */
+  expandedName: string | null;
+  onToggleExpand: (name: string) => void;
 }
 
 /** A variable detected in the prompt content (read-only, derived). */
@@ -37,6 +47,11 @@ export function VariablesSidebar({
   width,
   onResizeStart,
   isResizing,
+  promptId,
+  variableValues,
+  onSaveVariable,
+  expandedName,
+  onToggleExpand,
 }: VariablesSidebarProps) {
   const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
   const [newName, setNewName] = useState("");
@@ -46,6 +61,13 @@ export function VariablesSidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDefault, setEditDefault] = useState("");
   const [editDescription, setEditDescription] = useState("");
+
+  // Local draft values for the open textarea(s). These mirror what the user is
+  // typing and are the source of truth for the textarea; the debounce/blur in
+  // the parent persists them up into variableValues. We sync from the saved
+  // values when a row expands so external changes (e.g. reload) are reflected.
+  const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Extract variables from content using regex pattern {{variableName}}
   const extractedVariables = useMemo(() => {
@@ -128,6 +150,65 @@ export function VariablesSidebar({
 
   const isExtracted = (name: string) => extractedVariables.some((v) => v.name === name);
   const getUsageCount = (name: string) => extractedVariables.find((v) => v.name === name)?.count || 0;
+
+  // --- Variable value editing (accordion + debounced autosave) ----------------
+
+  // When a row expands, seed its draft from the saved value (if any) so the
+  // textarea shows what's persisted and edits start from there.
+  useEffect(() => {
+    if (expandedName) {
+      setDraftValues((prev) => {
+        if (prev[expandedName] !== undefined) return prev;
+        return { ...prev, [expandedName]: variableValues[expandedName] ?? "" };
+      });
+    }
+  }, [expandedName, variableValues]);
+
+  const flushSave = useCallback(
+    (name: string) => {
+      const timer = debounceTimers.current[name];
+      if (timer) {
+        clearTimeout(timer);
+        delete debounceTimers.current[name];
+      }
+      const value = draftValues[name] ?? variableValues[name] ?? "";
+      onSaveVariable(name, value);
+    },
+    [draftValues, variableValues, onSaveVariable]
+  );
+
+  const handleDraftChange = useCallback(
+    (name: string, value: string) => {
+      setDraftValues((prev) => ({ ...prev, [name]: value }));
+      // Debounced autosave (~400ms of inactivity).
+      const existing = debounceTimers.current[name];
+      if (existing) clearTimeout(existing);
+      debounceTimers.current[name] = setTimeout(() => {
+        onSaveVariable(name, value);
+        delete debounceTimers.current[name];
+      }, 400);
+    },
+    [onSaveVariable]
+  );
+
+  // Flush any pending debounced saves when the component unmounts (e.g. user
+  // switches panels or navigates away) so the latest value is never lost.
+  useEffect(() => {
+    const timers = debounceTimers.current;
+    return () => {
+      for (const name of Object.keys(timers)) {
+        clearTimeout(timers[name]);
+        const value = draftValues[name] ?? variableValues[name] ?? "";
+        onSaveVariable(name, value);
+      }
+    };
+    // Intentionally run only on unmount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleRowActivate = (name: string) => {
+    onToggleExpand(name);
+  };
 
   // Collapsed state: a slim icon-only bar mirroring the main sidebar's
   // collapsed mode. Clicking re-expands; the count badge stays visible.
@@ -287,33 +368,19 @@ export function VariablesSidebar({
                   Detected
                 </div>
                 {extractedVariables.map((variable) => (
-                  <div
+                  <DetectedVariableRow
                     key={variable.name}
-                    className="group flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="h-2 w-2 rounded-full bg-green-500 flex-shrink-0" />
-                      <code className="text-xs font-mono text-foreground truncate">
-                        {variable.name}
-                      </code>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-xs font-medium text-green-600">
-                        {variable.count}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleInsert(variable.name)}
-                        title="Insert variable"
-                      >
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                      </Button>
-                    </div>
-                  </div>
+                    variable={variable}
+                    usageCount={variable.count}
+                    savedValue={variableValues[variable.name]}
+                    draftValue={draftValues[variable.name] ?? variableValues[variable.name] ?? ""}
+                    expanded={expandedName === variable.name}
+                    promptId={promptId}
+                    onToggle={() => handleRowActivate(variable.name)}
+                    onDraftChange={handleDraftChange}
+                    onFlushSave={flushSave}
+                    onInsert={handleInsert}
+                  />
                 ))}
               </>
             )}
@@ -455,6 +522,148 @@ export function VariablesSidebar({
         </div>
       )}
       </div>
+    </div>
+  );
+}
+
+// ── Detected variable row with inline accordion value editor ───────────────
+
+interface DetectedVariableRowProps {
+  variable: DetectedVariable;
+  usageCount: number;
+  savedValue: string | undefined;
+  draftValue: string;
+  expanded: boolean;
+  promptId: number | null;
+  onToggle: () => void;
+  onDraftChange: (name: string, value: string) => void;
+  onFlushSave: (name: string) => void;
+  onInsert: (name: string) => void;
+}
+
+function DetectedVariableRow({
+  variable,
+  usageCount,
+  savedValue,
+  draftValue,
+  expanded,
+  promptId,
+  onToggle,
+  onDraftChange,
+  onFlushSave,
+  onInsert,
+}: DetectedVariableRowProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hasValue = savedValue && savedValue.trim().length > 0;
+
+  // Autofocus the textarea when the row expands.
+  useEffect(() => {
+    if (expanded && textareaRef.current) {
+      textareaRef.current.focus();
+      // Place cursor at end
+      const len = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(len, len);
+    }
+  }, [expanded]);
+
+  return (
+    <div className="rounded-md">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={`${variable.name} variable, ${usageCount} occurrence${usageCount === 1 ? "" : "s"}`}
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
+        className={cn(
+          "group flex items-center justify-between rounded-md px-2 py-1.5 transition-colors cursor-pointer",
+          expanded ? "bg-muted/60" : "hover:bg-muted/50"
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Chevron affordance — rotates when expanded. */}
+          <svg
+            className={cn(
+              "h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200",
+              expanded && "rotate-90"
+            )}
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+          <div
+            className={cn(
+              "h-2 w-2 rounded-full flex-shrink-0",
+              hasValue ? "bg-green-500" : "bg-green-500/30"
+            )}
+            title={hasValue ? "Has a saved value" : "No value set"}
+          />
+          <code className="text-xs font-mono text-foreground truncate">
+            {variable.name}
+          </code>
+          {/* Filled-row preview: truncated value so the user sees which vars are
+              populated without expanding every row. */}
+          {hasValue && (
+            <span className="truncate text-[11px] text-muted-foreground max-w-[120px]">
+              · {savedValue.length > 24 ? `${savedValue.slice(0, 24)}…` : savedValue}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-xs font-medium text-green-600">
+            {usageCount}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onInsert(variable.name);
+            }}
+            title="Insert variable"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </Button>
+        </div>
+      </div>
+
+      {/* Inline expansion — resizable textarea for this variable's value. */}
+      {expanded && (
+        <div className="px-2 pb-2 pt-1">
+          <textarea
+            ref={textareaRef}
+            value={draftValue}
+            onChange={(e) => onDraftChange(variable.name, e.target.value)}
+            onBlur={() => onFlushSave(variable.name)}
+            placeholder={`Enter a value for {{${variable.name}}}…`}
+            rows={3}
+            className={cn(
+              "w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs",
+              "ring-offset-background placeholder:text-muted-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              promptId === null && "opacity-60"
+            )}
+            disabled={promptId === null}
+          />
+          <p className={cn("mt-1 text-[10px]", promptId === null ? "text-amber-500" : "text-muted-foreground")}>
+            {promptId === null
+              ? "Save the prompt first to store variable values."
+              : "Autosaves as you type · drag the corner to resize"}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

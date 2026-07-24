@@ -127,6 +127,19 @@
   box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l));
 }
 
+/* Unfilled variable in the preview: same per-name hue for traceability, but a
+   dashed border + lower opacity so it reads as "still needs a value" and can't
+   be mistaken for a filled one. */
+.var-token--empty {
+  --hue: var(--token-hue, 220deg);
+  white-space: nowrap;
+  border-radius: 3px;
+  font-style: italic;
+  color: hsl(var(--hue) var(--token-sat) var(--token-fg-l) / 0.7);
+  background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.3);
+  box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.6);
+}
+
 @layer base {
   * {
     @apply border-border;

@@ -42,6 +42,45 @@ export interface ContentStats {
   paragraphs: number;
 }
 
+// Matches {{variable_name}} placeholders. Shared by the editor highlight
+// overlay, the variables sidebar extraction, and the preview compiler so the
+// three never drift apart.
+export const VARIABLE_TOKEN_RE = /\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g;
+
+export interface CompileResult {
+  /** Prompt content with saved values substituted; unfilled vars stay as {{name}}. */
+  text: string;
+  /** Names that have no saved value yet, in order of first appearance. */
+  unfilled: string[];
+}
+
+/**
+ * Compile prompt content by substituting saved variable values.
+ *
+ * Every {{name}} occurrence is replaced by its saved value when present. Names
+ * without a value are left as literal {{name}} (NOT silently dropped to an empty
+ * string, which would hide the gap) and reported in `unfilled` so callers can
+ * warn the user. Formatting and line breaks are preserved exactly — only the
+ * tokens themselves are swapped. Reusable for copy, export, and a future
+ * "run this prompt" feature.
+ */
+export function compilePrompt(content: string, variableValues: Record<string, string>): CompileResult {
+  const unfilled: string[] = [];
+  const seen = new Set<string>();
+  const text = content.replace(VARIABLE_TOKEN_RE, (match, name: string) => {
+    const value = variableValues[name];
+    if (value !== undefined && value.trim().length > 0) {
+      return value;
+    }
+    if (!seen.has(name)) {
+      seen.add(name);
+      unfilled.push(name);
+    }
+    return match;
+  });
+  return { text, unfilled };
+}
+
 export function getContentStats(text: string): ContentStats {
   if (!text || text.trim().length === 0) {
     return { tokens: 0, words: 0, sentences: 0, paragraphs: 0 };

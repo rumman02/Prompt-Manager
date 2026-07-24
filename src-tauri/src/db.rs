@@ -195,7 +195,55 @@ impl Database {
             [],
         )?;
 
+        // Create prompt_variables table — stores user-entered values for each
+        // {{variable}} detected (or custom) in a prompt, scoped to the prompt so
+        // they cascade-delete with it. Unique (prompt_id, name) so a variable has
+        // exactly one value per prompt; UPSERT semantics in upsert_prompt_variable.
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS prompt_variables (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                prompt_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                value TEXT DEFAULT '',
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+        self.conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_variables_name
+             ON prompt_variables(prompt_id, name)",
+            [],
+        )?;
+
         Ok(())
+    }
+
+    /// Insert or update the value of a single variable for a prompt.
+    /// The UNIQUE index on (prompt_id, name) makes this idempotent — re-saving
+    /// the same variable updates its value + timestamp rather than duplicating.
+    pub fn upsert_prompt_variable(&self, prompt_id: i64, name: &str, value: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO prompt_variables (prompt_id, name, value)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(prompt_id, name)
+             DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
+            rusqlite::params![prompt_id, name, value],
+        )?;
+        Ok(())
+    }
+
+    /// Fetch all saved variable values for a prompt, returned as (name, value) pairs.
+    pub fn get_prompt_variables(&self, prompt_id: i64) -> Result<Vec<(String, String)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT name, value FROM prompt_variables WHERE prompt_id = ?1",
+        )?;
+        let rows = stmt
+            .query_map([prompt_id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?
+            .collect::<Vec<_>>();
+        Ok(rows.into_iter().filter_map(|r| r.ok()).collect())
     }
 
     fn row_to_prompt(row: &Row) -> Result<Prompt> {

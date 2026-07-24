@@ -73,6 +73,22 @@ export function usePrompts() {
     await invoke("toggle_favorite", { id });
   }, []);
 
+  // Variable values are stored as {name: value} pairs scoped to a prompt.
+  // getPromptVariables returns them as (name, value) tuples from the backend;
+  // we flatten into a record for easy lookups in the UI.
+  const getPromptVariables = useCallback(async (id: number) => {
+    const rows = await invoke<[string, string][]>("get_prompt_variables", { id });
+    const record: Record<string, string> = {};
+    for (const [name, value] of rows) {
+      record[name] = value;
+    }
+    return record;
+  }, []);
+
+  const savePromptVariable = useCallback(async (id: number, name: string, value: string) => {
+    await invoke("save_prompt_variable", { promptId: id, name, value });
+  }, []);
+
   return {
     prompts,
     loading,
@@ -84,5 +100,7 @@ export function usePrompts() {
     searchPrompts,
     getPromptsByCategory,
     toggleFavorite,
+    getPromptVariables,
+    savePromptVariable,
   };
 }

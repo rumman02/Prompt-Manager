@@ -6,7 +6,9 @@ import { TagPreview } from "@/components/ui/tag-preview";
 import { HighlightedTextarea } from "@/components/prompts/HighlightedTextarea";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
 import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
+import { PreviewPanel } from "@/components/prompts/PreviewPanel";
 import { useResizable } from "@/hooks/useResizable";
+import { usePrompts } from "@/hooks/usePrompts";
 import type { PromptRow, PromptVersion } from "@/types";
 
 // micro-label used above each field for a consistent, tracked-out technical feel
@@ -18,7 +20,7 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.Re
   );
 }
 
-type RightPanel = "history" | "variables";
+type RightPanel = "history" | "variables" | "preview";
 
 export interface PromptFormData {
   title: string;
@@ -51,6 +53,13 @@ export function PromptEditorPage({
   const [saveError, setSaveError] = useState<string | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const { getPromptVariables, savePromptVariable } = usePrompts();
+
+  // Accordion state — which detected variable's value editor is open. Owned
+  // here so it resets when the panel is toggled or the prompt changes.
+  const [expandedVariable, setExpandedVariable] = useState<string | null>(null);
+  // Saved variable values for this prompt, keyed by variable name.
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
 
   // Free-mode max width: the panel can grow up to ~60% of the available editor
   // width (measured live), so it adapts to the window instead of a hard 480px cap.
@@ -81,14 +90,41 @@ export function PromptEditorPage({
       setCategory(prompt.category || "");
       setTags(prompt.tags || "");
       setDescription(prompt.description || "");
+      // Load any saved variable values for this prompt.
+      getPromptVariables(prompt.id)
+        .then(setVariableValues)
+        .catch(() => setVariableValues({}));
     } else {
       setTitle("");
       setContent("");
       setCategory("");
       setTags("");
       setDescription("");
+      setVariableValues({});
     }
-  }, [prompt]);
+    // Close the accordion whenever the prompt changes.
+    setExpandedVariable(null);
+  }, [prompt, getPromptVariables]);
+
+  // Persist a single variable's value to SQLite. Called by the sidebar on
+  // debounced typing + blur. We also mirror the saved value into state so the
+  // collapsed-row preview ("audience · beginners") updates immediately.
+  const handleSaveVariable = useCallback(
+    async (name: string, value: string) => {
+      if (!prompt) return;
+      try {
+        await savePromptVariable(prompt.id, name, value);
+        setVariableValues((prev) => ({ ...prev, [name]: value }));
+      } catch (e) {
+        console.error("Failed to save variable value:", e);
+      }
+    },
+    [prompt, savePromptVariable]
+  );
+
+  const handleToggleExpandVariable = useCallback((name: string) => {
+    setExpandedVariable((prev) => (prev === name ? null : name));
+  }, []);
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) return;
@@ -195,6 +231,26 @@ export function PromptEditorPage({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
                 </svg>
                 Variables
+              </button>
+              <button
+                onClick={() => {
+                  setActivePanel("preview");
+                  setIsRightPanelCollapsed(false);
+                }}
+                title="Preview compiled prompt"
+                aria-label="Preview compiled prompt"
+                className={
+                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 " +
+                  (activePanel === "preview" && !isRightPanelCollapsed
+                    ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
+                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]")
+                }
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Preview
               </button>
             </div>
             {/* secondary then primary — primary reads as the heavier, confident action */}
@@ -343,10 +399,25 @@ export function PromptEditorPage({
             onResizeStart={onResizeStart}
             isResizing={isResizing}
           />
-        ) : (
+        ) : activePanel === "variables" ? (
           <VariablesSidebar
             content={content}
             onInsertVariable={handleInsertVariable}
+            collapsed={isRightPanelCollapsed}
+            onToggle={() => setIsRightPanelCollapsed((v) => !v)}
+            width={width}
+            onResizeStart={onResizeStart}
+            isResizing={isResizing}
+            promptId={prompt?.id ?? null}
+            variableValues={variableValues}
+            onSaveVariable={handleSaveVariable}
+            expandedName={expandedVariable}
+            onToggleExpand={handleToggleExpandVariable}
+          />
+        ) : (
+          <PreviewPanel
+            content={content}
+            variableValues={variableValues}
             collapsed={isRightPanelCollapsed}
             onToggle={() => setIsRightPanelCollapsed((v) => !v)}
             width={width}
