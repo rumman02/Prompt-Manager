@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
-import { cn, formatDate } from "@/lib/utils";
-import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
+import { formatDate } from "@/lib/utils";
 import type { PromptVersion } from "@/types";
 
 interface VersionHistorySidebarProps {
@@ -14,13 +13,6 @@ interface VersionHistorySidebarProps {
   description: string;
   onRestore: (version: PromptVersion) => void;
   isEditing: boolean;
-  /** When collapsed, the panel shrinks to a slim icon-only bar (like the main sidebar). */
-  collapsed: boolean;
-  onToggle: () => void;
-  /** Shared resize state from the parent so width persists across panel swaps. */
-  width: number;
-  onResizeStart: (e: React.MouseEvent) => void;
-  isResizing: boolean;
 }
 
 /* ─── reusable 24×24 stroke icon paths (matches the rest of the app) ─── */
@@ -44,11 +36,6 @@ export function VersionHistorySidebar({
   description,
   onRestore,
   isEditing,
-  collapsed,
-  onToggle,
-  width,
-  onResizeStart,
-  isResizing,
 }: VersionHistorySidebarProps) {
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -142,59 +129,20 @@ export function VersionHistorySidebar({
     toast.success(`Restored v${version.version_number} to editor`);
   };
 
-  // Collapsed state: a slim icon-only bar mirroring the main sidebar's
-  // collapsed mode. Clicking re-expands; the count badge stays visible.
-  if (collapsed) {
-    return (
-      <div className="flex h-full w-14 shrink-0 flex-col items-center border-l bg-card py-3">
-        <button
-          onClick={onToggle}
-          title="Expand versions"
-          className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-        >
-          <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d={ICON.history} />
-          </svg>
-          <span className="text-[10px] font-medium leading-none">{versions.length}</span>
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className={cn("flex h-full shrink-0 flex-row border-l bg-card", isResizing && "select-none")}
-      style={{ width }}
-    >
-      {/* Drag handle on the inner (left) edge — full-height vertical strip. */}
-      <ResizeHandle side="left" onMouseDown={onResizeStart} isActive={isResizing} />
-      {/* Panel content column — min-w-0 so the handle keeps its strip. */}
-      <div className="flex flex-1 min-w-0 flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d={ICON.history} />
-            </svg>
-            <span className="text-sm font-semibold text-[hsl(var(--foreground))]">History</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="rounded-full bg-[hsl(var(--secondary))] px-2 py-0.5 text-xs font-medium text-[hsl(var(--secondary-foreground))]">
-              {versions.length}
-            </span>
-            <button
-              onClick={onToggle}
-              title="Collapse history"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d={ICON.collapse} />
-              </svg>
-            </button>
-          </div>
-        </div>
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
+      {/* Header */}
+      <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
+        <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d={ICON.history} />
+        </svg>
+        <span className="text-sm font-semibold text-[hsl(var(--foreground))]">History</span>
+        <span className="ml-auto rounded-full bg-[hsl(var(--secondary))] px-2 py-0.5 text-xs font-medium text-[hsl(var(--secondary-foreground))]">
+          {versions.length}
+        </span>
+      </div>
 
-        {/* Save new version */}
+      {/* Save new version */}
         {isEditing && (
           <div className="border-b p-3 space-y-2">
             <textarea
@@ -350,7 +298,6 @@ export function VersionHistorySidebar({
             </div>
           )}
         </div>
-      </div>
 
       {/* ─── View modal (full version content, read-only) ─── */}
       {viewing && (

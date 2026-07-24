@@ -44,6 +44,23 @@ export interface DateFormatOption {
   label: string;
 }
 
+// Split-pane layout persisted across editor sessions. Mirrors the LayoutNode
+// shape in prompts/SplitPane.tsx; kept here as plain data so it can live in
+// the Settings blob without a circular import.
+export type LayoutViewId = "edit" | "preview" | "variables" | "history";
+export type LayoutOrientation = "h" | "v";
+export interface LayoutPane {
+  kind: "pane";
+  view: LayoutViewId;
+}
+export interface LayoutSplit {
+  kind: "split";
+  orientation: LayoutOrientation;
+  sizes: number[];
+  children: LayoutNode[];
+}
+export type LayoutNode = LayoutPane | LayoutSplit;
+
 export const DATE_FORMATS: DateFormatOption[] = [
   { value: "MMM d, yyyy", label: "Jul 22, 2026" },
   { value: "dd/MM/yyyy", label: "22/07/2026" },

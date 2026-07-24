@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FormField, FormInput } from "@/components/ui/form-field";
@@ -7,7 +7,18 @@ import { HighlightedTextarea } from "@/components/prompts/HighlightedTextarea";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
 import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
 import { PreviewPanel } from "@/components/prompts/PreviewPanel";
-import { useResizable } from "@/hooks/useResizable";
+import {
+  SplitPane,
+  OrientationToggle,
+  makePane,
+  makeSplit,
+  makeSplitEven,
+  type ViewId,
+  type LayoutNode,
+  type Pane,
+  type Split,
+} from "@/components/prompts/SplitPane";
+import { useSettings } from "@/contexts/SettingsContext";
 import { usePrompts } from "@/hooks/usePrompts";
 import type { PromptRow, PromptVersion } from "@/types";
 
@@ -19,8 +30,6 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.Re
     </label>
   );
 }
-
-type RightPanel = "history" | "variables" | "preview";
 
 export interface PromptFormData {
   title: string;
@@ -37,6 +46,97 @@ interface PromptEditorPageProps {
   onSave: (data: PromptFormData) => Promise<void>;
 }
 
+// ─── Layout helpers ──────────────────────────────────────────────────────────
+// The layout is a tree of splits + leaf panes. All mutations are pure
+// functions over that tree; the parent owns the tree and persists it.
+
+function paneCount(node: LayoutNode): number {
+  if (node.kind === "pane") return 1;
+  return node.children.reduce((acc, c) => acc + paneCount(c), 0);
+}
+
+function getPaneAt(root: LayoutNode, path: number[]): LayoutNode | null {
+  let cur: LayoutNode = root;
+  for (const idx of path) {
+    if (cur.kind === "pane") return null;
+    if (idx < 0 || idx >= cur.children.length) return null;
+    cur = cur.children[idx];
+  }
+  return cur;
+}
+
+function mapAt(
+  root: LayoutNode,
+  path: number[],
+  fn: (node: LayoutNode) => LayoutNode,
+): LayoutNode {
+  if (path.length === 0) return fn(root);
+  const [idx, ...rest] = path;
+  if (root.kind === "pane") throw new Error("bad path");
+  return makeSplit(
+    root.orientation,
+    root.sizes,
+    root.children.map((c, i) => (i === idx ? mapAt(c, rest, fn) : c)),
+  );
+}
+
+/** Switch the view of the pane at `path` (in place). */
+function switchView(root: LayoutNode, path: number[], view: ViewId): LayoutNode {
+  return mapAt(root, path, (node) =>
+    node.kind === "pane" ? makePane(view) : node,
+  );
+}
+
+/** Split the pane at `path`: clone it into a new sibling, using `orientation`
+ *  for the new split container. */
+function splitPane(
+  root: LayoutNode,
+  path: number[],
+  orientation: "h" | "v",
+): LayoutNode {
+  return mapAt(root, path, (node) =>
+    node.kind === "pane"
+      ? makeSplitEven(orientation, [node, makePane(node.view)])
+      : node,
+  );
+}
+
+/** Close the pane at `path`. Re-promotes the sibling when a split drops to one
+ *  child, so the tree never holds a degenerate single-child split. */
+function closePane(root: LayoutNode, path: number[]): LayoutNode {
+  if (path.length === 0) return root; // can't close the root
+  const parentPath = path.slice(0, -1);
+  const childIdx = path[path.length - 1];
+  const parent = getPaneAt(root, parentPath);
+  if (!parent || parent.kind === "pane") return root;
+  if (parent.children.length <= 1) return root;
+
+  const nextChildren = parent.children.filter((_, i) => i !== childIdx);
+  if (nextChildren.length === 1) {
+    // Re-promote the lone sibling into the parent's slot.
+    const promoted = nextChildren[0];
+    if (parentPath.length === 0) return promoted;
+    return mapAt(root, parentPath, () => promoted);
+  }
+  const sizes = nextChildren.map(() => 1 / nextChildren.length);
+  return mapAt(root, parentPath, () =>
+    makeSplit(parent.orientation, sizes, nextChildren),
+  );
+}
+
+/** Resize two adjacent children of the split at `path`. */
+function resizeSplit(root: LayoutNode, path: number[], sizes: number[]): LayoutNode {
+  if (path.length === 0) {
+    if (root.kind === "split") return makeSplit(root.orientation, sizes, root.children);
+    return root;
+  }
+  return mapAt(root, path, (node) =>
+    node.kind === "split" ? makeSplit(node.orientation, sizes, node.children) : node,
+  );
+}
+
+const DEFAULT_LAYOUT: LayoutNode = makePane("edit");
+
 export function PromptEditorPage({
   prompt,
   categories,
@@ -48,40 +148,41 @@ export function PromptEditorPage({
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
-  const [activePanel, setActivePanel] = useState<RightPanel>("history");
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
   const { getPromptVariables, savePromptVariable } = usePrompts();
 
   // Accordion state — which detected variable's value editor is open. Owned
-  // here so it resets when the panel is toggled or the prompt changes.
+  // here so it resets when the prompt changes.
   const [expandedVariable, setExpandedVariable] = useState<string | null>(null);
-  // Saved variable values for this prompt, keyed by variable name.
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
 
-  // Free-mode max width: the panel can grow up to ~60% of the available editor
-  // width (measured live), so it adapts to the window instead of a hard 480px cap.
-  const [maxPanelWidth, setMaxPanelWidth] = useState(480);
-  useEffect(() => {
-    const el = editorContainerRef.current;
-    if (!el) return;
-    const update = () => setMaxPanelWidth(Math.max(320, Math.round(el.clientWidth * 0.6)));
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  // ── Split-pane layout state, persisted globally via Settings. ──
+  const { settings, updateSettings } = useSettings();
+  const [layout, setLayout] = useState<LayoutNode>(
+    settings.editorLayout ?? DEFAULT_LAYOUT,
+  );
+  const [orientation, setOrientation] = useState<"h" | "v">(
+    settings.editorSplitOrientation ?? "h",
+  );
 
-  // Shared resize state for the single right-side panel slot — width persists
-  // when toggling between History and Variables so the panel doesn't jump.
-  const { width, onResizeStart, isResizing } = useResizable({
-    initial: 256,
-    min: 200,
-    max: maxPanelWidth,
-    side: "right",
-  });
+  // Persist layout + orientation whenever they change (debounced via rAF so a
+  // long resize drag doesn't thrash localStorage every frame).
+  const rafScheduled = useRef(false);
+  const persistLayout = useCallback(
+    (nextLayout: LayoutNode, nextOrientation: "h" | "v") => {
+      if (rafScheduled.current) return;
+      rafScheduled.current = true;
+      requestAnimationFrame(() => {
+        rafScheduled.current = false;
+        updateSettings({
+          editorLayout: nextLayout,
+          editorSplitOrientation: nextOrientation,
+        });
+      });
+    },
+    [updateSettings],
+  );
 
   useEffect(() => {
     if (prompt) {
@@ -90,7 +191,6 @@ export function PromptEditorPage({
       setCategory(prompt.category || "");
       setTags(prompt.tags || "");
       setDescription(prompt.description || "");
-      // Load any saved variable values for this prompt.
       getPromptVariables(prompt.id)
         .then(setVariableValues)
         .catch(() => setVariableValues({}));
@@ -102,13 +202,9 @@ export function PromptEditorPage({
       setDescription("");
       setVariableValues({});
     }
-    // Close the accordion whenever the prompt changes.
     setExpandedVariable(null);
   }, [prompt, getPromptVariables]);
 
-  // Persist a single variable's value to SQLite. Called by the sidebar on
-  // debounced typing + blur. We also mirror the saved value into state so the
-  // collapsed-row preview ("audience · beginners") updates immediately.
   const handleSaveVariable = useCallback(
     async (name: string, value: string) => {
       if (!prompt) return;
@@ -119,7 +215,7 @@ export function PromptEditorPage({
         console.error("Failed to save variable value:", e);
       }
     },
-    [prompt, savePromptVariable]
+    [prompt, savePromptVariable],
   );
 
   const handleToggleExpandVariable = useCallback((name: string) => {
@@ -150,13 +246,10 @@ export function PromptEditorPage({
       setContent((prev) => prev + variable);
       return;
     }
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const newContent = content.substring(0, start) + variable + content.substring(end);
     setContent(newContent);
-
-    // Set cursor position after inserted variable
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + variable.length, start + variable.length);
@@ -165,6 +258,184 @@ export function PromptEditorPage({
 
   const isEditing = !!prompt;
   const isDisabled = !title.trim() || !content.trim();
+
+  // ── Layout mutation handlers (wired to SplitPane). ──
+  const count = useMemo(() => paneCount(layout), [layout]);
+  const handleSwitchView = useCallback(
+    (path: number[], view: ViewId) => {
+      const next = switchView(layout, path, view);
+      setLayout(next);
+      persistLayout(next, orientation);
+    },
+    [layout, orientation, persistLayout],
+  );
+  const handleSplitPane = useCallback(
+    (path: number[]) => {
+      const next = splitPane(layout, path, orientation);
+      setLayout(next);
+      persistLayout(next, orientation);
+    },
+    [layout, orientation, persistLayout],
+  );
+  const handleClosePane = useCallback(
+    (path: number[]) => {
+      const next = closePane(layout, path);
+      setLayout(next);
+      persistLayout(next, orientation);
+    },
+    [layout, orientation, persistLayout],
+  );
+  const handleResize = useCallback(
+    (path: number[], sizes: number[]) => {
+      const next = resizeSplit(layout, path, sizes);
+      setLayout(next);
+      persistLayout(next, orientation);
+    },
+    [layout, orientation, persistLayout],
+  );
+  const handleOrientationChange = useCallback(
+    (o: "h" | "v") => {
+      setOrientation(o);
+      persistLayout(layout, o);
+    },
+    [layout, persistLayout],
+  );
+
+  // ── Per-view renderers. The Edit view is the full editor; the others are
+  //    the refactored sidebars (no resize/collapse props). ──
+  const renderPane = useCallback(
+    (view: ViewId) => {
+      switch (view) {
+        case "edit":
+          return (
+            <div className="flex-1 overflow-auto px-6 py-5">
+              <div className="space-y-1">
+                <FieldLabel htmlFor="title">Title</FieldLabel>
+                <FormInput
+                  id="title"
+                  value={title}
+                  onChange={setTitle}
+                  placeholder="Enter prompt title..."
+                  className="text-lead h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                />
+              </div>
+
+              <div className="mt-5">
+                <FieldLabel htmlFor="content">Prompt Content</FieldLabel>
+                <div className="mt-1">
+                  <HighlightedTextarea
+                    id="content"
+                    value={content}
+                    onChange={setContent}
+                    placeholder={"Write your prompt here...\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
+                    rows={14}
+                    className="min-h-[260px]"
+                    ref={contentTextareaRef}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-4">
+                <div className="text-eyebrow mb-3">Details</div>
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="description">Description</FieldLabel>
+                    <FormInput
+                      id="description"
+                      value={description}
+                      onChange={setDescription}
+                      placeholder="Brief description of this prompt..."
+                      className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1">
+                      <FieldLabel htmlFor="category">Category</FieldLabel>
+                      <FormInput
+                        id="category"
+                        value={category}
+                        onChange={setCategory}
+                        placeholder="e.g. Writing, Coding…"
+                        list="category-suggestions"
+                        className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                      />
+                      <datalist id="category-suggestions">
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat} />
+                        ))}
+                      </datalist>
+                    </div>
+
+                    <div className="space-y-1">
+                      <FieldLabel htmlFor="tags">Tags</FieldLabel>
+                      <FormInput
+                        id="tags"
+                        value={tags}
+                        onChange={setTags}
+                        placeholder="comma, separated, tags"
+                        className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                      />
+                    </div>
+                  </div>
+
+                  {tags.trim() && (
+                    <div className="pt-1">
+                      <TagPreview tags={tags} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        case "preview":
+          return (
+            <PreviewPanel content={content} variableValues={variableValues} />
+          );
+        case "variables":
+          return (
+            <VariablesSidebar
+              content={content}
+              onInsertVariable={handleInsertVariable}
+              promptId={prompt?.id ?? null}
+              variableValues={variableValues}
+              onSaveVariable={handleSaveVariable}
+              expandedName={expandedVariable}
+              onToggleExpand={handleToggleExpandVariable}
+            />
+          );
+        case "history":
+          return (
+            <VersionHistorySidebar
+              promptId={prompt?.id ?? null}
+              title={title}
+              content={content}
+              category={category}
+              tags={tags}
+              description={description}
+              onRestore={handleRestoreVersion}
+              isEditing={isEditing}
+            />
+          );
+      }
+    },
+    [
+      title,
+      content,
+      category,
+      tags,
+      description,
+      categories,
+      variableValues,
+      expandedVariable,
+      prompt?.id,
+      isEditing,
+      handleInsertVariable,
+      handleSaveVariable,
+      handleToggleExpandVariable,
+      handleRestoreVersion,
+    ],
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -193,67 +464,6 @@ export function PromptEditorPage({
         }
         actions={
           <>
-            {/* Right-panel selector — tertiary control: ghost-weight, de-emphasized
-                so it never competes with the primary Create/Update action. */}
-            <div className="flex items-center gap-0.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-0.5">
-              <button
-                onClick={() => {
-                  setActivePanel("history");
-                  setIsRightPanelCollapsed(false);
-                }}
-                title="Show version history"
-                className={
-                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 " +
-                  (activePanel === "history" && !isRightPanelCollapsed
-                    ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
-                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]")
-                }
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                History
-              </button>
-              <button
-                onClick={() => {
-                  setActivePanel("variables");
-                  setIsRightPanelCollapsed(false);
-                }}
-                title="Show variables"
-                className={
-                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 " +
-                  (activePanel === "variables" && !isRightPanelCollapsed
-                    ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
-                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]")
-                }
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
-                </svg>
-                Variables
-              </button>
-              <button
-                onClick={() => {
-                  setActivePanel("preview");
-                  setIsRightPanelCollapsed(false);
-                }}
-                title="Preview compiled prompt"
-                aria-label="Preview compiled prompt"
-                className={
-                  "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 " +
-                  (activePanel === "preview" && !isRightPanelCollapsed
-                    ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
-                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]")
-                }
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Preview
-              </button>
-            </div>
-            {/* secondary then primary — primary reads as the heavier, confident action */}
             <Button variant="ghost" size="sm" onClick={onBack} className="text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]">
               Cancel
             </Button>
@@ -264,8 +474,12 @@ export function PromptEditorPage({
         }
       />
 
-      {/* Inline error banner — surfaces backend/invoke failures that were
-          previously swallowed by console.error-only handlers. */}
+      {/* Orientation toggle — lives in the header-adjacent strip, not buried in
+          settings. It controls the orientation of the *next* split. */}
+      <div className="flex shrink-0 items-center justify-end border-b border-[hsl(var(--border))] bg-card px-3 py-1.5">
+        <OrientationToggle orientation={orientation} onChange={handleOrientationChange} />
+      </div>
+
       {saveError && (
         <div
           role="alert"
@@ -285,146 +499,18 @@ export function PromptEditorPage({
         </div>
       )}
 
-      {/* Main editor area — content fills all space; right panel is the only sidebar.
-          rounded-r-xl: only the right corners are rounded. The left corners sit
-          flush against the main sidebar (no radius, no gap).
-          border-r-0: the right edge has no border — the History/Variables panel
-          docks flush against the window edge, so the container's right border would
-          otherwise stack with the panel's own edge into a visible double line. */}
-      <div ref={editorContainerRef} className="flex flex-1 min-h-0 rounded-r-xl border border-r-0 bg-card">
-        {/* Main editor content — flex-1 so it expands when no panel is docked on the left. */}
-        <div className="flex flex-1 flex-col min-w-0">
-          <div className="flex-1 overflow-auto px-6 py-5">
-            {/* ── Title — tightened, the artifact's name ── */}
-            <div className="space-y-1">
-              <FieldLabel htmlFor="title">Title</FieldLabel>
-              <FormInput
-                id="title"
-                value={title}
-                onChange={setTitle}
-                placeholder="Enter prompt title..."
-                className="text-lead h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
-              />
-            </div>
-
-            {/* ── Prompt Content — the instrument: monospace code zone with live
-                {{variable}} highlighting. Gets the dominant vertical room. ── */}
-            <div className="mt-5">
-              <FieldLabel htmlFor="content">Prompt Content</FieldLabel>
-              <div className="mt-1">
-                <HighlightedTextarea
-                  id="content"
-                  value={content}
-                  onChange={setContent}
-                  placeholder={"Write your prompt here...\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
-                  rows={14}
-                  className="min-h-[260px]"
-                  ref={contentTextareaRef}
-                />
-              </div>
-            </div>
-
-            {/* ── Metadata band — Description / Category / Tags grouped as a
-                distinct row, separated by a subtle divider + faint tint. ── */}
-            <div className="mt-6 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-4">
-              <div className="text-eyebrow mb-3">
-                Details
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <FieldLabel htmlFor="description">Description</FieldLabel>
-                  <FormInput
-                    id="description"
-                    value={description}
-                    onChange={setDescription}
-                    placeholder="Brief description of this prompt..."
-                    className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-1">
-                    <FieldLabel htmlFor="category">Category</FieldLabel>
-                    <FormInput
-                      id="category"
-                      value={category}
-                      onChange={setCategory}
-                      placeholder="e.g. Writing, Coding…"
-                      list="category-suggestions"
-                      className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
-                    />
-                    <datalist id="category-suggestions">
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat} />
-                      ))}
-                    </datalist>
-                  </div>
-
-                  <div className="space-y-1">
-                    <FieldLabel htmlFor="tags">Tags</FieldLabel>
-                    <FormInput
-                      id="tags"
-                      value={tags}
-                      onChange={setTags}
-                      placeholder="comma, separated, tags"
-                      className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
-                    />
-                  </div>
-                </div>
-
-                {tags.trim() && (
-                  <div className="pt-1">
-                    <TagPreview tags={tags} />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Single right-side panel slot — History or Variables, one at a time. */}
-        {activePanel === "history" ? (
-          <VersionHistorySidebar
-            promptId={prompt?.id ?? null}
-            title={title}
-            content={content}
-            category={category}
-            tags={tags}
-            description={description}
-            onRestore={handleRestoreVersion}
-            isEditing={isEditing}
-            collapsed={isRightPanelCollapsed}
-            onToggle={() => setIsRightPanelCollapsed((v) => !v)}
-            width={width}
-            onResizeStart={onResizeStart}
-            isResizing={isResizing}
-          />
-        ) : activePanel === "variables" ? (
-          <VariablesSidebar
-            content={content}
-            onInsertVariable={handleInsertVariable}
-            collapsed={isRightPanelCollapsed}
-            onToggle={() => setIsRightPanelCollapsed((v) => !v)}
-            width={width}
-            onResizeStart={onResizeStart}
-            isResizing={isResizing}
-            promptId={prompt?.id ?? null}
-            variableValues={variableValues}
-            onSaveVariable={handleSaveVariable}
-            expandedName={expandedVariable}
-            onToggleExpand={handleToggleExpandVariable}
-          />
-        ) : (
-          <PreviewPanel
-            content={content}
-            variableValues={variableValues}
-            collapsed={isRightPanelCollapsed}
-            onToggle={() => setIsRightPanelCollapsed((v) => !v)}
-            width={width}
-            onResizeStart={onResizeStart}
-            isResizing={isResizing}
-          />
-        )}
+      {/* Split-pane editor area. rounded-r-xl: right corners only; border-r-0 so
+          the rightmost pane docks flush against the window edge. */}
+      <div className="flex flex-1 min-h-0 rounded-r-xl border border-r-0 bg-card">
+        <SplitPane
+          layout={layout}
+          paneCount={count}
+          renderPane={renderPane}
+          onSwitchView={handleSwitchView}
+          onSplitPane={handleSplitPane}
+          onClosePane={handleClosePane}
+          onResize={handleResize}
+        />
       </div>
     </div>
   );

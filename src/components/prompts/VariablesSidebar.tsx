@@ -1,18 +1,10 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
 
 interface VariablesSidebarProps {
   content: string;
   onInsertVariable: (variable: string) => void;
-  /** When collapsed, the panel shrinks to a slim icon-only bar (like the main sidebar). */
-  collapsed: boolean;
-  onToggle: () => void;
-  /** Shared resize state from the parent so width persists across panel swaps. */
-  width: number;
-  onResizeStart: (e: React.MouseEvent) => void;
-  isResizing: boolean;
   /** The prompt being edited, or null when creating a new prompt (no values to persist yet). */
   promptId: number | null;
   /** Saved variable values for this prompt, keyed by variable name. */
@@ -42,11 +34,6 @@ interface CustomVariable {
 export function VariablesSidebar({
   content,
   onInsertVariable,
-  collapsed,
-  onToggle,
-  width,
-  onResizeStart,
-  isResizing,
   promptId,
   variableValues,
   onSaveVariable,
@@ -210,56 +197,17 @@ export function VariablesSidebar({
     onToggleExpand(name);
   };
 
-  // Collapsed state: a slim icon-only bar mirroring the main sidebar's
-  // collapsed mode. Clicking re-expands; the count badge stays visible.
-  if (collapsed) {
-    return (
-      <div className="flex h-full w-14 shrink-0 flex-col items-center border-l bg-card py-3">
-        <button
-          onClick={onToggle}
-          title="Expand variables"
-          className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
-          </svg>
-          <span className="text-[10px] font-medium leading-none">{allVariables.length}</span>
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className={cn("flex h-full shrink-0 flex-row border-l bg-card", isResizing && "select-none")}
-      style={{ width }}
-    >
-      {/* Drag handle on the inner (left) edge — full-height vertical strip. */}
-      <ResizeHandle side="right" onMouseDown={onResizeStart} isActive={isResizing} />
-      {/* Panel content column — min-w-0 so the handle keeps its strip. */}
-      <div className="flex flex-1 min-w-0 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
-          </svg>
-          <span className="text-sm font-semibold">Variables</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-            {allVariables.length}
-          </span>
-          <button
-            onClick={onToggle}
-            title="Collapse variables"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
-            </svg>
-          </button>
-        </div>
+      <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
+        <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
+        </svg>
+        <span className="text-sm font-semibold">Variables</span>
+        <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+          {allVariables.length}
+        </span>
       </div>
 
       {/* Add custom variable */}
@@ -521,7 +469,6 @@ export function VariablesSidebar({
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

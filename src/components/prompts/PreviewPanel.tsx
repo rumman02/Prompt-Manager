@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { compilePrompt, VARIABLE_TOKEN_RE, type CompileResult } from "@/lib/utils";
-import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
 import { toast } from "sonner";
 
 interface PreviewPanelProps {
@@ -10,13 +9,6 @@ interface PreviewPanelProps {
   /** Saved variable values keyed by name. Draft (in-progress) values are merged
    *  in by the parent, so typing in the Variables panel is reflected live. */
   variableValues: Record<string, string>;
-  /** Mirror of VariablesSidebar's collapsed/width/resize props so this panel
-   *  occupies the exact same slot and shares its persisted width. */
-  collapsed: boolean;
-  onToggle: () => void;
-  width: number;
-  onResizeStart: (e: React.MouseEvent) => void;
-  isResizing: boolean;
 }
 
 // Same deterministic hue as the editor overlay, so a given name maps to the
@@ -61,15 +53,7 @@ function renderCompiled(
   return parts;
 }
 
-export function PreviewPanel({
-  content,
-  variableValues,
-  collapsed,
-  onToggle,
-  width,
-  onResizeStart,
-  isResizing,
-}: PreviewPanelProps) {
+export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false);
 
   const { text, unfilled }: CompileResult = useMemo(
@@ -113,74 +97,35 @@ export function PreviewPanel({
     }
   }, [text, unfilled.length]);
 
-  // Collapsed: slim icon bar mirroring VariablesSidebar's collapsed mode.
-  if (collapsed) {
-    return (
-      <div className="flex h-full w-14 shrink-0 flex-col items-center border-l bg-card py-3">
-        <button
-          onClick={onToggle}
-          title="Expand preview"
-          className="flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
+      {/* Header — Copy action lives here, always visible, not buried. */}
+      <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          {unfilled.length > 0 && (
-            <span className="text-[10px] font-medium leading-none text-amber-500">
-              {unfilled.length}
-            </span>
-          )}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn("flex h-full shrink-0 flex-row border-l bg-card", isResizing && "select-none")}
-      style={{ width }}
-    >
-      <ResizeHandle side="right" onMouseDown={onResizeStart} isActive={isResizing} />
-      <div className="flex flex-1 min-w-0 flex-col">
-        {/* Header — Copy action lives here, always visible, not buried. */}
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-sm font-semibold">Preview</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {unfilled.length > 0 && (
-              <span
-                className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600"
-                title="Unfilled variables are copied as {{name}}"
-              >
-                {unfilled.length} unfilled
-              </span>
-            )}
-            <button
-              onClick={onToggle}
-              title="Collapse preview"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
-              </svg>
-            </button>
-          </div>
+          <span className="text-sm font-semibold">Preview</span>
         </div>
-
-        {/* Copy bar */}
-        <div className="border-b px-4 py-2.5">
-          <Button
-            size="sm"
-            className="w-full gap-1.5"
-            onClick={handleCopy}
-            aria-label={copied ? "Copied to clipboard" : "Copy compiled prompt"}
+        {unfilled.length > 0 && (
+          <span
+            className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600"
+            title="Unfilled variables are copied as {{name}}"
           >
+            {unfilled.length} unfilled
+          </span>
+        )}
+      </div>
+
+      {/* Copy bar */}
+      <div className="border-b px-4 py-2.5">
+        <Button
+          size="sm"
+          className="w-full gap-1.5"
+          onClick={handleCopy}
+          aria-label={copied ? "Copied to clipboard" : "Copy compiled prompt"}
+        >
             {copied ? (
               <>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -209,15 +154,18 @@ export function PreviewPanel({
         {/* Compiled output — read-only, monospace, whitespace preserved.
             Looks like the code-zone so the edit→preview transition feels
             continuous; not a textarea since this is read-only + copyable. */}
-        <div className="flex-1 overflow-auto">
-          <div className="code-zone relative m-3 rounded-md border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))]">
-            <pre
-              aria-label="Compiled prompt preview"
-              className="m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-[hsl(var(--foreground))]"
-            >
-              {rendered}
-            </pre>
-          </div>
+      <div className="flex-1 overflow-auto">
+        <div className="code-zone relative m-3 rounded-md border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))]">
+          {/* font-code: the compiled output is still prompt/code content, so it
+              must render in the same monospace stack as the editor's code-zone.
+              (The .code-zone class sets the font on the wrapper; applying
+              font-code directly to the <pre> makes it robust against inheritance.) */}
+          <pre
+            aria-label="Compiled prompt preview"
+            className="font-code m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-[hsl(var(--foreground))]"
+          >
+            {rendered}
+          </pre>
         </div>
       </div>
     </div>

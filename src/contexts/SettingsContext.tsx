@@ -11,6 +11,10 @@ export interface Settings {
   landingPage: LandingPage;
   trashTimeout: number;
   trashTimeoutUnit: "days" | "weeks" | "months";
+  /** Last-used editor pane layout (which views, split orientation, sizes). */
+  editorLayout: import("@/constants/settings").LayoutNode | null;
+  /** Orientation that the next split will use. */
+  editorSplitOrientation: import("@/constants/settings").LayoutOrientation;
 }
 
 interface SettingsContextType {
@@ -27,6 +31,8 @@ const defaultSettings: Settings = {
   landingPage: "dashboard",
   trashTimeout: 30,
   trashTimeoutUnit: "days",
+  editorLayout: null,
+  editorSplitOrientation: "h",
 };
 
 const STORAGE_KEY = "prompt-manager-settings";
