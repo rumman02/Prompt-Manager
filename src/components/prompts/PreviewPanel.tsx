@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { compilePrompt, VARIABLE_TOKEN_RE, type CompileResult } from "@/lib/utils";
+import { renderCompiledMarkdown } from "@/lib/markdown";
+import type { RenderedMarkdown } from "@/lib/markdown";
 import { toast } from "sonner";
 
 interface PreviewPanelProps {
@@ -11,75 +11,53 @@ interface PreviewPanelProps {
   variableValues: Record<string, string>;
 }
 
-// Same deterministic hue as the editor overlay, so a given name maps to the
-// same color in edit and preview — the token you're filling is traceable.
-function hashHue(name: string): number {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) {
-    h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  }
-  return h % 330;
-}
-
-// Split compiled text into runs. Unfilled {{name}} tokens become highlighted
-// .var-token--empty spans; everything else is literal text. We walk the regex
-// manually (not String.replace) so we can attach per-token keys + styles.
-function renderCompiled(
-  text: string,
-  unfilledSet: Set<string>,
-): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  let last = 0;
-  let m: RegExpExecArray | null;
-  let key = 0;
-  VARIABLE_TOKEN_RE.lastIndex = 0;
-  while ((m = VARIABLE_TOKEN_RE.exec(text)) !== null) {
-    if (m.index > last) parts.push(<span key={key++}>{text.slice(last, m.index)}</span>);
-    const name = m[1];
-    const isEmpty = unfilledSet.has(name);
-    parts.push(
-      <span
-        key={key++}
-        className={isEmpty ? "var-token--empty" : "var-token"}
-        style={isEmpty ? undefined : ({ ["--token-hue" as string]: `${hashHue(name)}deg` })}
-        title={isEmpty ? "No value set — this placeholder was copied as-is" : `Value for {{${name}}}`}
-      >
-        {m[0]}
-      </span>
-    );
-    last = VARIABLE_TOKEN_RE.lastIndex;
-  }
-  if (last <= text.length) parts.push(<span key={key++}>{text.slice(last)}</span>);
-  return parts;
-}
-
 export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false);
 
-  const { text, unfilled }: CompileResult = useMemo(
-    () => compilePrompt(content, variableValues),
+  // One compile pass yields the raw text (for clipboard), the sanitized +
+  // variable-highlighted HTML (for rendering), and the unfilled list (for the
+  // counter / helper text). Markdown is rendered here; the Edit tab stays a
+  // plain-text textarea over raw Markdown source.
+  const { text, html, unfilled }: RenderedMarkdown = useMemo(
+    () => renderCompiledMarkdown(content, variableValues),
     [content, variableValues],
-  );
-  const unfilledSet = useMemo(() => new Set(unfilled), [unfilled]);
-
-  const rendered = useMemo(
-    () => renderCompiled(text, unfilledSet),
-    [text, unfilledSet],
   );
 
   const handleCopy = useCallback(async () => {
+    let wrote = false;
     try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      // Fallback for non-secure contexts: hidden textarea + execCommand.
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
+      // Primary path: Tauri's clipboard plugin works in the webview regardless
+      // of secure-context restrictions that gate navigator.clipboard.
+      const { writeText } = await import("@tauri-apps/plugin-clipboard-manager");
+      await writeText(text);
+      wrote = true;
+    } catch (pluginErr) {
+      // Plugin unavailable (e.g. running in a plain browser). Fall back to the
+      // Web Clipboard API, then to the legacy textarea + execCommand hack for
+      // non-secure contexts.
+      console.warn("Tauri clipboard plugin unavailable, falling back:", pluginErr);
+      try {
+        await navigator.clipboard.writeText(text);
+        wrote = true;
+      } catch {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand("copy");
+          wrote = true;
+        } catch (execErr) {
+          console.error("Clipboard execCommand fallback failed:", execErr);
+        }
+        document.body.removeChild(textarea);
+      }
+    }
+    if (!wrote) {
+      toast.error("Couldn't copy to clipboard");
+      return;
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -151,22 +129,16 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
           )}
         </div>
 
-        {/* Compiled output — read-only, monospace, whitespace preserved.
-            Looks like the code-zone so the edit→preview transition feels
-            continuous; not a textarea since this is read-only + copyable. */}
+        {/* Compiled output — Markdown rendered to sanitized HTML, with unfilled
+            {{placeholders}} highlighted as dashed .var-token--empty pills. Body
+            text uses the app's UI font (not monospace); only code spans/blocks do.
+            The raw compiled Markdown (not this HTML) is what Copy puts on the clipboard. */}
       <div className="flex-1 overflow-auto">
-        <div className="code-zone relative m-3 rounded-md border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))]">
-          {/* font-code: the compiled output is still prompt/code content, so it
-              must render in the same monospace stack as the editor's code-zone.
-              (The .code-zone class sets the font on the wrapper; applying
-              font-code directly to the <pre> makes it robust against inheritance.) */}
-          <pre
-            aria-label="Compiled prompt preview"
-            className="font-code m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-[hsl(var(--foreground))]"
-          >
-            {rendered}
-          </pre>
-        </div>
+        <div
+          aria-label="Compiled prompt preview"
+          className="markdown-preview m-3 rounded-md border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))] px-3 py-2.5"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
       </div>
     </div>
   );

@@ -308,6 +308,7 @@ fn get_prompt_variables(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::default().build())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             let handle = app.handle().clone();
             tauri::async_runtime::block_on(async move {

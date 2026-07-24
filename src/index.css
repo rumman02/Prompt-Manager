@@ -173,3 +173,145 @@
 ::selection {
   background: hsl(var(--primary) / 0.2);
 }
+
+/* ── Markdown preview (Preview tab) ──
+   Scoped to .markdown-preview so it never leaks into the rest of the app. Body
+   text uses the app's normal UI sans-serif (NOT the .code-zone monospace) so the
+   rendered prompt reads as the final artifact; only code spans/blocks go mono.
+   Theming is driven by the same HSL design tokens as the rest of the UI. */
+.markdown-preview {
+  color: hsl(var(--foreground));
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  color: hsl(var(--foreground));
+  margin-top: 1.1em;
+  margin-bottom: 0.4em;
+}
+
+.markdown-preview h1 { font-size: 1.6rem; }
+.markdown-preview h2 { font-size: 1.35rem; }
+.markdown-preview h3 { font-size: 1.18rem; }
+.markdown-preview h4 { font-size: 1.05rem; }
+.markdown-preview h5 { font-size: 0.95rem; }
+.markdown-preview h6 { font-size: 0.85rem; color: hsl(var(--muted-foreground)); }
+
+.markdown-preview p {
+  margin: 0 0 0.7em;
+}
+
+.markdown-preview strong,
+.markdown-preview b {
+  font-weight: 600;
+}
+
+.markdown-preview em,
+.markdown-preview i {
+  font-style: italic;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  margin: 0 0 0.7em;
+  padding-left: 1.5rem;
+  list-style-position: outside;
+}
+
+.markdown-preview ul {
+  list-style-type: disc;
+}
+
+.markdown-preview ol {
+  list-style-type: decimal;
+}
+
+.markdown-preview li {
+  margin-bottom: 0.2em;
+}
+
+.markdown-preview li > ul,
+.markdown-preview li > ol {
+  margin: 0.2em 0 0;
+}
+
+.markdown-preview blockquote {
+  margin: 0 0 0.7em;
+  padding: 0.4rem 0 0.4rem 1rem;
+  border-left: 3px solid hsl(var(--primary));
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 0 6px 6px 0;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+.markdown-preview blockquote p {
+  margin: 0;
+}
+
+.markdown-preview a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-preview a:hover {
+  color: hsl(var(--primary) / 0.8);
+}
+
+.markdown-preview code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.85em;
+  background: hsl(var(--code-bg));
+  border: 1px solid hsl(var(--code-border));
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+}
+
+.markdown-preview pre {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  background: hsl(var(--code-bg));
+  border: 1px solid hsl(var(--code-border));
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0 0 0.7em;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.markdown-preview pre code {
+  font-size: 0.85em;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  white-space: pre;
+}
+
+.markdown-preview hr {
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
+  margin: 1.2em 0;
+}
+
+.markdown-preview img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* Keep the unfilled-variable pill readable inside the rendered Markdown. The
+   global .var-token--empty styles already handle color/border; this just ensures
+   inline flow and vertical alignment inside prose. */
+.markdown-preview .var-token--empty {
+  vertical-align: baseline;
+}

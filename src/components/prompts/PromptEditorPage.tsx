@@ -327,7 +327,7 @@ export function PromptEditorPage({
                     id="content"
                     value={content}
                     onChange={setContent}
-                    placeholder={"Write your prompt here...\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
+                    placeholder={"Write your prompt here. Markdown is supported (headings, bold, lists, code, links…).\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
                     rows={14}
                     className="min-h-[260px]"
                     ref={contentTextareaRef}

@@ -18,7 +18,7 @@ import { SkillsPage } from "@/components/skills";
 import { FavoritesPage } from "@/components/favorites";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import type { PromptRow, CategoryCount } from "@/types";
 
 function AppContent() {
@@ -214,8 +214,15 @@ function AppContent() {
           description: data.description || null,
         });
       }
-      setIsEditorPageOpen(false);
-      setEditingPrompt(null);
+      if (editingPrompt) {
+        // Update: stay on the editor so the user can keep working. A success
+        // toast confirms the save; the window only closes via Cancel/Back.
+        toast.success("Prompt updated");
+      } else {
+        // Create: close the editor and return to the prompt list.
+        setIsEditorPageOpen(false);
+        setEditingPrompt(null);
+      }
       await refresh();
     } catch (e) {
       // Re-throw so the editor page can surface the failure as an inline
