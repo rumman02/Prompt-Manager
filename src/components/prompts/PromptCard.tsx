@@ -16,6 +16,7 @@ interface PromptCardProps {
   onToggleFavorite?: (id: number) => void;
 }
 
+/* macOS card: rounded-14, subtle border + shadow, accent tint on hover. */
 export function PromptCard({
   prompt,
   onSelect,
@@ -29,7 +30,7 @@ export function PromptCard({
 
   return (
     <Card
-      className="cursor-pointer border-0 shadow-sm transition-all hover:shadow-md hover:border-primary/30 group"
+      className="cursor-pointer transition-all hover:shadow-macos-popover hover:border-primary/30 group"
       onClick={() => onSelect(prompt)}
       onContextMenu={(e) => actionsRef.current?.openContextMenu(e)}
     >
@@ -49,7 +50,7 @@ export function PromptCard({
           />
         </div>
         {prompt.category && (
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
+          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
             {prompt.category}
           </span>
         )}
@@ -59,16 +60,16 @@ export function PromptCard({
           {truncate(prompt.description || prompt.content, 120)}
         </p>
         {prompt.tags && (
-          <div className="mt-3 flex flex-wrap gap-1">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {prompt.tags.split(",").map((tag, i) => (
-              <span key={i} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+              <span key={i} className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
                 {tag.trim()}
               </span>
             ))}
           </div>
         )}
-        <p className="mt-3 text-xs text-muted-foreground">{formatDate(prompt.updated_at)}</p>
-        <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/80">
+        <p className="mt-3 text-caption text-muted-foreground">{formatDate(prompt.updated_at)}</p>
+        <div className="mt-2 flex items-center gap-3 text-caption text-muted-foreground/80">
           <span>~{stats.tokens} tokens</span>
           <span>{stats.words} words</span>
           <span>{stats.sentences} sentences</span>

@@ -3,117 +3,191 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── PromptHub palette: warm paper + ink, one accent (accent = user-configurable --primary) ── */
+  /* ── Apple HIG semantic color system (macOS native) ──
+     Light = macOS 14 / Sonoma light; Dark = macOS 14 dark.
+     Each token is a bare HSL triplet so usage is hsl(var(--token)).
+     The accent (--primary) is overridden at runtime by SettingsContext. */
   :root {
-    --background: 43 22% 96%;       /* #f6f5f0 warm paper */
-    --foreground: 46 12% 13%;       /* #222019 ink */
-    --card: 40 33% 98%;             /* #fdfcf8 near-white surface */
-    --card-foreground: 46 12% 13%;
-    --popover: 40 33% 98%;
-    --popover-foreground: 46 12% 13%;
-    --primary: 222 31% 21%;         /* accent slot — overridden at runtime by SettingsContext */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 43 14% 92%;        /* faint paper tint for pills/badges */
-    --secondary-foreground: 46 12% 35%;
-    --muted: 43 14% 92%;            /* faint paper surface (distinct from its text) */
-    --muted-foreground: 46 10% 42%; /* readable text ON a muted surface */
-    --accent: 43 14% 92%;
-    --accent-foreground: 46 12% 13%;
-    --destructive: 0 62% 48%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 43 14% 89%;           /* #e4e1d6 */
-    --input: 43 14% 89%;
-    --ring: 46 12% 13%;
-    --radius: 0.5rem;
+    /* Surfaces */
+    --background: 0 0% 100%;            /* #ffffff systemBackground */
+    --foreground: 0 0% 0%;              /* #000000 label */
+    --card: 0 0% 100%;                  /* #ffffff (elevated surface) */
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;               /* window/sheet background */
+    --popover-foreground: 0 0% 0%;
 
-    /* named roles so accents stop competing for attention */
-    --text-secondary: 46 10% 32%;   /* metadata values (category, tags) — lighter than primary */
-    --accent-2-h: 32;                /* secondary accent (version labels) — warm amber, fixed */
+    /* Accent — runtime-overridden by SettingsContext (default Apple Blue) */
+    --primary: 211 100% 50%;            /* #007aff controlAccent */
+    --primary-foreground: 0 0% 100%;    /* white on accent */
+
+    /* Secondary / grouped surfaces */
+    --secondary: 240 6% 96%;            /* #f5f5f7 secondarySystemBackground */
+    --secondary-foreground: 240 6% 50%;  /* readable on secondary */
+    --muted: 240 6% 96%;                /* same surface as secondary */
+    --muted-foreground: 240 4% 46%;     /* #6e6e73 secondaryLabel */
+    --accent: 240 6% 96%;
+    --accent-foreground: 0 0% 0%;
+
+    /* Semantic status */
+    --destructive: 2 100% 59%;          /* #ff3b30 systemRed */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & controls */
+    --border: 240 6% 90%;               /* #d2d2d7 separator */
+    --input: 240 6% 90%;
+    --ring: 211 100% 50%;               /* accent focus ring */
+    --radius: 0.625rem;                 /* 10pt — Apple standard control radius */
+
+    /* Named roles */
+    --text-secondary: 240 4% 46%;       /* secondaryLabel for metadata */
+    --accent-2-h: 32;                    /* warm amber (version labels) — fixed */
     --accent-2-s: 85%;
     --accent-2-l: 45%;
 
-    /* code-zone + variable tokens. Hue per-variable is set in JS via --token-hue;
-       these theme tokens drive saturation/bg/fg/border so theming stays centralized. */
-    --code-bg: 40 18% 97%;
-    --code-border: 43 14% 89%;
+    /* Code-zone + variable tokens */
+    --code-bg: 240 6% 96%;              /* #f5f5f7 */
+    --code-border: 240 6% 90%;
     --code-accent: var(--primary);
     --token-sat: 70%;
-    --token-bg-l: 92%;
-    --token-fg-l: 28%;
-    --token-border-l: 78%;
+    --token-bg-l: 95%;
+    --token-fg-l: 30%;
+    --token-border-l: 80%;
+
+    /* Extended semantic tokens (not in default Tailwind mapping) */
+    --success: 137 55% 44%;             /* #34c759 systemGreen */
+    --warning: 35 100% 50%;             /* #ff9500 systemOrange */
+    --tertiary-label: 240 6% 65%;       /* #aeaeb2 tertiaryLabel */
   }
 
   .dark {
-    --background: 220 12% 7%;        /* #0f1115 deep ink */
-    --foreground: 40 12% 90%;        /* #e7e4db */
-    --card: 220 11% 11%;            /* #16191f */
-    --card-foreground: 40 12% 90%;
-    --popover: 220 11% 11%;
-    --popover-foreground: 40 12% 90%;
-    --primary: 210 40% 98%;         /* accent slot — lightened at runtime by SettingsContext */
-    --primary-foreground: 222 31% 13%;
-    --secondary: 220 9% 18%;
-    --secondary-foreground: 215 10% 75%;
-    --muted: 220 9% 18%;            /* surface */
-    --muted-foreground: 215 10% 62%; /* readable text ON a muted surface */
-    --accent: 220 9% 18%;
-    --accent-foreground: 40 12% 90%;
-    --destructive: 0 62% 55%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 9% 20%;           /* #23272f */
-    --input: 220 9% 20%;
-    --ring: 212 15% 80%;
+    /* Surfaces */
+    --background: 0 0% 11%;             /* #1c1c1e systemBackground */
+    --foreground: 0 0% 100%;            /* #ffffff label */
+    --card: 0 0% 17%;                 /* #2c2c2e elevated surface */
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 17%;
+    --popover-foreground: 0 0% 100%;
 
-    --text-secondary: 40 10% 68%;
+    /* Accent — runtime-overridden, lightened for dark by SettingsContext */
+    --primary: 213 100% 52%;            /* #0a84ff controlAccent (dark) */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary / grouped surfaces */
+    --secondary: 0 0% 17%;              /* #2c2c2e secondarySystemBackground */
+    --secondary-foreground: 0 0% 68%;    /* #98989d secondaryLabel */
+    --muted: 0 0% 17%;
+    --muted-foreground: 0 0% 62%;       /* #98989d */
+    --accent: 0 0% 17%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Semantic status */
+    --destructive: 4 100% 60%;          /* #ff453a systemRed (dark) */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & controls */
+    --border: 0 0% 24%;                 /* #38383a separator */
+    --input: 0 0% 24%;
+    --ring: 213 100% 52%;
+
+    /* Named roles */
+    --text-secondary: 0 0% 62%;
     --accent-2-h: 32;
     --accent-2-s: 75%;
     --accent-2-l: 62%;
 
-    --code-bg: 220 12% 9%;
-    --code-border: 220 9% 20%;
+    /* Code-zone + variable tokens */
+    --code-bg: 0 0% 11%;
+    --code-border: 0 0% 24%;
     --code-accent: var(--primary);
     --token-sat: 55%;
-    --token-bg-l: 18%;
+    --token-bg-l: 20%;
     --token-fg-l: 84%;
-    --token-border-l: 30%;
+    --token-border-l: 32%;
+
+    /* Extended semantic tokens */
+    --success: 137 55% 49%;             /* #30d158 systemGreen (dark) */
+    --warning: 38 100% 52%;             /* #ff9f0a systemOrange (dark) */
+    --tertiary-label: 0 0% 40%;         /* #636366 tertiaryLabel */
   }
 }
 
-/* ── Typography: UI face (chrome) + code face (content editor) ── */
+/* ── Typography: SF Pro (Apple system) ── */
 @layer base {
   body {
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 .font-code,
 .code-zone {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
   font-feature-settings: "liga" 0;
 }
 
-/* ── Type scale ── */
+/* ── Apple text styles (HIG type scale) ── */
+.text-title {
+  font-size: 1.625rem;                  /* 26pt */
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.011em;
+  color: hsl(var(--foreground));
+}
+.text-headline {
+  font-size: 1rem;                      /* 16pt */
+  font-weight: 600;
+  line-height: 1.35;
+  color: hsl(var(--foreground));
+}
+.text-body {
+  font-size: 0.9375rem;                 /* 15pt */
+  font-weight: 400;
+  line-height: 1.5;
+  color: hsl(var(--foreground));
+}
+.text-subheadline {
+  font-size: 0.8125rem;                 /* 13pt */
+  font-weight: 400;
+  line-height: 1.4;
+  color: hsl(var(--foreground));
+}
+.text-footnote {
+  font-size: 0.75rem;                   /* 12pt */
+  font-weight: 400;
+  line-height: 1.4;
+  color: hsl(var(--muted-foreground));
+}
+.text-caption {
+  font-size: 0.6875rem;                 /* 11pt */
+  font-weight: 400;
+  line-height: 1.35;
+  color: hsl(var(--muted-foreground));
+}
+/* Eyebrow / section header — uppercase label */
 .text-eyebrow {
-  font-size: 11px;
+  font-size: 0.6875rem;                 /* 11pt */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: hsl(var(--muted-foreground));
 }
+/* Lead — prominent body text */
 .text-lead {
-  font-size: 1.0625rem;
+  font-size: 1.0625rem;                 /* 17pt */
   font-weight: 600;
   line-height: 1.25;
   color: hsl(var(--foreground));
 }
+/* Meta — secondary metadata */
 .text-meta {
   color: hsl(var(--text-secondary));
 }
 
 /* code-zone focus ring — applied to the wrapper when the textarea is focused */
 .code-zone:focus-within {
-  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.35);
-  border-color: hsl(var(--code-accent) / 0.7);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+  border-color: hsl(var(--code-accent) / 0.8);
 }
 
 /* variable tokens — per-name hue via --token-hue; border via inset box-shadow
@@ -121,7 +195,7 @@
 .var-token {
   --hue: var(--token-hue, 220deg);
   white-space: nowrap;
-  border-radius: 3px;
+  border-radius: 4px;
   color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
   background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.55);
   box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l));
@@ -133,7 +207,7 @@
 .var-token--empty {
   --hue: var(--token-hue, 220deg);
   white-space: nowrap;
-  border-radius: 3px;
+  border-radius: 4px;
   font-style: italic;
   color: hsl(var(--hue) var(--token-sat) var(--token-fg-l) / 0.7);
   background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.3);
@@ -150,10 +224,10 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — thin, macOS-style */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -161,17 +235,29 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 3px;
+  background: hsl(var(--border) / 0.8);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: hsl(var(--muted-foreground) / 0.6);
 }
 
-/* Selection */
+/* Selection — accent tint */
 ::selection {
   background: hsl(var(--primary) / 0.2);
+}
+
+/* ── Reduced motion (Apple HIG: respect Reduce Motion) ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Markdown preview (Preview tab) ──
@@ -181,7 +267,7 @@
    Theming is driven by the same HSL design tokens as the rest of the UI. */
 .markdown-preview {
   color: hsl(var(--foreground));
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.7;
   overflow-wrap: anywhere;
@@ -270,19 +356,19 @@
 }
 
 .markdown-preview code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.85em;
   background: hsl(var(--code-bg));
   border: 1px solid hsl(var(--code-border));
-  border-radius: 3px;
+  border-radius: 4px;
   padding: 0.05em 0.35em;
 }
 
 .markdown-preview pre {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
   background: hsl(var(--code-bg));
   border: 1px solid hsl(var(--code-border));
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.75rem 1rem;
   margin: 0 0 0.7em;
   overflow-x: auto;
@@ -306,7 +392,7 @@
 
 .markdown-preview img {
   max-width: 100%;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 /* Keep the unfilled-variable pill readable inside the rendered Markdown. The

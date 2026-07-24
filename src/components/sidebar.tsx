@@ -23,6 +23,8 @@ interface SidebarProps {
   };
 }
 
+/* macOS native sidebar: vibrancy material feel, source-list style with rounded
+   selection highlight (accent tint), SF Symbols-style icons, section headers. */
 export function Sidebar({
   collapsed,
   onToggle,
@@ -49,7 +51,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-card transition-all duration-300",
+        "flex flex-col border-r bg-secondary/80 backdrop-blur-xl transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >
@@ -60,7 +62,7 @@ export function Sidebar({
       <div className="flex h-16 items-center justify-between px-4" data-tauri-drag-region="false">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-primary">
               <svg className="h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
               </svg>
@@ -71,7 +73,7 @@ export function Sidebar({
         <button
           onClick={onToggle}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors",
+            "flex h-8 w-8 items-center justify-center rounded-[8px] hover:bg-muted transition-colors",
             collapsed && "mx-auto"
           )}
         >
@@ -90,7 +92,7 @@ export function Sidebar({
       {/* Navigation */}
       <nav className="flex-1 overflow-auto p-3 space-y-6">
         {/* Main Navigation */}
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -99,9 +101,9 @@ export function Sidebar({
                 if (item.id === "prompts") onCategorySelect(null);
               }}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors",
                 activeView === item.id
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-primary text-primary-foreground shadow-macos-button"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 collapsed && "justify-center px-2"
               )}
@@ -117,7 +119,12 @@ export function Sidebar({
                 const n = countFor(item.id);
                 if (n === null || n < 0) return null;
                 return (
-                  <span className="ml-auto inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                  <span className={cn(
+                    "ml-auto inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums",
+                    activeView === item.id
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}>
                     {n}
                   </span>
                 );
@@ -133,9 +140,9 @@ export function Sidebar({
         <button
           onClick={() => onViewChange("settings")}
           className={cn(
-            "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            "flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors",
             activeView === "settings"
-              ? "bg-primary text-primary-foreground shadow-sm"
+              ? "bg-primary text-primary-foreground shadow-macos-button"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
             collapsed && "justify-center px-2"
           )}
@@ -151,4 +158,3 @@ export function Sidebar({
     </aside>
   );
 }
-

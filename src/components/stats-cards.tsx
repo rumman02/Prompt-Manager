@@ -22,14 +22,14 @@ export function StatsCards({ stats }: StatsCardsProps) {
       {STAT_CONFIGS.map((config, index) => {
         const Icon = config.icon;
         return (
-          <Card key={config.title} className="border-0 shadow-sm">
+          <Card key={config.title} className="shadow-macos-window">
             <CardContent className="flex items-center gap-4 p-5">
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${config.bgColor}`}>
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] ${config.bgColor}`}>
                 <Icon className={`h-5 w-5 ${config.color}`} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">{config.title}</p>
-                <p className="text-2xl font-bold tracking-tight">{values[index]}</p>
+                <p className="text-caption text-muted-foreground">{config.title}</p>
+                <p className="text-title tracking-tight">{values[index]}</p>
               </div>
             </CardContent>
           </Card>

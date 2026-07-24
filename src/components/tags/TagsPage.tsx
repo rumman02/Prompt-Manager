@@ -235,8 +235,8 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 auto-rows-auto rounded-lg border bg-card overflow-hidden">
-            <div className="grid col-span-3 grid-cols-subgrid border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 auto-rows-auto rounded-xl border bg-card shadow-macos-window overflow-hidden">
+            <div className="grid col-span-3 grid-cols-subgrid border-b bg-muted/30 px-4 py-2.5 text-eyebrow">
               <span>Tag</span>
               <span className="w-28 text-center">Prompts</span>
               <span className="w-28 text-right">Actions</span>
@@ -259,7 +259,7 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
                     <span className="text-sm font-medium truncate">{tag.name}</span>
                   </div>
                   <div className="w-28 flex items-center justify-center">
-                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
+                    <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
                       {tag.count} prompt{tag.count !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -286,7 +286,7 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium">
+            <h3 className="text-headline">
               {searchQuery ? "No tags found" : "No tags yet"}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -328,7 +328,7 @@ function TagCard({
 }) {
   const color = tagColor(tag.name);
   return (
-    <Card className="group transition-all hover:border-primary/40 hover:shadow-md hover:bg-muted/20">
+    <Card className="group transition-all hover:border-primary/40 hover:shadow-macos-button hover:bg-muted/20">
       <CardContent className="p-3 flex items-center gap-3">
         <div
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
@@ -340,7 +340,7 @@ function TagCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate">{tag.name}</div>
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary whitespace-nowrap">
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground whitespace-nowrap">
             {tag.count} prompt{tag.count !== 1 ? "s" : ""}
           </span>
         </div>
@@ -400,7 +400,7 @@ function TagActionsMenu({
           stop(e);
           setOpen((v) => !v);
         }}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-foreground transition-all"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
         title="Tag options"
       >
         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -412,7 +412,7 @@ function TagActionsMenu({
         <div
           ref={menuRef}
           onMouseDown={stop}
-          className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg"
+          className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-xl border bg-popover/95 backdrop-blur-xl p-1.5 text-popover-foreground shadow-macos-popover"
         >
           <button
             onClick={(e) => {
@@ -468,13 +468,13 @@ function AddTagsModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl bg-card shadow-2xl border">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">Add Tags</h2>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl bg-card/95 backdrop-blur-xl shadow-macos-popover border">
+        <div className="flex items-center justify-between px-6 py-4">
+          <h2 className="text-headline">Add Tags</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted transition-colors"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -482,14 +482,14 @@ function AddTagsModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="px-6 pb-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="prompt-select">Select Prompt</Label>
             <select
               id="prompt-select"
               value={selectedPromptId ?? ""}
               onChange={(e) => setSelectedPromptId(Number(e.target.value) || null)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex h-8 w-full rounded-[6px] border border-input bg-background px-3 py-1.5 pr-8 text-sm shadow-macos-inset ring-offset-background appearance-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="">Choose a prompt...</option>
               {prompts.map((prompt) => (
@@ -512,7 +512,7 @@ function AddTagsModal({
                   .map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
+                      className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
                     >
                       {tag}
                     </span>
@@ -541,7 +541,7 @@ function AddTagsModal({
                     return (
                       <span
                         key={i}
-                        className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                        className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
                       >
                         {trimmed}
                       </span>
@@ -553,7 +553,7 @@ function AddTagsModal({
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button

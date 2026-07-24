@@ -52,15 +52,15 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto rounded-xl bg-card shadow-2xl border">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-6 py-4">
-          <h2 className="text-lg font-semibold">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-md" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto rounded-2xl bg-card/95 backdrop-blur-xl shadow-macos-popover border border-border">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/80 backdrop-blur-xl px-6 py-4">
+          <h2 className="text-headline">
             {prompt ? "Edit Prompt" : "Create New Prompt"}
           </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -76,7 +76,7 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter prompt title..."
-              className="text-base"
+              className="text-lead"
             />
           </div>
 
@@ -88,7 +88,7 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your prompt here..."
               rows={8}
-              className="font-mono text-sm leading-relaxed"
+              className="font-code text-sm leading-relaxed"
             />
           </div>
 
@@ -133,7 +133,7 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
                   const trimmed = tag.trim();
                   if (!trimmed) return null;
                   return (
-                    <span key={i} className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                    <span key={i} className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                       {trimmed}
                     </span>
                   );
@@ -143,7 +143,7 @@ export function PromptEditor({ open, onClose, onSave, prompt, categories }: Prom
           </div>
         </div>
 
-        <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t bg-card px-6 py-4">
+        <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-border bg-card/80 backdrop-blur-xl px-6 py-4">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>

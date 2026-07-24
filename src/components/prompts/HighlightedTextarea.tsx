@@ -71,9 +71,9 @@ export const HighlightedTextarea = ({ value, onChange, className, ref, ...rest }
   }, [value]);
 
   return (
-    <div className={cn("code-zone relative w-full overflow-hidden rounded-md border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))]", className)}>
+    <div className={cn("code-zone relative w-full overflow-hidden rounded-[6px] border border-code-border bg-code-bg", className)}>
       {/* thin accent rule on the left edge — marks this as the instrument */}
-      <span className="pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-l-md bg-[hsl(var(--code-accent)/0.55)]" aria-hidden />
+      <span className="pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-l-[6px] bg-[hsl(var(--code-accent)/0.55)]" aria-hidden />
       {/* highlight backdrop */}
       <pre
         ref={backdropRef}
@@ -90,7 +90,7 @@ export const HighlightedTextarea = ({ value, onChange, className, ref, ...rest }
         onScroll={handleScroll}
         onChange={(e) => onChange(e.target.value)}
         spellCheck={false}
-        className="code-zone absolute inset-0 m-0 h-full w-full resize-y whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.65] text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--muted-foreground))]"
+        className="code-zone absolute inset-0 m-0 h-full w-full resize-y whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground"
       />
     </div>
   );

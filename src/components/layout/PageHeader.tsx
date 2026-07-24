@@ -13,6 +13,7 @@ interface PageHeaderProps {
   };
 }
 
+/* macOS toolbar-style header: large title, subtle surface, back button. */
 export function PageHeader({ icon, title, subtitle, actions, backButton }: PageHeaderProps) {
   return (
     <div className="flex flex-col bg-card shrink-0">
@@ -28,7 +29,7 @@ export function PageHeader({ icon, title, subtitle, actions, backButton }: PageH
               onClick={backButton.onClick}
               aria-label={backButton.label}
               title={backButton.label}
-              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 cursor-pointer"
             >
               <svg
                 className="h-4 w-4"
@@ -41,12 +42,12 @@ export function PageHeader({ icon, title, subtitle, actions, backButton }: PageH
               </svg>
             </button>
           )}
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary/10">
             {icon}
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <h1 className="text-headline font-semibold tracking-tight">{title}</h1>
+            <p className="text-caption text-muted-foreground">{subtitle}</p>
           </div>
         </div>
         {actions && (
@@ -58,4 +59,3 @@ export function PageHeader({ icon, title, subtitle, actions, backButton }: PageH
     </div>
   );
 }
-

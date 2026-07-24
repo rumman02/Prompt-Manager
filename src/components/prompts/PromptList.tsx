@@ -92,19 +92,23 @@ export function PromptList({
                   </Button>
                 )}
                 {onViewModeChange && (
-                  <div className="flex items-center gap-1 rounded-md border bg-muted/30 p-1">
+                  <div className="inline-flex h-8 rounded-[10px] bg-muted p-1 shadow-macos-inset">
                     <button
                       onClick={() => onViewModeChange("list")}
-                      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                        viewMode === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      className={`rounded-[6px] px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
+                        viewMode === "list"
+                          ? "bg-background text-foreground shadow-macos-button"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       List
                     </button>
                     <button
                       onClick={() => onViewModeChange("grid")}
-                      className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                        viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      className={`rounded-[6px] px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
+                        viewMode === "grid"
+                          ? "bg-background text-foreground shadow-macos-button"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       Grid

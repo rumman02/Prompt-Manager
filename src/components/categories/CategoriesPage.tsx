@@ -203,7 +203,7 @@ export function CategoriesPage({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium">No categories yet</h3>
+                <h3 className="text-headline">No categories yet</h3>
                 <p className="mt-1 text-sm text-muted-foreground">Create prompts with categories or add a new category</p>
               </CardContent>
             </Card>
@@ -254,7 +254,7 @@ function CategoryCard({
   );
 
   return (
-    <Card className="group relative transition-all hover:border-primary/40 hover:shadow-md hover:bg-muted/20">
+    <Card className="group relative transition-all hover:border-primary/40 hover:shadow-macos-button hover:bg-muted/20">
       <CardContent className="p-4 space-y-3">
         {/* row 1: icon + name + actions */}
         <div className="flex items-center gap-3">
@@ -294,7 +294,7 @@ function CategoryCard({
 
         {/* row 2: pill badge with count */}
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
+          <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
             {category.count} prompt{category.count !== 1 ? "s" : ""}
           </span>
         </div>
@@ -365,7 +365,7 @@ function CategoryActionsMenu({
           stop(e);
           setOpen((v) => !v);
         }}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-foreground transition-all"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
         title="Category options"
       >
         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -377,7 +377,7 @@ function CategoryActionsMenu({
         <div
           ref={menuRef}
           onMouseDown={stop}
-          className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg"
+          className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-xl border bg-popover/95 backdrop-blur-xl p-1.5 text-popover-foreground shadow-macos-popover"
         >
           <button
             onClick={(e) => {
@@ -449,13 +449,13 @@ function AddCategoryModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl bg-card shadow-2xl border">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">Add Category</h2>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl bg-card/95 backdrop-blur-xl shadow-macos-popover border">
+        <div className="flex items-center justify-between px-6 py-4">
+          <h2 className="text-headline">Add Category</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted transition-colors"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -463,7 +463,7 @@ function AddCategoryModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="px-6 pb-6 space-y-4">
           <div className="space-y-2">
             <label htmlFor="category-name" className="text-sm font-medium">
               Category Name
@@ -479,13 +479,13 @@ function AddCategoryModal({
               autoFocus
             />
             {categories.some((c) => c.category.toLowerCase() === newCategoryName.trim().toLowerCase()) && (
-              <p className="text-sm text-amber-600">A category with this name already exists.</p>
+              <p className="text-sm text-warning">A category with this name already exists.</p>
             )}
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button

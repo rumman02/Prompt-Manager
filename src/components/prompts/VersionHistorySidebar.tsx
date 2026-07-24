@@ -132,29 +132,29 @@ export function VersionHistorySidebar({
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
         <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d={ICON.history} />
         </svg>
-        <span className="text-sm font-semibold text-[hsl(var(--foreground))]">History</span>
-        <span className="ml-auto rounded-full bg-[hsl(var(--secondary))] px-2 py-0.5 text-xs font-medium text-[hsl(var(--secondary-foreground))]">
+        <span className="text-subheadline font-semibold">History</span>
+        <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
           {versions.length}
         </span>
       </div>
 
       {/* Save new version */}
         {isEditing && (
-          <div className="border-b p-3 space-y-2">
+          <div className="border-b border-border p-3 space-y-2">
             <textarea
               value={saveMessage}
               onChange={(e) => setSaveMessage(e.target.value)}
               placeholder="Version message (optional)..."
-              className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full resize-none rounded-[6px] border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               rows={2}
             />
             <button
               type="button"
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--secondary))] px-3 py-1.5 text-sm font-medium text-[hsl(var(--secondary-foreground))] transition-colors hover:bg-[hsl(var(--secondary))]/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-[6px] border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-colors duration-150 hover:bg-secondary/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={handleSaveVersion}
               disabled={!title.trim() || !content.trim()}
             >
@@ -174,23 +174,23 @@ export function VersionHistorySidebar({
             </div>
           ) : versions.length === 0 ? (
             <div className="flex flex-col items-start gap-2 py-6 px-4 text-left">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[hsl(var(--secondary))] text-[hsl(var(--muted-foreground))]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-muted text-muted-foreground">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))]">
+              <p className="text-caption leading-relaxed text-muted-foreground">
                 {isEditing
                   ? "No versions yet. Save your first snapshot above, and every future change will be listed here for a one-click restore."
                   : "Versions appear here once you save this prompt and edit it again — each saved change becomes a snapshot you can restore with one click."}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[hsl(var(--border))]">
+            <div className="divide-y divide-border">
               {versions.map((version) => (
                 <div
                   key={version.id}
-                  className="group relative px-3 py-3.5 transition-colors hover:bg-[hsl(var(--secondary))]"
+                  className="group relative px-3 py-3 transition-colors duration-150 hover:bg-muted/50"
                 >
                   {/* hover accent bar — makes entries easy to scan as the list grows */}
                   <span className="pointer-events-none absolute inset-y-2 left-0 w-[2px] rounded-r bg-[hsl(var(--accent-2-h)_var(--accent-2-s)_var(--accent-2-l))] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
@@ -201,7 +201,7 @@ export function VersionHistorySidebar({
                         <span className="text-xs font-semibold text-[hsl(var(--accent-2-h)_var(--accent-2-s)_var(--accent-2-l))]">
                           v{version.version_number}
                         </span>
-                        <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                        <span className="text-caption text-muted-foreground">
                           {formatDate(version.created_at)}
                         </span>
                       </div>
@@ -216,12 +216,12 @@ export function VersionHistorySidebar({
                               if (e.key === "Escape") setRenamingId(null);
                             }}
                             placeholder="Add a label..."
-                            className="w-full rounded border border-input bg-background px-1.5 py-0.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            className="w-full rounded-[6px] border border-input bg-background px-1.5 py-0.5 text-xs shadow-macos-inset focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           />
                           <button
                             onClick={() => handleRename(version.id)}
                             title="Save label"
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
                           >
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" d={ICON.check} />
@@ -230,7 +230,7 @@ export function VersionHistorySidebar({
                           <button
                             onClick={() => setRenamingId(null)}
                             title="Cancel"
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
                           >
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" d={ICON.close} />
@@ -240,11 +240,11 @@ export function VersionHistorySidebar({
                       ) : (
                         <>
                           {version.message && (
-                            <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                            <p className="mt-0.5 text-caption text-muted-foreground truncate">
                               {version.message}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground/70 truncate">
+                          <p className="text-caption text-muted-foreground/70 truncate">
                             {version.title}
                           </p>
                         </>
@@ -253,11 +253,11 @@ export function VersionHistorySidebar({
 
                     {/* Action toolbar — revealed on hover (group-hover) over the row */}
                     {renamingId !== version.id && (
-                      <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-[hsl(var(--border))]/60 bg-[hsl(var(--card))]/80 p-0.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                      <div className="flex shrink-0 items-center gap-0.5 rounded-[6px] border border-border/60 bg-card/80 backdrop-blur-sm p-0.5 opacity-0 shadow-macos-button transition-opacity group-hover:opacity-100">
                         <button
                           onClick={() => setViewing(version)}
                           title="View"
-                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.view} />
@@ -266,7 +266,7 @@ export function VersionHistorySidebar({
                         <button
                           onClick={() => handleRestore(version)}
                           title="Restore"
-                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.restore} />
@@ -275,7 +275,7 @@ export function VersionHistorySidebar({
                         <button
                           onClick={() => startRename(version)}
                           title="Rename"
-                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.rename} />
@@ -284,7 +284,7 @@ export function VersionHistorySidebar({
                         <button
                           onClick={() => setPendingDeleteId(version.id)}
                           title="Delete"
-                          className="flex h-7 w-7 items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--destructive))]/10 hover:text-[hsl(var(--destructive))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d={ICON.trash} />
@@ -302,20 +302,20 @@ export function VersionHistorySidebar({
       {/* ─── View modal (full version content, read-only) ─── */}
       {viewing && (
         <div className="fixed inset-0 z-50 flex items-stretch justify-end">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setViewing(null)} />
-          <div className="relative z-10 w-full max-w-xl bg-card shadow-2xl border-l flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-md" onClick={() => setViewing(null)} />
+          <div className="relative z-10 w-full max-w-xl bg-card/90 backdrop-blur-xl border-l border-border flex flex-col shadow-macos-window animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-semibold truncate">
+                <h2 className="text-headline truncate">
                   v{viewing.version_number}{viewing.message ? ` — ${viewing.message}` : ""}
                 </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-caption text-muted-foreground mt-0.5">
                   Saved {formatDate(viewing.created_at)}
                 </p>
               </div>
               <button
                 onClick={() => setViewing(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
                 title="Close"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -327,7 +327,7 @@ export function VersionHistorySidebar({
             <div className="flex-1 overflow-auto p-6 space-y-5">
               <div className="flex flex-wrap gap-2">
                 {viewing.category && (
-                  <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                     {viewing.category}
                   </span>
                 )}
@@ -335,7 +335,7 @@ export function VersionHistorySidebar({
                   const trimmed = tag.trim();
                   if (!trimmed) return null;
                   return (
-                    <span key={i} className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground">
+                    <span key={i} className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
                       {trimmed}
                     </span>
                   );
@@ -343,33 +343,33 @@ export function VersionHistorySidebar({
               </div>
 
               {viewing.description && (
-                <div className="rounded-lg bg-muted/50 p-4">
-                  <p className="text-sm text-muted-foreground leading-relaxed">{viewing.description}</p>
+                <div className="rounded-xl bg-muted/50 p-4">
+                  <p className="text-body text-muted-foreground leading-relaxed">{viewing.description}</p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <span className="text-sm font-medium">Title</span>
-                <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="text-sm text-foreground">{viewing.title}</p>
+                <span className="text-subheadline font-medium">Title</span>
+                <div className="rounded-xl border border-border bg-muted/30 p-3">
+                  <p className="text-body text-foreground">{viewing.title}</p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <span className="text-sm font-medium">Prompt Content</span>
-                <div className="rounded-lg border bg-muted/30 p-4">
-                  <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+                <span className="text-subheadline font-medium">Prompt Content</span>
+                <div className="rounded-xl border border-border bg-muted/30 p-4">
+                  <pre className="whitespace-pre-wrap font-code text-sm leading-relaxed text-foreground">
                     {viewing.content}
                   </pre>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t px-6 py-3 shrink-0">
+            <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-3 shrink-0">
               <button
                 type="button"
                 onClick={() => setViewing(null)}
-                className="rounded-md border border-input px-4 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+                className="rounded-[6px] border border-input px-4 py-1.5 text-sm font-medium transition-colors duration-150 hover:bg-muted"
               >
                 Close
               </button>
@@ -380,7 +380,7 @@ export function VersionHistorySidebar({
                   setViewing(null);
                   handleRestore(v);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                className="inline-flex items-center gap-1.5 rounded-[6px] bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary/90"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d={ICON.restore} />
@@ -395,24 +395,24 @@ export function VersionHistorySidebar({
       {/* ─── Delete confirmation ─── */}
       {pendingDeleteId != null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setPendingDeleteId(null)} />
-          <div className="relative z-10 w-full max-w-sm rounded-xl bg-card p-6 shadow-2xl border">
-            <h3 className="text-lg font-semibold">Delete Version</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setPendingDeleteId(null)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-card/95 backdrop-blur-xl p-6 shadow-macos-popover border border-border">
+            <h3 className="text-headline">Delete Version</h3>
+            <p className="mt-2 text-body text-muted-foreground">
               Permanently delete this version? This cannot be undone.
             </p>
             <div className="mt-5 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setPendingDeleteId(null)}
-                className="rounded-md border border-input px-4 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+                className="rounded-[6px] border border-input px-4 py-1.5 text-sm font-medium transition-colors duration-150 hover:bg-muted"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => handleDeleteVersion(pendingDeleteId)}
-                className="rounded-md bg-destructive px-4 py-1.5 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90"
+                className="rounded-[6px] bg-destructive px-4 py-1.5 text-sm font-medium text-destructive-foreground transition-colors duration-150 hover:bg-destructive/90"
               >
                 Delete
               </button>

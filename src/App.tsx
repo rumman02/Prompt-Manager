@@ -244,8 +244,22 @@ function AppContent() {
     : prompts;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      <Toaster theme={settings.theme === "dark" ? "dark" : "light"} position="bottom-right" richColors />
+    <div className="flex h-screen w-screen overflow-hidden bg-secondary/30">
+      <Toaster
+        theme={settings.theme === "dark" ? "dark" : "light"}
+        position="bottom-right"
+        richColors
+        toastOptions={{
+          style: {
+            borderRadius: "14px",
+            backdropFilter: "blur(20px)",
+            background: settings.theme === "dark" ? "rgba(44, 44, 46, 0.9)" : "rgba(255, 255, 255, 0.9)",
+            border: `1px solid ${settings.theme === "dark" ? "rgba(72, 72, 74, 0.5)" : "rgba(210, 210, 215, 0.5)"}`,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.16)",
+            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+          },
+        }}
+      />
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}

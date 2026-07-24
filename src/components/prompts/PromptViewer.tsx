@@ -41,20 +41,20 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-xl bg-card shadow-2xl border-l flex flex-col animate-in slide-in-from-right duration-300">
-        <div className="flex items-center justify-between border-b px-6 py-4 shrink-0">
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-md" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-xl bg-card/90 backdrop-blur-xl border-l border-border flex flex-col shadow-macos-window animate-in slide-in-from-right duration-300">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold truncate">{prompt.title}</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <h2 className="text-headline truncate">{prompt.title}</h2>
+            <p className="text-caption text-muted-foreground mt-0.5">
               Updated {formatDate(prompt.updated_at)}
             </p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {onToggleFavorite && (
               <button
                 onClick={() => onToggleFavorite(prompt.id)}
-                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${prompt.is_favorite ? 'text-yellow-500' : 'hover:bg-muted'}`}
+                className={`flex h-7 w-7 items-center justify-center rounded-[6px] transition-colors duration-150 ${prompt.is_favorite ? 'text-yellow-500' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                 title={prompt.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <svg className="h-4 w-4" fill={prompt.is_favorite ? 'currentColor' : 'none'} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -64,7 +64,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
             )}
             <button
               onClick={() => onEdit(prompt)}
-              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
               title="Edit"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -73,7 +73,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors duration-150"
               title="Delete"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -82,7 +82,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
             </button>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
               title="Close"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -95,8 +95,8 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
         <div className="flex-1 overflow-auto p-6 space-y-5">
           <div className="flex flex-wrap gap-2">
             {prompt.category && (
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                <svg className="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                <svg className="mr-1.5 h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                 </svg>
                 {prompt.category}
@@ -107,8 +107,8 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
                 const trimmed = tag.trim();
                 if (!trimmed) return null;
                 return (
-                  <span key={i} className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground">
-                    <svg className="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <span key={i} className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                    <svg className="mr-1.5 h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
                     </svg>
@@ -119,14 +119,14 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
           </div>
 
           {prompt.description && (
-            <div className="rounded-lg bg-muted/50 p-4">
-              <p className="text-sm text-muted-foreground leading-relaxed">{prompt.description}</p>
+            <div className="rounded-xl bg-muted/50 p-4">
+              <p className="text-body text-muted-foreground leading-relaxed">{prompt.description}</p>
             </div>
           )}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Prompt Content</span>
+              <span className="text-subheadline font-medium">Prompt Content</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -135,7 +135,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
               >
                 {copied ? (
                   <>
-                    <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <svg className="h-3.5 w-3.5 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                     Copied!
@@ -150,14 +150,14 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
                 )}
               </Button>
             </div>
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <pre className="whitespace-pre-wrap font-code text-sm leading-relaxed text-foreground">
                 {prompt.content}
               </pre>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+          <div className="flex items-center gap-4 text-caption text-muted-foreground pt-3 border-t border-border">
             <span>Created: {formatDate(prompt.created_at)}</span>
             <span>Updated: {formatDate(prompt.updated_at)}</span>
           </div>
@@ -166,11 +166,11 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative z-10 w-full max-w-sm rounded-xl bg-card p-6 shadow-2xl border">
-            <h3 className="text-lg font-semibold">Move to Trash</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Are you sure you want to move "{prompt.title}" to trash? You can restore it from the Trash page.
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-card/95 backdrop-blur-xl p-6 shadow-macos-popover border border-border">
+            <h3 className="text-headline">Move to Trash</h3>
+            <p className="mt-2 text-body text-muted-foreground">
+              Are you sure you want to move &ldquo;{prompt.title}&rdquo; to trash? You can restore it from the Trash page.
             </p>
             <div className="mt-5 flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>

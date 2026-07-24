@@ -45,11 +45,11 @@ export function AgentsPage() {
         }
       />
       <div className="flex-1 overflow-auto p-6">
-        <Card className="border-dashed">
+        <Card className="border-dashed shadow-none">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-[10px] bg-primary/10 mb-4">
               <svg
-                className="h-7 w-7 text-muted-foreground"
+                className="h-7 w-7 text-primary"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
@@ -62,8 +62,8 @@ export function AgentsPage() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium">No agents yet</h3>
-            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+            <h3 className="text-headline font-medium">No agents yet</h3>
+            <p className="mt-1 max-w-sm text-caption text-muted-foreground">
               Agents let you bundle prompts, skills, and instructions into reusable assistants. Create your first agent to get started.
             </p>
           </CardContent>

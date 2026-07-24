@@ -476,14 +476,14 @@ export function PromptEditorPage({
 
       {/* Orientation toggle — lives in the header-adjacent strip, not buried in
           settings. It controls the orientation of the *next* split. */}
-      <div className="flex shrink-0 items-center justify-end border-b border-[hsl(var(--border))] bg-card px-3 py-1.5">
+      <div className="flex shrink-0 items-center justify-end border-b border-border bg-card px-3 py-1.5">
         <OrientationToggle orientation={orientation} onChange={handleOrientationChange} />
       </div>
 
       {saveError && (
         <div
           role="alert"
-          className="mx-6 mt-4 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          className="mx-6 mt-4 flex items-start gap-2 rounded-[10px] border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
         >
           <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <circle cx="12" cy="12" r="10" />
@@ -501,7 +501,7 @@ export function PromptEditorPage({
 
       {/* Split-pane editor area. rounded-r-xl: right corners only; border-r-0 so
           the rightmost pane docks flush against the window edge. */}
-      <div className="flex flex-1 min-h-0 rounded-r-xl border border-r-0 bg-card">
+      <div className="flex flex-1 min-h-0 rounded-r-xl border border-r-0 border-border bg-card">
         <SplitPane
           layout={layout}
           paneCount={count}

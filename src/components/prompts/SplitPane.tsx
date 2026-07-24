@@ -94,7 +94,7 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
     <div
       role="tablist"
       aria-label="Pane views"
-      className="flex shrink-0 items-center gap-0.5 border-b border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] px-1 py-0.5"
+      className="flex shrink-0 items-center gap-0.5 border-b border-border bg-muted/40 px-1 py-0.5"
     >
       {VIEWS.map((v) => {
         const active = v.id === view;
@@ -106,11 +106,11 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
             onClick={() => onSwitch(v.id)}
             title={v.label}
             className={cn(
-              "flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1",
+              "flex h-7 items-center gap-1.5 rounded-[6px] px-2.5 text-xs font-medium transition-all duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
               active
-                ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
-                : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]",
+                ? "bg-background text-foreground shadow-macos-button"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -125,7 +125,7 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
           onClick={onSplit}
           title="Split pane"
           aria-label="Split pane"
-          className="flex h-7 w-7 items-center justify-center rounded-sm text-[hsl(var(--muted-foreground))] transition-colors hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+          className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors duration-150 hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
@@ -136,7 +136,7 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
             onClick={onClose}
             title="Close pane"
             aria-label="Close pane"
-            className="flex h-7 w-7 items-center justify-center rounded-sm text-[hsl(var(--muted-foreground))] transition-colors hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors duration-150 hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -182,7 +182,7 @@ export function OrientationToggle({ orientation, onChange }: OrientationTogglePr
     <div
       role="group"
       aria-label="Split orientation"
-      className="flex items-center gap-0.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--code-bg))] p-0.5"
+      className="inline-flex h-8 items-center gap-0.5 rounded-[10px] border border-border bg-muted p-1 shadow-macos-inset"
     >
       {options.map((o) => {
         const active = o.id === orientation;
@@ -194,11 +194,11 @@ export function OrientationToggle({ orientation, onChange }: OrientationTogglePr
             aria-label={o.label}
             aria-pressed={active}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-sm transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1",
+              "flex h-6 w-6 items-center justify-center rounded-[6px] transition-all duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
               active
-                ? "bg-[hsl(var(--foreground))] text-[hsl(var(--background))]"
-                : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]",
+                ? "bg-background text-foreground shadow-macos-button"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {o.icon}

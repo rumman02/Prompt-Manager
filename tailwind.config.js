@@ -15,6 +15,10 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Display"', '"Segoe UI"', 'system-ui', 'sans-serif'],
+        mono: ['"SF Mono"', 'SFMono-Regular', 'ui-monospace', 'Menlo', 'Consolas', '"Liberation Mono"', 'monospace'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -49,11 +53,28 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        /* Extended semantic tokens */
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground, 0 0% 100%))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground, 0 0% 100%))",
+        },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "var(--radius)",           /* 10pt */
+        md: "calc(var(--radius) - 2px)", /* 8pt */
+        sm: "calc(var(--radius) - 4px)", /* 6pt */
+        xl: "0.875rem",                /* 14pt — cards/sheets */
+        "2xl": "1.25rem",              /* 20pt — windows/modals */
+      },
+      boxShadow: {
+        'macos-window': '0 0 0 0.5px hsl(var(--border)), 0 2px 12px rgba(0, 0, 0, 0.08)',
+        'macos-popover': '0 0 0 0.5px hsl(var(--border)), 0 8px 32px rgba(0, 0, 0, 0.16)',
+        'macos-button': '0 1px 2px rgba(0, 0, 0, 0.06)',
+        'macos-inset': 'inset 0 1px 2px rgba(0, 0, 0, 0.06)',
       },
       keyframes: {
         "accordion-down": {

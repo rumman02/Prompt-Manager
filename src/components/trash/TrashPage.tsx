@@ -97,7 +97,7 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="text-muted-foreground">Loading trash...</div>
+        <div className="text-caption text-muted-foreground">Loading trash...</div>
       </div>
     );
   }
@@ -137,16 +137,16 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
           ) : undefined
         }
       />
-      <div className="flex-1 overflow-auto p-6 space-y-6">
+      <div className="flex-1 overflow-auto p-6 space-y-4">
 
       {emptyTrashError && (
-        <div className="rounded-lg border bg-destructive/10 border-destructive/30 px-4 py-3">
+        <div className="rounded-[10px] border border-destructive/30 bg-destructive/10 px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               <svg className="h-4 w-4 text-destructive mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
               </svg>
-              <span className="text-sm text-destructive">{emptyTrashError}</span>
+              <span className="text-subheadline text-destructive">{emptyTrashError}</span>
             </div>
             <button
               onClick={() => setEmptyTrashError(null)}
@@ -162,12 +162,12 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
       )}
 
       {trashedPrompts.length > 0 && (
-        <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 px-4 py-3">
+        <div className="rounded-[10px] border border-warning/30 bg-warning/10 px-4 py-3">
           <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
             </svg>
-            <span className="text-xs text-amber-700 dark:text-amber-300">
+            <span className="text-subheadline text-warning">
               Items in trash will be permanently deleted after the retention period. You can restore them before then.
             </span>
           </div>
@@ -175,8 +175,8 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
       )}
 
       {trashedPrompts.length > 0 ? (
-        <div className="rounded-lg border bg-card overflow-hidden grid grid-cols-[1fr_8rem_7rem_6rem_auto] gap-x-4 auto-rows-auto">
-          <div className="grid col-span-5 grid-cols-subgrid border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-xl border bg-card shadow-macos-window overflow-hidden grid grid-cols-[1fr_8rem_7rem_6rem_auto] gap-x-4 auto-rows-auto">
+          <div className="grid col-span-5 grid-cols-subgrid border-b bg-muted/30 px-4 py-3 text-eyebrow text-muted-foreground">
             <span>Title</span>
             <span className="text-center">Category</span>
             <span className="text-center">Days Left</span>
@@ -186,6 +186,7 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
           <div className="grid col-span-5 grid-cols-subgrid divide-y contents">
             {trashedPrompts.map((prompt) => {
               const daysLeft = getDaysRemaining(prompt.deleted_at);
+              const isUrgent = daysLeft !== null && daysLeft <= 3;
               return (
                 <div
                   key={prompt.id}
@@ -199,8 +200,8 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
                       </svg>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{prompt.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-subheadline font-medium truncate">{prompt.title}</p>
+                      <p className="text-caption text-muted-foreground truncate">
                         {truncate(prompt.description || prompt.content, 60)}
                       </p>
                     </div>
@@ -211,15 +212,19 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
                         {prompt.category}
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">—</span>
+                      <span className="text-caption text-muted-foreground/50">—</span>
                     )}
                   </div>
                   <div className="flex items-center justify-center">
-                    <span className={`text-xs font-medium ${daysLeft !== null && daysLeft <= 3 ? "text-destructive" : "text-muted-foreground"}`}>
-                      {daysLeft !== null ? `${daysLeft}d` : "-"}
-                    </span>
+                    {daysLeft !== null ? (
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isUrgent ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                        {daysLeft}d left
+                      </span>
+                    ) : (
+                      <span className="text-caption text-muted-foreground/50">—</span>
+                    )}
                   </div>
-                  <span className="text-right text-xs text-muted-foreground">
+                  <span className="text-right text-caption text-muted-foreground">
                     {prompt.deleted_at ? formatDate(prompt.deleted_at) : "-"}
                   </span>
 
@@ -236,15 +241,15 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
           </div>
         </div>
       ) : (
-        <Card className="border-dashed">
+        <Card className="border-dashed shadow-none">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
               <svg className="h-7 w-7 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium">Trash is empty</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Deleted prompts will appear here until permanently removed</p>
+            <h3 className="text-headline font-medium">Trash is empty</h3>
+            <p className="mt-1 max-w-sm text-caption text-muted-foreground">Deleted prompts will appear here until permanently removed</p>
           </CardContent>
         </Card>
       )}
@@ -260,10 +265,10 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
 
       {showEmptyConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowEmptyConfirm(false)} />
-          <div className="relative z-10 w-full max-w-sm rounded-xl bg-card p-6 shadow-2xl border">
-            <h3 className="text-lg font-semibold">Empty Trash</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowEmptyConfirm(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-card/95 p-6 shadow-macos-popover border backdrop-blur-xl">
+            <h3 className="text-headline font-semibold">Empty Trash</h3>
+            <p className="mt-2 text-subheadline text-muted-foreground">
               Permanently delete all {trashedPrompts.length} trashed prompt
               {trashedPrompts.length !== 1 ? "s" : ""}? This cannot be undone.
             </p>
@@ -364,7 +369,7 @@ function TrashRowActions({
       <button
         ref={triggerRef}
         onClick={handleTriggerClick}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-accent hover:text-foreground transition-all"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
         title="Actions"
       >
         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -379,7 +384,7 @@ function TrashRowActions({
             ref={menuRef}
             style={menuStyle}
             onMouseDown={stop}
-            className="rounded-lg border bg-popover p-1 text-popover-foreground shadow-xl"
+            className="rounded-[10px] border bg-popover p-1 text-popover-foreground shadow-macos-popover"
           >
             <button
               onClick={(e) => {
@@ -387,7 +392,7 @@ function TrashRowActions({
                 closeMenu();
                 onRestore();
               }}
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-muted focus:bg-muted transition-colors"
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-subheadline hover:bg-muted focus:bg-muted transition-colors"
             >
               <svg
                 className="h-3.5 w-3.5 shrink-0"
@@ -407,7 +412,7 @@ function TrashRowActions({
                 closeMenu();
                 onDelete();
               }}
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10 focus:bg-destructive/10 transition-colors"
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-subheadline text-destructive hover:bg-destructive/10 focus:bg-destructive/10 transition-colors"
             >
               <svg
                 className="h-3.5 w-3.5 shrink-0"
@@ -440,13 +445,13 @@ function TrashDetailModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg mx-4 rounded-xl bg-card shadow-2xl border">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-lg mx-4 rounded-2xl bg-card/95 shadow-macos-popover border backdrop-blur-xl">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h3 className="text-lg font-semibold truncate pr-4">{prompt.title}</h3>
+          <h3 className="text-headline font-semibold truncate pr-4">{prompt.title}</h3>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-[10px] hover:bg-muted transition-colors"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -462,14 +467,14 @@ function TrashDetailModal({
             </div>
           )}
           {prompt.description && (
-            <p className="text-sm text-muted-foreground">{prompt.description}</p>
+            <p className="text-subheadline text-muted-foreground">{prompt.description}</p>
           )}
-          <div className="rounded-lg border bg-muted/30 p-4 max-h-48 overflow-auto">
-            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">
+          <div className="rounded-[10px] border bg-muted/30 p-4 max-h-48 overflow-auto">
+            <pre className="whitespace-pre-wrap font-mono text-caption leading-relaxed text-foreground">
               {prompt.content}
             </pre>
           </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4 text-caption text-muted-foreground">
             <span>Created: {formatDate(prompt.created_at)}</span>
             <span>Deleted: {prompt.deleted_at ? formatDate(prompt.deleted_at) : "-"}</span>
           </div>

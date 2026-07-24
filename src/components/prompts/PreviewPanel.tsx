@@ -78,17 +78,17 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
       {/* Header — Copy action lives here, always visible, not buried. */}
-      <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span className="text-sm font-semibold">Preview</span>
+          <span className="text-subheadline font-semibold">Preview</span>
         </div>
         {unfilled.length > 0 && (
           <span
-            className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600"
+            className="rounded-full bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning"
             title="Unfilled variables are copied as {{name}}"
           >
             {unfilled.length} unfilled
@@ -97,7 +97,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
       </div>
 
       {/* Copy bar */}
-      <div className="border-b px-4 py-2.5">
+      <div className="border-b border-border px-4 py-2.5">
         <Button
           size="sm"
           className="w-full gap-1.5"
@@ -121,7 +121,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
             )}
           </Button>
           {unfilled.length > 0 && (
-            <p className="mt-1.5 text-[11px] text-muted-foreground">
+            <p className="mt-1.5 text-caption text-muted-foreground">
               {unfilled.length === 1
                 ? "1 variable is unfilled — its {{placeholder}} will be copied as-is."
                 : `${unfilled.length} variables are unfilled — their {{placeholders}} will be copied as-is.`}
@@ -136,7 +136,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
       <div className="flex-1 overflow-auto">
         <div
           aria-label="Compiled prompt preview"
-          className="markdown-preview m-3 rounded-md border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))] px-3 py-2.5"
+          className="markdown-preview m-3 rounded-xl border border-code-border bg-code-bg px-4 py-3"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>

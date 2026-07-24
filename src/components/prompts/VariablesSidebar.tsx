@@ -200,18 +200,18 @@ export function VariablesSidebar({
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b px-4 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
         <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
         </svg>
-        <span className="text-sm font-semibold">Variables</span>
-        <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+        <span className="text-subheadline font-semibold">Variables</span>
+        <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
           {allVariables.length}
         </span>
       </div>
 
       {/* Add custom variable */}
-      <div className="border-b p-3 space-y-2">
+      <div className="border-b border-border p-3 space-y-2">
         {!showAddFields ? (
           <div className="flex gap-2">
             <input
@@ -225,7 +225,7 @@ export function VariablesSidebar({
                 }
               }}
               placeholder="Add variable..."
-              className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex-1 rounded-[6px] border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <Button
               size="sm"
@@ -241,7 +241,7 @@ export function VariablesSidebar({
             </Button>
           </div>
         ) : (
-          <div className="space-y-2 rounded-md border border-input bg-background p-2">
+          <div className="space-y-2 rounded-[10px] border border-input bg-background p-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-foreground">New variable</span>
               <button
@@ -262,14 +262,14 @@ export function VariablesSidebar({
                 if (e.key === "Enter" && canAdd) handleAddVariable();
               }}
               placeholder="Variable name"
-              className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <input
               type="text"
               value={newDefault}
               onChange={(e) => setNewDefault(e.target.value)}
               placeholder="Default value (optional)"
-              className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <input
               type="text"
@@ -279,7 +279,7 @@ export function VariablesSidebar({
                 if (e.key === "Enter" && canAdd) handleAddVariable();
               }}
               placeholder="Description (optional)"
-              className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <Button
               size="sm"
@@ -291,7 +291,7 @@ export function VariablesSidebar({
             </Button>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           Use {"{{variable_name}}"} syntax in your prompt
         </p>
       </div>
@@ -303,7 +303,7 @@ export function VariablesSidebar({
             <svg className="h-10 w-10 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
             </svg>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-caption text-muted-foreground">
               No variables found. Add custom ones or use {"{{variable}}"} syntax.
             </p>
           </div>
@@ -312,7 +312,7 @@ export function VariablesSidebar({
             {/* Extracted variables section */}
             {extractedVariables.length > 0 && (
               <>
-                <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="px-2 py-1.5 text-eyebrow text-muted-foreground">
                   Detected
                 </div>
                 {extractedVariables.map((variable) => (
@@ -336,18 +336,18 @@ export function VariablesSidebar({
             {/* Custom variables section */}
             {customVariables.filter((v) => !isExtracted(v.name)).length > 0 && (
               <>
-                <div className="px-2 py-1.5 mt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="px-2 py-1.5 mt-2 text-eyebrow text-muted-foreground">
                   Custom
                 </div>
                 {customVariables
                   .filter((v) => !isExtracted(v.name))
                   .map((v) => (
-                    <div key={v.id} className="rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50">
+                    <div key={v.id} className="rounded-[6px] px-2 py-1.5 transition-colors duration-150 hover:bg-muted/50">
                       {editingId === v.id ? (
                         <div className="space-y-2 pt-0.5">
                           <div className="flex items-center gap-2">
                             <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
-                            <code className="text-xs font-mono text-foreground truncate">
+                            <code className="text-xs font-code text-foreground truncate">
                               {v.name}
                             </code>
                           </div>
@@ -356,7 +356,7 @@ export function VariablesSidebar({
                             value={editDefault}
                             onChange={(e) => setEditDefault(e.target.value)}
                             placeholder="Default value (optional)"
-                            className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           />
                           <input
                             type="text"
@@ -366,7 +366,7 @@ export function VariablesSidebar({
                               if (e.key === "Enter") handleUpdateCustomVariable(v.id);
                             }}
                             placeholder="Description (optional)"
-                            className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           />
                           <div className="flex items-center gap-1.5">
                             <Button size="sm" className="h-6 px-2 text-xs" onClick={() => handleUpdateCustomVariable(v.id)}>
@@ -382,17 +382,17 @@ export function VariablesSidebar({
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
-                              <code className="text-xs font-mono text-foreground truncate">
+                              <code className="text-xs font-code text-foreground truncate">
                                 {v.name}
                               </code>
                             </div>
                             {v.default && (
-                              <p className="ml-4 mt-0.5 truncate text-[11px] text-muted-foreground">
+                              <p className="ml-4 mt-0.5 truncate text-caption text-muted-foreground">
                                 default: {v.default}
                               </p>
                             )}
                             {v.description && (
-                              <p className="ml-4 truncate text-[11px] text-muted-foreground">
+                              <p className="ml-4 truncate text-caption text-muted-foreground">
                                 {v.description}
                               </p>
                             )}
@@ -444,18 +444,18 @@ export function VariablesSidebar({
 
       {/* Quick insert section */}
       {allVariables.length > 0 && (
-        <div className="border-t p-3">
-          <p className="text-xs text-muted-foreground mb-2">Quick insert</p>
-          <div className="flex flex-wrap gap-1">
+        <div className="border-t border-border p-3">
+          <p className="text-caption text-muted-foreground mb-2">Quick insert</p>
+          <div className="flex flex-wrap gap-1.5">
             {allVariables.slice(0, 8).map((name) => (
               <button
                 key={name}
                 onClick={() => handleInsert(name)}
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-mono transition-colors",
+                  "rounded-full px-2.5 py-0.5 text-xs font-code transition-colors duration-150",
                   isExtracted(name)
-                    ? "bg-green-500/10 text-green-700 hover:bg-green-500/20"
-                    : "bg-blue-500/10 text-blue-700 hover:bg-blue-500/20"
+                    ? "bg-success/10 text-success hover:bg-success/20"
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
                 )}
               >
                 {`{{${name}}}`}
@@ -514,7 +514,7 @@ function DetectedVariableRow({
   }, [expanded]);
 
   return (
-    <div className="rounded-md">
+    <div className="rounded-[6px]">
       <div
         role="button"
         tabIndex={0}
@@ -528,7 +528,7 @@ function DetectedVariableRow({
           }
         }}
         className={cn(
-          "group flex items-center justify-between rounded-md px-2 py-1.5 transition-colors cursor-pointer",
+          "group flex items-center justify-between rounded-[6px] px-2 py-1.5 transition-colors duration-150 cursor-pointer",
           expanded ? "bg-muted/60" : "hover:bg-muted/50"
         )}
       >
@@ -554,19 +554,19 @@ function DetectedVariableRow({
             )}
             title={hasValue ? "Has a saved value" : "No value set"}
           />
-          <code className="text-xs font-mono text-foreground truncate">
+          <code className="text-xs font-code text-foreground truncate">
             {variable.name}
           </code>
           {/* Filled-row preview: truncated value so the user sees which vars are
               populated without expanding every row. */}
           {hasValue && (
-            <span className="truncate text-[11px] text-muted-foreground max-w-[120px]">
+            <span className="truncate text-caption text-muted-foreground max-w-[120px]">
               · {savedValue.length > 24 ? `${savedValue.slice(0, 24)}…` : savedValue}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1">
-          <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-xs font-medium text-green-600">
+          <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-xs font-medium text-success">
             {usageCount}
           </span>
           <Button
@@ -597,14 +597,14 @@ function DetectedVariableRow({
             placeholder={`Enter a value for {{${variable.name}}}…`}
             rows={3}
             className={cn(
-              "w-full resize-y rounded-md border border-input bg-background px-2 py-1.5 text-xs",
+              "w-full resize-y rounded-[6px] border border-input bg-background px-2 py-1.5 text-xs shadow-macos-inset",
               "ring-offset-background placeholder:text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               promptId === null && "opacity-60"
             )}
             disabled={promptId === null}
           />
-          <p className={cn("mt-1 text-[10px]", promptId === null ? "text-amber-500" : "text-muted-foreground")}>
+          <p className={cn("mt-1 text-caption", promptId === null ? "text-warning" : "text-muted-foreground")}>
             {promptId === null
               ? "Save the prompt first to store variable values."
               : "Autosaves as you type · drag the corner to resize"}

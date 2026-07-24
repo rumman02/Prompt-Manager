@@ -183,7 +183,7 @@ export const PromptActionsMenu = forwardRef<
             ref={menuRef}
             style={menuStyle}
             onMouseDown={stop}
-            className="rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg"
+            className="rounded-[10px] border border-border bg-popover/90 backdrop-blur-xl p-1 text-popover-foreground shadow-macos-popover"
           >
             <MenuItem icon={ICON.pencil} onClick={handleEdit}>
               Edit
@@ -226,10 +226,10 @@ function DefaultActions({
     <button
       ref={triggerRef as React.RefObject<HTMLButtonElement>}
       onClick={onTriggerClick}
-      className="flex h-8 w-8 shrink-0 items-center justify-center overflow-visible rounded-md text-foreground/80 hover:bg-accent hover:text-foreground transition-colors"
+      className="flex h-7 w-7 shrink-0 items-center justify-center overflow-visible rounded-[6px] text-foreground/70 hover:bg-muted hover:text-foreground transition-colors duration-150"
       title="More options"
     >
-      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
         <path d={ICON.dots} />
       </svg>
     </button>
@@ -259,7 +259,7 @@ function MenuItem({
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors ${
+      className={`flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 text-left text-subheadline transition-colors duration-150 ${
         destructive
           ? "text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
           : "hover:bg-muted focus:bg-muted"
