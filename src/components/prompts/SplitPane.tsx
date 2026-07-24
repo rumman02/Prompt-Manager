@@ -94,7 +94,7 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
     <div
       role="tablist"
       aria-label="Pane views"
-      className="flex shrink-0 items-center gap-0.5 border-b border-border bg-muted/40 px-1 py-0.5"
+      className="flex shrink-0 items-end gap-px bg-muted/40 px-1 pt-1"
     >
       {VIEWS.map((v) => {
         const active = v.id === view;
@@ -106,11 +106,15 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
             onClick={() => onSwitch(v.id)}
             title={v.label}
             className={cn(
-              "flex h-7 items-center gap-1.5 rounded-[6px] px-2.5 text-xs font-medium transition-all duration-150",
+              // Chrome-style tab: rounded top corners, flat bottom; active tab
+              // lifts up and overlaps the content border so it visually connects
+              // to the panel, inactive tabs sit slightly recessed/muted.
+              "relative flex h-[30px] items-center gap-1.5 rounded-t-[8px] px-3 text-xs font-medium transition-all duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+              "border border-b-0",
               active
-                ? "bg-background text-foreground shadow-macos-button"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                ? "border-border bg-card text-foreground z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.04)] after:absolute after:left-0 after:-bottom-px after:h-0.5 after:w-full after:bg-card after:content-['']"
+                : "border-transparent bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -120,7 +124,7 @@ function PaneTabStrip({ view, canClose, onSwitch, onSplit, onClose }: PaneTabStr
           </button>
         );
       })}
-      <div className="ml-auto flex items-center gap-0.5">
+      <div className="ml-auto flex items-center gap-0.5 pb-[3px]">
         <button
           onClick={onSplit}
           title="Split pane"
@@ -280,7 +284,7 @@ function Node({
           onSplit={() => onSplitPane(path)}
           onClose={() => onClosePane(path)}
         />
-        <div className="flex-1 overflow-auto">{renderPane(node.view)}</div>
+        <div className="flex-1 overflow-auto border-t border-border">{renderPane(node.view)}</div>
       </div>
     );
   }
