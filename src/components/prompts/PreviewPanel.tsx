@@ -131,7 +131,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
       <div className="flex-1 overflow-auto">
         <div
           aria-label="Compiled prompt preview"
-          className="markdown-preview m-3 rounded-xl border border-code-border bg-code-bg px-4 py-3"
+          className="markdown-preview m-3 rounded-xl bg-code-bg px-4 py-3"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>

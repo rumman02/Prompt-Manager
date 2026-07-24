@@ -308,7 +308,7 @@ export function PromptEditorPage({
       switch (view) {
         case "edit":
           return (
-            <div className="flex-1 overflow-auto px-6 py-5">
+            <div className="min-h-0 overflow-auto px-6 py-5">
               <div className="space-y-1">
                 <FieldLabel htmlFor="title">Title</FieldLabel>
                 <FormInput
@@ -328,7 +328,6 @@ export function PromptEditorPage({
                     value={content}
                     onChange={setContent}
                     placeholder={"Write your prompt here. Markdown is supported (headings, bold, lists, code, links…).\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
-                    rows={14}
                     className="min-h-[260px]"
                     ref={contentTextareaRef}
                   />
@@ -345,7 +344,7 @@ export function PromptEditorPage({
                       value={description}
                       onChange={setDescription}
                       placeholder="Brief description of this prompt..."
-                      className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                      className="text-meta border-transparent bg-transparent px-2 py-1.5 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
                     />
                   </div>
 
@@ -358,7 +357,7 @@ export function PromptEditorPage({
                         onChange={setCategory}
                         placeholder="e.g. Writing, Coding…"
                         list="category-suggestions"
-                        className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                        className="text-meta border-transparent bg-transparent px-2 py-1.5 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
                       />
                       <datalist id="category-suggestions">
                         {categories.map((cat) => (
@@ -374,7 +373,7 @@ export function PromptEditorPage({
                         value={tags}
                         onChange={setTags}
                         placeholder="comma, separated, tags"
-                        className="text-meta border-transparent bg-transparent px-0 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
+                        className="text-meta border-transparent bg-transparent px-2 py-1.5 focus-visible:ring-0 focus-visible:border-b focus-visible:border-[hsl(var(--border))]"
                       />
                     </div>
                   </div>
@@ -499,9 +498,10 @@ export function PromptEditorPage({
         </div>
       )}
 
-      {/* Split-pane editor area. rounded-r-xl: right corners only; border-r-0 so
-          the rightmost pane docks flush against the window edge. */}
-      <div className="flex flex-1 min-h-0 rounded-r-xl border border-r-0 border-border bg-card">
+      {/* Split-pane editor area. No outer frame — the per-pane tab strips and
+          their content borders define the panels, so the whole editor sits
+          flush and matches the rest of the page. */}
+      <div className="flex flex-1 min-h-0 rounded-r-xl bg-card">
         <SplitPane
           layout={layout}
           paneCount={count}

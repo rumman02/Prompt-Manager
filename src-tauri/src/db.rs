@@ -762,7 +762,7 @@ impl Database {
             ),
             (
                 "Blog Post Writer",
-                "Write a comprehensive blog post about {topic}. The post should:\n- Have an engaging headline\n- Include an introduction that hooks the reader\n- Contain 3-5 main sections with subheadings\n- Use examples and data to support claims\n- End with a strong conclusion and call-to-action\n- Be approximately {word_count} words\n- Target audience: {audience}\n\nTone: {tone}",
+                "Write a comprehensive blog post about {topic}. The post should:\n- Have an engaging headline\n- Include an introduction that hooks the reader\n- Contain 3-5 main sections with subheadings\n- Use examples and data to support claims\n- End with a strong conclusion and call-to-action\n- Be approximately {word_count} words\n- Target audience: {audience}\nTone: {tone}",
                 Some("Writing"),
                 Some("blog,content,seo"),
                 Some("Generates SEO-optimized blog posts with structured sections"),

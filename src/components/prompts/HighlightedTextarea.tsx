@@ -70,28 +70,34 @@ export const HighlightedTextarea = ({ value, onChange, className, ref, ...rest }
     return parts;
   }, [value]);
 
+  // The backdrop (highlight overlay) and the textarea are stacked in a single
+  // CSS grid cell. Because neither is absolutely positioned, the textarea's
+  // own height drives the wrapper's height — so the resize-y handle actually
+  // grows/shrinks the whole control (and the panel scrolls to absorb it)
+  // instead of being capped by a fixed parent height.
   return (
-    <div className={cn("code-zone relative w-full overflow-hidden rounded-[6px] border border-code-border bg-code-bg", className)}>
-      {/* thin accent rule on the left edge — marks this as the instrument */}
-      <span className="pointer-events-none absolute inset-y-0 left-0 w-[3px] rounded-l-[6px] bg-[hsl(var(--code-accent)/0.55)]" aria-hidden />
-      {/* highlight backdrop */}
-      <pre
-        ref={backdropRef}
-        aria-hidden
-        className="pointer-events-none m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-transparent"
-      >
-        {renderHighlighted}
-      </pre>
-      {/* actual input, layered on top */}
-      <textarea
-        {...rest}
-        ref={ref}
-        value={value}
-        onScroll={handleScroll}
-        onChange={(e) => onChange(e.target.value)}
-        spellCheck={false}
-        className="code-zone absolute inset-0 m-0 h-full w-full resize-y whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground"
-      />
+    <div className={cn("code-zone relative w-full overflow-auto rounded-[6px] border border-code-border bg-code-bg", className)}>
+      <div className="grid">
+        {/* highlight backdrop — same cell as the textarea, scrolls with it */}
+        <pre
+          ref={backdropRef}
+          aria-hidden
+          className="pointer-events-none m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-transparent [grid-area:1/1]"
+        >
+          {renderHighlighted}
+        </pre>
+        {/* actual input, layered on top. resize-y grows the textarea, which
+            grows the shared grid row and thus the wrapper itself. */}
+        <textarea
+          {...rest}
+          ref={ref}
+          value={value}
+          onScroll={handleScroll}
+          onChange={(e) => onChange(e.target.value)}
+          spellCheck={false}
+          className="code-zone m-0 w-full resize-y whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground [grid-area:1/1]"
+        />
+      </div>
     </div>
   );
 };
