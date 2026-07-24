@@ -148,6 +148,7 @@ export function PromptEditorPage({
             />
           </svg>
         }
+        backButton={{ label: "Back", onClick: onBack }}
         title={isEditing ? "Edit Prompt" : "Create New Prompt"}
         subtitle={
           isEditing
@@ -228,21 +229,13 @@ export function PromptEditorPage({
         </div>
       )}
 
-      {/* Back button row */}
-      <div className="px-6 pt-4">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-          Back to Prompts
-        </button>
-      </div>
-
-      {/* Main editor area — content fills all space; right panel is the only sidebar. */}
-      <div ref={editorContainerRef} className="flex flex-1 min-h-0 rounded-xl border bg-card">
+      {/* Main editor area — content fills all space; right panel is the only sidebar.
+          rounded-r-xl: only the right corners are rounded. The left corners sit
+          flush against the main sidebar (no radius, no gap).
+          border-r-0: the right edge has no border — the History/Variables panel
+          docks flush against the window edge, so the container's right border would
+          otherwise stack with the panel's own edge into a visible double line. */}
+      <div ref={editorContainerRef} className="flex flex-1 min-h-0 rounded-r-xl border border-r-0 bg-card">
         {/* Main editor content — flex-1 so it expands when no panel is docked on the left. */}
         <div className="flex flex-1 flex-col min-w-0">
           <div className="flex-1 overflow-auto px-6 py-5">
