@@ -124,6 +124,8 @@
 .code-zone {
   font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
   font-feature-settings: "liga" 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
 }
 
 /* ── Apple text styles (HIG type scale) ── */
@@ -184,9 +186,9 @@
   color: hsl(var(--text-secondary));
 }
 
-/* code-zone focus ring — applied to the wrapper when the textarea is focused */
+/* code-zone focus — applied to the wrapper when the textarea is focused.
+   Minimal: a 1px accent border, no glow/box-shadow. */
 .code-zone:focus-within {
-  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
   border-color: hsl(var(--code-accent) / 0.8);
 }
 
