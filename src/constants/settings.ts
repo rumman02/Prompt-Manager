@@ -81,3 +81,24 @@ export const LANDING_PAGES: LandingPageOption[] = [
   { value: "categories", label: "Categories", description: "Browse prompts by category" },
   { value: "tags", label: "Tags", description: "Browse prompts by tags" },
 ];
+
+export const FONT_FAMILIES = [
+  { value: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif", label: "System Default" },
+  { value: "Georgia, 'Times New Roman', serif", label: "Georgia" },
+  { value: "'Helvetica Neue', Arial, Helvetica, sans-serif", label: "Helvetica" },
+] as const;
+
+export const EDITOR_FONT_FAMILIES = [
+  { value: "'SF Mono', SFMono-Regular, ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace", label: "System Mono" },
+  { value: "'Courier New', Courier, monospace", label: "Courier New" },
+] as const;
+
+export const FONT_SIZES = [
+  { value: "0.75rem", label: "12px" },
+  { value: "0.8125rem", label: "13px" },
+  { value: "0.875rem", label: "14px" },
+  { value: "0.9375rem", label: "15px" },
+  { value: "1rem", label: "16px" },
+  { value: "1.125rem", label: "18px" },
+  { value: "1.25rem", label: "20px" },
+] as const;

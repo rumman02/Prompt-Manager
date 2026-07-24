@@ -15,6 +15,12 @@ export interface Settings {
   editorLayout: import("@/constants/settings").LayoutNode | null;
   /** Orientation that the next split will use. */
   editorSplitOrientation: import("@/constants/settings").LayoutOrientation;
+  /** UI font family */
+  fontFamily: string;
+  /** Editor / monospace font family */
+  editorFontFamily: string;
+  /** Base font size (rem) */
+  fontSize: string;
 }
 
 interface SettingsContextType {
@@ -33,6 +39,9 @@ const defaultSettings: Settings = {
   trashTimeoutUnit: "days",
   editorLayout: null,
   editorSplitOrientation: "h",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif",
+  editorFontFamily: "'SF Mono', SFMono-Regular, ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace",
+  fontSize: "0.875rem",
 };
 
 const STORAGE_KEY = "prompt-manager-settings";
@@ -166,6 +175,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty("--primary-foreground", `${h} ${s > 0 ? 40 : 0}% ${foregroundL}%`);
   }, [settings.accentColor, settings.theme]);
 
+  // Apply font settings
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--font-ui", settings.fontFamily);
+    root.style.setProperty("--font-editor", settings.editorFontFamily);
+    root.style.setProperty("--font-size-base", settings.fontSize);
+  }, [settings.fontFamily, settings.editorFontFamily, settings.fontSize]);
+
   const updateSettings = useCallback((partial: Partial<Settings>) => {
     setSettings((prev) => ({ ...prev, ...partial }));
   }, []);
@@ -175,6 +192,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // Clear inline styles so CSS defaults take over
     document.documentElement.style.removeProperty("--primary");
     document.documentElement.style.removeProperty("--primary-foreground");
+    document.documentElement.style.removeProperty("--font-ui");
+    document.documentElement.style.removeProperty("--font-editor");
+    document.documentElement.style.removeProperty("--font-size-base");
   }, []);
 
   return (

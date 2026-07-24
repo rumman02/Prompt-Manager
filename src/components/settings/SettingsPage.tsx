@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { useSettings, type LandingPage } from "@/contexts/SettingsContext";
-import { ACCENT_PRESETS, LANGUAGES, DATE_FORMATS, LANDING_PAGES } from "@/constants/settings";
+import { ACCENT_PRESETS, LANGUAGES, DATE_FORMATS, LANDING_PAGES, FONT_FAMILIES, EDITOR_FONT_FAMILIES, FONT_SIZES } from "@/constants/settings";
 
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -154,6 +154,62 @@ export function SettingsPage() {
                   <span className="text-xs font-medium capitalize">{mode}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label className="text-subheadline">UI Font</Label>
+                <p className="text-footnote mt-0.5">Application interface font family</p>
+              </div>
+              <Select
+                value={settings.fontFamily}
+                onChange={(e) => updateSettings({ fontFamily: e.target.value })}
+                className="w-48"
+              >
+                {FONT_FAMILIES.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </Select>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label className="text-subheadline">Editor Font</Label>
+                <p className="text-footnote mt-0.5">Code editor monospace font</p>
+              </div>
+              <Select
+                value={settings.editorFontFamily}
+                onChange={(e) => updateSettings({ editorFontFamily: e.target.value })}
+                className="w-48"
+              >
+                {EDITOR_FONT_FAMILIES.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </Select>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label className="text-subheadline">Base Font Size</Label>
+                <p className="text-footnote mt-0.5">Scale the app's text size</p>
+              </div>
+              <Select
+                value={settings.fontSize}
+                onChange={(e) => updateSettings({ fontSize: e.target.value })}
+                className="w-28"
+              >
+                {FONT_SIZES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </Select>
             </div>
           </div>
         </CardContent>
