@@ -4,7 +4,6 @@ pub mod db;
 
 
 pub use db::Database;
-use tauri::Manager;
 
 fn init_db(app_handle: tauri::AppHandle) -> Result<(), String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;

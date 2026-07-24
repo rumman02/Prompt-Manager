@@ -1,6 +1,5 @@
 use rusqlite::{Connection, Result, Row};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
