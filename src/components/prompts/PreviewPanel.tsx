@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { renderCompiledMarkdown } from "@/lib/markdown";
 import type { RenderedMarkdown } from "@/lib/markdown";
+import { copyToClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
 import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 
@@ -14,6 +15,9 @@ interface PreviewPanelProps {
 
 export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false);
+  // false = rendered Markdown preview, true = raw compiled Markdown source.
+  // Persists across re-renders so the user's choice sticks while editing.
+  const [showRaw, setShowRaw] = useState(false);
 
   // One compile pass yields the raw text (for clipboard), the sanitized +
   // variable-highlighted HTML (for rendering), and the unfilled list (for the
@@ -25,46 +29,16 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
   );
 
   const handleCopy = useCallback(async () => {
-    let wrote = false;
-    try {
-      // Primary path: Tauri's clipboard plugin works in the webview regardless
-      // of secure-context restrictions that gate navigator.clipboard.
-      const { writeText } = await import("@tauri-apps/plugin-clipboard-manager");
-      await writeText(text);
-      wrote = true;
-    } catch (pluginErr) {
-      // Plugin unavailable (e.g. running in a plain browser). Fall back to the
-      // Web Clipboard API, then to the legacy textarea + execCommand hack for
-      // non-secure contexts.
-      console.warn("Tauri clipboard plugin unavailable, falling back:", pluginErr);
-      try {
-        await navigator.clipboard.writeText(text);
-        wrote = true;
-      } catch {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.style.position = "fixed";
-        textarea.style.opacity = "0";
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand("copy");
-          wrote = true;
-        } catch (execErr) {
-          console.error("Clipboard execCommand fallback failed:", execErr);
-        }
-        document.body.removeChild(textarea);
-      }
-    }
+    const wrote = await copyToClipboard(text);
     if (!wrote) {
       toast.error("Couldn't copy to clipboard");
       return;
     }
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
 
-    // Non-blocking heads-up: copy always succeeds, but if anything is unfilled
-    // the user should know the {{placeholders} made it onto their clipboard.
+    // Non-blocking heads-up: copy succeeded, but if anything is unfilled the user
+    // should know the {{placeholders}} made it onto their clipboard.
     if (unfilled.length > 0) {
       toast(
         unfilled.length === 1
@@ -96,9 +70,20 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
           text uses the app's UI font (not monospace); only code spans/blocks do.
           The raw compiled Markdown (not this HTML) is what Copy puts on the clipboard.
           The copy button floats top-right over the content so it stays anchored to
-          what it copies, not stranded in a header bar. */}
+          what it copies, not stranded in a header bar. The Raw/Formatted toggle
+          sits flush left of the copy button — same row, same chrome. */}
       <div className="relative flex-1 overflow-auto">
-        <div className="absolute right-3 top-3 z-10">
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="bg-card/80 backdrop-blur"
+            onClick={() => setShowRaw((v) => !v)}
+            aria-pressed={showRaw}
+            aria-label={showRaw ? "Show formatted preview" : "Show raw Markdown"}
+          >
+            {showRaw ? "Formatted" : "Raw"}
+          </Button>
           <Button
             size="sm"
             variant="secondary"
@@ -123,11 +108,20 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
             )}
           </Button>
         </div>
-        <div
-          aria-label="Compiled prompt preview"
-          className="markdown-preview m-3 rounded-xl bg-code-bg px-4 py-3"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        {showRaw ? (
+          <pre
+            aria-label="Raw compiled Markdown"
+            className="m-3 whitespace-pre-wrap rounded-xl bg-code-bg px-4 py-3 font-code text-sm leading-relaxed text-foreground"
+          >
+            {text}
+          </pre>
+        ) : (
+          <div
+            aria-label="Compiled prompt preview"
+            className="markdown-preview m-3 rounded-xl bg-code-bg px-4 py-3"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
       </div>
     </div>
   );

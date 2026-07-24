@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+import { copyToClipboard } from "@/lib/clipboard";
+import { toast } from "sonner";
 import type { PromptRow } from "@/types";
 
 interface PromptViewerProps {
@@ -18,20 +20,13 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
   if (!prompt) return null;
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(prompt.content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = prompt.content;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    const wrote = await copyToClipboard(prompt.content);
+    if (!wrote) {
+      toast.error("Couldn't copy to clipboard");
+      return;
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const handleDelete = () => {
