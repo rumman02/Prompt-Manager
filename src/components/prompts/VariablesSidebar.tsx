@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 
 interface VariablesSidebarProps {
   content: string;
@@ -199,16 +200,15 @@ export function VariablesSidebar({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
-      {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
-        <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01" />
-        </svg>
-        <span className="text-subheadline font-semibold">Variables</span>
-        <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {allVariables.length}
+      {/* Status bar — mirrors the Preview/Edit top bar so panels sitting
+          side-by-side read as one system. */}
+      <PanelStatusBar>
+        <span className="font-medium">Variables</span>
+        <span aria-hidden className="h-3 w-px bg-border" />
+        <span>
+          {allVariables.length} variable{allVariables.length === 1 ? "" : "s"} detected
         </span>
-      </div>
+      </PanelStatusBar>
 
       {/* Add custom variable */}
       <div className="border-b border-border p-3 space-y-2">

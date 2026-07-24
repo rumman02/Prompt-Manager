@@ -20,7 +20,9 @@ import {
 } from "@/components/prompts/SplitPane";
 import { useSettings } from "@/contexts/SettingsContext";
 import { usePrompts } from "@/hooks/usePrompts";
+import { getContentStats } from "@/lib/utils";
 import type { PromptRow, PromptVersion } from "@/types";
+import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 
 // micro-label used above each field for a consistent, tracked-out technical feel
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -28,6 +30,58 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.Re
     <label htmlFor={htmlFor} className="text-eyebrow block">
       {children}
     </label>
+  );
+}
+
+// Compact status bar for the Meta pane — a one-line summary of the prompt's
+// metadata so the Meta tab's top bar aligns with Edit/Preview/Variables/History.
+function MetaStatsBar({
+  category,
+  tags,
+}: {
+  category: string;
+  tags: string;
+}) {
+  const tagCount = tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean).length;
+  const items = [
+    `Category: ${category.trim() || "None"}`,
+    `${tagCount} tag${tagCount === 1 ? "" : "s"}`,
+  ];
+  return (
+    <PanelStatusBar>
+      {items.map((label, i) => (
+        <span key={i} className="flex items-center gap-x-2.5">
+          {i > 0 && <span aria-hidden className="h-3 w-px bg-border" />}
+          <span>{label}</span>
+        </span>
+      ))}
+    </PanelStatusBar>
+  );
+}
+
+// Slim status bar shown above the editor in the Edit pane. Recomputes on every
+// `content` change (the work is trivial) so the counts track typing live.
+function EditStatsBar({ content }: { content: string }) {
+  const stats = getContentStats(content);
+  const items = [
+    `${stats.words} word${stats.words === 1 ? "" : "s"}`,
+    `${stats.tokens} token${stats.tokens === 1 ? "" : "s"}`,
+    `${stats.sentences} sentence${stats.sentences === 1 ? "" : "s"}`,
+    `${stats.paragraphs} paragraph${stats.paragraphs === 1 ? "" : "s"}`,
+    `${stats.variables} variable${stats.variables === 1 ? "" : "s"}`,
+  ];
+  return (
+    <PanelStatusBar>
+      {items.map((label, i) => (
+        <span key={i} className="flex items-center gap-x-2.5">
+          {i > 0 && <span aria-hidden className="h-3 w-px bg-border" />}
+          <span className="tabular-nums">{label}</span>
+        </span>
+      ))}
+    </PanelStatusBar>
   );
 }
 
@@ -308,7 +362,13 @@ export function PromptEditorPage({
       switch (view) {
         case "edit":
           return (
-            <div className="h-full p-4">
+            <div className="flex h-full flex-col">
+              {/* Live stats bar — word / token / sentence / paragraph / variable
+                  counts update as the user types, mirroring a code editor's
+                  status bar. Shares PanelStatusBar chrome with the Preview pane's
+                  unfilled-variables helper so the two top bars align. */}
+              <EditStatsBar content={content} />
+              <div className="min-h-0 flex-1 px-3 py-2">
               <HighlightedTextarea
                 id="content"
                 value={content}
@@ -318,11 +378,14 @@ export function PromptEditorPage({
                 className="h-full"
                 ref={contentTextareaRef}
               />
+              </div>
             </div>
           );
         case "meta":
           return (
-            <div className="min-h-0 overflow-auto px-6 py-5">
+            <div className="flex h-full flex-col">
+              <MetaStatsBar category={category} tags={tags} />
+              <div className="min-h-0 overflow-auto px-6 py-5">
               <div className="space-y-4">
                 <div className="space-y-1">
                   <FieldLabel htmlFor="title">Title</FieldLabel>
@@ -381,6 +444,7 @@ export function PromptEditorPage({
                     <TagPreview tags={tags} />
                   </div>
                 )}
+              </div>
               </div>
             </div>
           );

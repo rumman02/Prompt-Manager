@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { PromptVersion } from "@/types";
+import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 
 interface VersionHistorySidebarProps {
   promptId: number | null;
@@ -131,16 +132,15 @@ export function VersionHistorySidebar({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
-      {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
-        <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d={ICON.history} />
-        </svg>
-        <span className="text-subheadline font-semibold">History</span>
-        <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {versions.length}
+      {/* Status bar — mirrors the Preview/Edit top bar so panels sitting
+          side-by-side read as one system. */}
+      <PanelStatusBar>
+        <span className="font-medium">History</span>
+        <span aria-hidden className="h-3 w-px bg-border" />
+        <span>
+          {versions.length} version{versions.length === 1 ? "" : "s"}
         </span>
-      </div>
+      </PanelStatusBar>
 
       {/* Save new version */}
         {isEditing && (

@@ -40,6 +40,8 @@ export interface ContentStats {
   words: number;
   sentences: number;
   paragraphs: number;
+  /** Number of distinct {{variable}} placeholders detected in the content. */
+  variables: number;
 }
 
 // Matches {{variable_name}} placeholders. Shared by the editor highlight
@@ -81,13 +83,27 @@ export function compilePrompt(content: string, variableValues: Record<string, st
   return { text, unfilled };
 }
 
+/**
+ * Lightweight content metrics for the editor status bar. Token count is an
+ * approximation (~1.33 tokens per word, the common GPT-style rule of thumb)
+ * — good enough for a live characterisation of the prompt, not billing-grade.
+ */
 export function getContentStats(text: string): ContentStats {
   if (!text || text.trim().length === 0) {
-    return { tokens: 0, words: 0, sentences: 0, paragraphs: 0 };
+    return { tokens: 0, words: 0, sentences: 0, paragraphs: 0, variables: 0 };
   }
   const words = text.trim().split(/\s+/).length;
   const sentences = (text.match(/[.!?]+/g) || []).length || (words > 0 ? 1 : 0);
   const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0).length || (words > 0 ? 1 : 0);
   const tokens = Math.ceil(words * 1.33);
-  return { tokens, words, sentences, paragraphs };
+  // Distinct {{variable}} placeholders, matching the shared VARIABLE_TOKEN_RE
+  // used by the editor highlight overlay, variables sidebar, and preview
+  // compiler — so the count can't drift from what those surfaces report.
+  const seen = new Set<string>();
+  let m: RegExpExecArray | null;
+  VARIABLE_TOKEN_RE.lastIndex = 0;
+  while ((m = VARIABLE_TOKEN_RE.exec(text)) !== null) {
+    seen.add(m[1]);
+  }
+  return { tokens, words, sentences, paragraphs, variables: seen.size };
 }
