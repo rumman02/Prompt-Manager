@@ -17,6 +17,7 @@ src-tauri/Cargo.lock
 .env.local
 
 # AI tool config
+.agents/
 .claude/
 .pi/
 AGENTS.md
