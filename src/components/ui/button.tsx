@@ -3,21 +3,21 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-/* macOS push button: rounded-10, subtle shadow, accent fill for primary,
+/* macOS push button: rounded-md (8px), subtle shadow, accent fill for primary,
    bordered-secondary for ghost, spring-feel press animation, focus ring. */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-macos-button hover:bg-primary/90 active:brightness-95",
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 active:brightness-95",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-macos-button hover:bg-destructive/90 active:brightness-95",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:brightness-95",
         outline:
-          "border border-input bg-background shadow-macos-button hover:bg-accent hover:text-accent-foreground active:brightness-95",
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:brightness-95",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-macos-button hover:bg-secondary/80 active:brightness-95",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:brightness-95",
         ghost:
           "hover:bg-accent hover:text-accent-foreground",
         link:
@@ -25,8 +25,8 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-8 px-4 py-1.5",        /* 32pt — macOS standard control */
-        sm: "h-7 rounded-[8px] px-3 text-xs",  /* 28pt — small */
-        lg: "h-10 rounded-[10px] px-6",    /* 40pt — large */
+        sm: "h-7 rounded-sm px-3 text-xs",  /* 28pt — small */
+        lg: "h-10 rounded-md px-6",    /* 40pt — large */
         icon: "h-8 w-8",                    /* square icon button */
       },
     },

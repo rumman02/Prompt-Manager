@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
 import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 
 interface VariablesSidebarProps {
@@ -225,7 +226,7 @@ export function VariablesSidebar({
                 }
               }}
               placeholder="Add variable..."
-              className="flex-1 rounded-[6px] border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex-1 rounded-sm border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <Button
               size="sm"
@@ -235,13 +236,11 @@ export function VariablesSidebar({
               disabled={!canAdd}
               title="Add variable"
             >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
+              <Icon name="add" size="sm" />
             </Button>
           </div>
         ) : (
-          <div className="space-y-2 rounded-[10px] border border-input bg-background p-2">
+          <div className="space-y-2 rounded-lg border border-input bg-background p-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-foreground">New variable</span>
               <button
@@ -249,9 +248,7 @@ export function VariablesSidebar({
                 className="text-muted-foreground hover:text-foreground"
                 title="Cancel"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Icon name="close" size="sm" />
               </button>
             </div>
             <input
@@ -262,14 +259,14 @@ export function VariablesSidebar({
                 if (e.key === "Enter" && canAdd) handleAddVariable();
               }}
               placeholder="Variable name"
-              className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <input
               type="text"
               value={newDefault}
               onChange={(e) => setNewDefault(e.target.value)}
               placeholder="Default value (optional)"
-              className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <input
               type="text"
@@ -279,7 +276,7 @@ export function VariablesSidebar({
                 if (e.key === "Enter" && canAdd) handleAddVariable();
               }}
               placeholder="Description (optional)"
-              className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <Button
               size="sm"
@@ -300,9 +297,7 @@ export function VariablesSidebar({
       <div className="flex-1 overflow-auto">
         {allVariables.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <svg className="h-10 w-10 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
-            </svg>
+            <Icon name="variable" size="xl" className="text-muted-foreground/40" />
             <p className="mt-2 text-caption text-muted-foreground">
               No variables found. Add custom ones or use {"{{variable}}"} syntax.
             </p>
@@ -342,7 +337,7 @@ export function VariablesSidebar({
                 {customVariables
                   .filter((v) => !isExtracted(v.name))
                   .map((v) => (
-                    <div key={v.id} className="rounded-[6px] px-2 py-1.5 transition-colors duration-150 hover:bg-muted/50">
+                    <div key={v.id} className="rounded-sm px-2 py-1.5 transition-colors duration-150 hover:bg-muted/50">
                       {editingId === v.id ? (
                         <div className="space-y-2 pt-0.5">
                           <div className="flex items-center gap-2">
@@ -356,7 +351,7 @@ export function VariablesSidebar({
                             value={editDefault}
                             onChange={(e) => setEditDefault(e.target.value)}
                             placeholder="Default value (optional)"
-                            className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           />
                           <input
                             type="text"
@@ -366,7 +361,7 @@ export function VariablesSidebar({
                               if (e.key === "Enter") handleUpdateCustomVariable(v.id);
                             }}
                             placeholder="Description (optional)"
-                            className="w-full rounded-[6px] border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           />
                           <div className="flex items-center gap-1.5">
                             <Button size="sm" className="h-6 px-2 text-xs" onClick={() => handleUpdateCustomVariable(v.id)}>
@@ -405,9 +400,7 @@ export function VariablesSidebar({
                               onClick={() => handleInsert(v.name)}
                               title="Insert variable"
                             >
-                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                              </svg>
+                              <Icon name="add" size="xs" />
                             </Button>
                             <Button
                               size="sm"
@@ -416,9 +409,7 @@ export function VariablesSidebar({
                               onClick={() => startEditing(v)}
                               title="Edit variable"
                             >
-                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                              </svg>
+                              <Icon name="edit" size="xs" />
                             </Button>
                             <Button
                               size="sm"
@@ -427,9 +418,7 @@ export function VariablesSidebar({
                               onClick={() => handleRemoveCustomVariable(v.id)}
                               title="Remove variable"
                             >
-                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
+                              <Icon name="close" size="xs" />
                             </Button>
                           </div>
                         </div>
@@ -514,7 +503,7 @@ function DetectedVariableRow({
   }, [expanded]);
 
   return (
-    <div className="rounded-[6px]">
+    <div className="rounded-sm">
       <div
         role="button"
         tabIndex={0}
@@ -528,25 +517,20 @@ function DetectedVariableRow({
           }
         }}
         className={cn(
-          "group flex items-center justify-between rounded-[6px] px-2 py-1.5 transition-colors duration-150 cursor-pointer",
+          "group flex items-center justify-between rounded-sm px-2 py-1.5 transition-colors duration-150 cursor-pointer",
           expanded ? "bg-muted/60" : "hover:bg-muted/50"
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
           {/* Chevron affordance — rotates when expanded. */}
-          <svg
+          <Icon
+            name="chevronRight"
+            size="xs"
             className={cn(
-              "h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200",
+              "shrink-0 text-muted-foreground transition-transform duration-200",
               expanded && "rotate-90"
             )}
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
+          />
           <div
             className={cn(
               "h-2 w-2 rounded-full flex-shrink-0",
@@ -579,9 +563,7 @@ function DetectedVariableRow({
             }}
             title="Insert variable"
           >
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+            <Icon name="add" size="xs" />
           </Button>
         </div>
       </div>
@@ -597,7 +579,7 @@ function DetectedVariableRow({
             placeholder={`Enter a value for {{${variable.name}}}…`}
             rows={3}
             className={cn(
-              "w-full resize-y rounded-[6px] border border-input bg-background px-2 py-1.5 text-xs shadow-macos-inset",
+              "w-full resize-y rounded-sm border border-input bg-background px-2 py-1.5 text-xs shadow-macos-inset",
               "ring-offset-background placeholder:text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               promptId === null && "opacity-60"

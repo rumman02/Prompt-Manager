@@ -64,16 +64,25 @@ module.exports = {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",           /* 10pt */
-        md: "calc(var(--radius) - 2px)", /* 8pt */
-        sm: "calc(var(--radius) - 4px)", /* 6pt */
-        xl: "0.875rem",                /* 14pt — cards/sheets */
-        "2xl": "1.25rem",              /* 20pt — windows/modals */
+        /* Radius scale — applied by component type */
+        xs: "var(--radius-xs)",           /* 4px — token pills, inline badges */
+        sm: "var(--radius-sm)",           /* 6px — inputs, textareas */
+        md: "var(--radius-md)",           /* 8px — standard buttons, menu items */
+        lg: "var(--radius-lg)",           /* 10px — cards, nav items, search */
+        xl: "var(--radius-xl)",           /* 14px — panels, elevated surfaces */
+        "2xl": "var(--radius-2xl)",       /* 20px — modals, sheets */
+        full: "var(--radius-full)",       /* 9999px — avatars, circular controls */
       },
       boxShadow: {
-        'macos-window': '0 0 0 0.5px hsl(var(--border)), 0 2px 12px rgba(0, 0, 0, 0.08)',
-        'macos-popover': '0 0 0 0.5px hsl(var(--border)), 0 8px 32px rgba(0, 0, 0, 0.16)',
-        'macos-button': '0 1px 2px rgba(0, 0, 0, 0.06)',
+        /* Shadow scale — subtle, physically plausible */
+        'hairline': 'var(--shadow-hairline)',
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        /* Legacy aliases — TODO: migrate to scale */
+        'macos-window': 'var(--shadow-md)',
+        'macos-popover': 'var(--shadow-lg)',
+        'macos-button': 'var(--shadow-sm)',
         'macos-inset': 'inset 0 1px 2px rgba(0, 0, 0, 0.06)',
       },
       keyframes: {

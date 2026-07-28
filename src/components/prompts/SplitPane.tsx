@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
 
 /// Split-pane layout system for the prompt editor.
@@ -67,32 +68,12 @@ interface PaneTabStripProps {
   onClose: () => void;
 }
 
-const VIEWS: { id: ViewId; label: string; icon: string }[] = [
-  {
-    id: "preview",
-    label: "Preview",
-    icon: "M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
-  },
-  {
-    id: "meta",
-    label: "Meta",
-    icon: "M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z M6 6h.008v.008H6V6z",
-  },
-  {
-    id: "edit",
-    label: "Edit",
-    icon: "M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10",
-  },
-  {
-    id: "variables",
-    label: "Variables",
-    icon: "M4.745 2.25h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M4.745 21.75h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01m2.245 0h1.01M2.25 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01M21.75 4.745v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01m0 2.245v1.01",
-  },
-  {
-    id: "history",
-    label: "History",
-    icon: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z",
-  },
+const VIEWS: { id: ViewId; label: string; icon: IconName }[] = [
+  { id: "preview", label: "Preview", icon: "eye" },
+  { id: "meta", label: "Meta", icon: "file" },
+  { id: "edit", label: "Edit", icon: "edit" },
+  { id: "variables", label: "Variables", icon: "variable" },
+  { id: "history", label: "History", icon: "history" },
 ];
 
 function PaneTabStrip({
@@ -121,7 +102,7 @@ function PaneTabStrip({
               // Chrome-style tab: rounded top corners, flat bottom; active tab
               // lifts up and overlaps the content border so it visually connects
               // to the panel, inactive tabs sit slightly recessed/muted.
-              "relative flex h-[30px] items-center gap-1.5 rounded-t-[8px] px-3 text-xs font-medium transition-all duration-150",
+              "relative flex h-[30px] items-center gap-1.5 rounded-t-md px-3 text-xs font-medium transition-all duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
               "border border-b-0",
               active
@@ -129,9 +110,7 @@ function PaneTabStrip({
                 : "border-transparent bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d={v.icon} />
-            </svg>
+            <Icon name={v.icon} size="sm" />
             {v.label}
           </button>
         );
@@ -143,11 +122,9 @@ function PaneTabStrip({
             onClick={onClose}
             title="Close pane"
             aria-label="Close pane"
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground transition-colors duration-150 hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <Icon name="close" size="sm" />
           </button>
         )}
       </div>
@@ -166,22 +143,12 @@ export function OrientationToggle({ onSplit }: OrientationToggleProps) {
     {
       id: "h",
       label: "Split vertically",
-      icon: (
-        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15" />
-        </svg>
-      ),
+      icon: <Icon name="columns" size="sm" />,
     },
     {
       id: "v",
       label: "Split horizontally",
-      icon: (
-        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12h15" />
-        </svg>
-      ),
+      icon: <Icon name="rows" size="sm" />,
     },
   ];
   return (
@@ -198,7 +165,7 @@ export function OrientationToggle({ onSplit }: OrientationToggleProps) {
             title={o.label}
             aria-label={o.label}
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-[6px] transition-all duration-150",
+              "flex h-7 w-7 items-center justify-center rounded-md transition-all duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
               "text-muted-foreground hover:text-foreground hover:bg-muted",
             )}

@@ -7,6 +7,7 @@ import { HighlightedTextarea } from "@/components/prompts/HighlightedTextarea";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
 import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
 import { PreviewPanel } from "@/components/prompts/PreviewPanel";
+import { Icon } from "@/components/ui/icon";
 import {
   SplitPane,
   makePane,
@@ -358,7 +359,7 @@ export function PromptEditorPage({
                 id="content"
                 value={content}
                 onChange={setContent}
-                placeholder={"Write your prompt here. Markdown is supported (headings, bold, lists, code, links…).\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
+                placeholder={"Write your prompt here. Markdown is supported (headings, bold, lists, code, links).\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
                 fill
                 className="h-full"
                 ref={contentTextareaRef}
@@ -485,21 +486,7 @@ export function PromptEditorPage({
   return (
     <div className="flex h-full flex-col">
       <PageHeader
-        icon={
-          <svg
-            className="h-5 w-5 text-primary"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
-            />
-          </svg>
-        }
+        icon="edit"
         backButton={{ label: "Back", onClick: onBack }}
         title={isEditing ? "Edit Prompt" : "Create New Prompt"}
         subtitle={
@@ -522,18 +509,14 @@ export function PromptEditorPage({
       {saveError && (
         <div
           role="alert"
-          className="mx-6 mt-4 flex items-start gap-2 rounded-[10px] border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          className="mx-6 mt-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
         >
-          <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
+          <Icon name="alert" size="md" className="mt-0.5 shrink-0" />
           <div className="flex-1">
             <span className="font-medium">Failed to save:</span> {saveError}
           </div>
           <button onClick={() => setSaveError(null)} className="text-destructive/70 hover:text-destructive" aria-label="Dismiss error">
-            ✕
+            <Icon name="close" size="sm" />
           </button>
         </div>
       )}

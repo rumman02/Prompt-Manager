@@ -1,61 +1,18 @@
-import {
-  IconRobot,
-  IconBolt,
-  IconFileText,
-  IconFolder,
-  IconHeart,
-  IconTag,
-  IconTrash,
-} from "@tabler/icons-react";
+import type { IconName } from "@/components/ui/icon";
 
 export interface StatConfig {
   title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bgColor: string;
+  icon: IconName;
+  /** Restrained accent — uses the single primary accent, not rainbow palette */
+  accent?: boolean;
 }
 
 export const STAT_CONFIGS: StatConfig[] = [
-  {
-    title: "Agents",
-    icon: IconRobot,
-    color: "text-violet-600",
-    bgColor: "bg-violet-50",
-  },
-  {
-    title: "Skills",
-    icon: IconBolt,
-    color: "text-rose-600",
-    bgColor: "bg-rose-50",
-  },
-  {
-    title: "Prompts",
-    icon: IconFileText,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    title: "Categories",
-    icon: IconFolder,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
-  },
-  {
-    title: "Favorites",
-    icon: IconHeart,
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-50",
-  },
-  {
-    title: "Tags",
-    icon: IconTag,
-    color: "text-orange-500",
-    bgColor: "bg-orange-50",
-  },
-  {
-    title: "Trash",
-    icon: IconTrash,
-    color: "text-slate-500",
-    bgColor: "bg-slate-100",
-  },
+  { title: "Agents", icon: "agents" },
+  { title: "Skills", icon: "skills" },
+  { title: "Prompts", icon: "prompts" },
+  { title: "Categories", icon: "categories" },
+  { title: "Favorites", icon: "favorites" },
+  { title: "Tags", icon: "tags" },
+  { title: "Trash", icon: "trash" },
 ];

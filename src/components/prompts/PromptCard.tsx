@@ -16,7 +16,7 @@ interface PromptCardProps {
   onToggleFavorite?: (id: number) => void;
 }
 
-/* macOS card: rounded-14, subtle border + shadow, accent tint on hover. */
+/* macOS card: rounded-xl (14px), subtle border + shadow, accent tint on hover. */
 export function PromptCard({
   prompt,
   onSelect,
@@ -30,7 +30,7 @@ export function PromptCard({
 
   return (
     <Card
-      className="cursor-pointer transition-all hover:shadow-macos-popover hover:border-primary/30 group"
+      className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/30 group"
       onClick={() => onSelect(prompt)}
       onContextMenu={(e) => actionsRef.current?.openContextMenu(e)}
     >

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
 
 interface FavoritesPageProps {
@@ -45,21 +46,7 @@ export function FavoritesPage({
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        icon={
-          <svg
-            className="h-5 w-5 text-primary"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-            />
-          </svg>
-        }
+        icon="favorites"
         title="Favorites"
         subtitle={`${favoritePrompts.length} favorited prompt${favoritePrompts.length !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
@@ -70,9 +57,7 @@ export function FavoritesPage({
               placeholder="Search favorites..."
             />
             <Button disabled className="gap-2 opacity-50">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
+              <Icon name="add" size="sm" />
               Add Favorite
             </Button>
           </div>
@@ -81,21 +66,7 @@ export function FavoritesPage({
       {favoritePrompts.length === 0 ? (
         <div className="flex-1 overflow-auto p-6">
           <EmptyState
-            icon={
-              <svg
-                className="h-7 w-7 text-primary"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                />
-              </svg>
-            }
+            icon="favorites"
             title="No favorites yet"
             description="Prompts you mark as favorites will appear here. Tap the heart on any prompt to save it."
           />

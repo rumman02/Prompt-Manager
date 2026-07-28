@@ -5,6 +5,7 @@ import { EmptyPromptsState } from "./EmptyPromptsState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
 
 interface PromptListProps {
@@ -52,23 +53,7 @@ export function PromptList({
     <div className="flex flex-col h-full">
       {showHeader && headerTitle && (
         <PageHeader
-          icon={
-            headerIcon ?? (
-              <svg
-                className="h-5 w-5 text-primary"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                />
-              </svg>
-            )
-          }
+          icon="prompts"
           title={headerTitle}
           subtitle={headerSubtitle ?? "Browse your prompts"}
           actions={
@@ -85,19 +70,17 @@ export function PromptList({
                 )}
                 {onCreatePrompt && (
                   <Button onClick={onCreatePrompt} className="gap-2">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
+                    <Icon name="add" size="sm" />
                     Add Prompt
                   </Button>
                 )}
                 {onViewModeChange && (
-                  <div className="inline-flex h-8 rounded-[10px] bg-muted p-1 shadow-macos-inset">
+                  <div className="inline-flex h-8 rounded-lg bg-muted p-1 shadow-macos-inset">
                     <button
                       onClick={() => onViewModeChange("list")}
-                      className={`rounded-[6px] px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
                         viewMode === "list"
-                          ? "bg-background text-foreground shadow-macos-button"
+                          ? "bg-background text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -105,9 +88,9 @@ export function PromptList({
                     </button>
                     <button
                       onClick={() => onViewModeChange("grid")}
-                      className={`rounded-[6px] px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
                         viewMode === "grid"
-                          ? "bg-background text-foreground shadow-macos-button"
+                          ? "bg-background text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -122,7 +105,11 @@ export function PromptList({
       )}
       <div className="flex-1 overflow-auto p-6">
         {prompts.length === 0 ? (
-          <EmptyPromptsState onLoadDemo={onLoadDemo} />
+          <EmptyPromptsState
+            icon="prompts"
+            title="No prompts yet"
+            description="Create your first prompt to get started."
+          />
         ) : viewMode === "grid" ? (
           <PromptGrid
             prompts={prompts}

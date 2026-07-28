@@ -1,5 +1,6 @@
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 interface HeaderProps {
   searchQuery: string;
@@ -24,20 +25,8 @@ export function Header({
       {/* Main header row */}
       <div className="flex h-16 items-center justify-between px-6" data-tauri-drag-region>
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary/10">
-            <svg
-              className="h-5 w-5 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-              />
-            </svg>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+            <Icon name="prompts" size="lg" className="text-primary" />
           </div>
           <div>
             <h1 className="text-headline tracking-tight">Prompt Manager</h1>
@@ -53,9 +42,7 @@ export function Header({
             onFocus={onSearchFocus}
           />
           <Button onClick={onCreatePrompt} className="gap-2">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+            <Icon name="add" size="sm" />
             New Prompt
           </Button>
         </div>

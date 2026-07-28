@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { formatDate, truncate } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
 
 interface TrashPageProps {
@@ -56,13 +57,6 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
   };
 
   const handleEmptyTrash = () => {
-    // Open a real confirmation modal instead of window.confirm().
-    //
-    // window.confirm() is *not implemented* in Tauri v2's Wry webview: it
-    // returns undefined (it does not throw), so the old code's `ok` was always
-    // undefined and `if (!ok) return` always bailed out — making the button
-    // silently do nothing. The app already uses a custom confirm modal pattern
-    // (see PromptViewer's showDeleteConfirm), so we reuse that here.
     if (trashedPrompts.length === 0) return;
     setEmptyTrashError(null);
     setShowEmptyConfirm(true);
@@ -86,8 +80,6 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
 
   const getDaysRemaining = (deletedAt: string | null): number | null => {
     if (!deletedAt) return null;
-    // Stored as naive UTC (see formatDate); parse as UTC so the day count isn't
-    // skewed by the user's local offset.
     const deleted = new Date(deletedAt.endsWith("Z") || deletedAt.includes("T") ? deletedAt : deletedAt + "Z");
     const now = new Date();
     const daysInTrash = Math.floor((now.getTime() - deleted.getTime()) / (1000 * 60 * 60 * 24));
@@ -106,21 +98,7 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
   return (
     <div className="flex flex-col h-full">
       <PageHeader
-        icon={
-          <svg
-            className="h-5 w-5 text-primary"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-            />
-          </svg>
-        }
+        icon="trash"
         title="Trash"
         subtitle={
           trashedPrompts.length === 0
@@ -130,9 +108,7 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
         actions={
           trashedPrompts.length > 0 ? (
             <Button variant="destructive" onClick={handleEmptyTrash} disabled={emptyTrashBusy} className="gap-2">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-              </svg>
+              <Icon name="delete" size="sm" />
               {emptyTrashBusy ? "Emptying…" : "Empty Trash"}
             </Button>
           ) : undefined
@@ -141,12 +117,10 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
       <div className="flex-1 overflow-auto p-6 space-y-4">
 
       {emptyTrashError && (
-        <div className="rounded-[10px] border border-destructive/30 bg-destructive/10 px-4 py-3">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
-              <svg className="h-4 w-4 text-destructive mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
+              <Icon name="alert" size="md" className="text-destructive mt-0.5" />
               <span className="text-subheadline text-destructive">{emptyTrashError}</span>
             </div>
             <button
@@ -154,20 +128,16 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
               className="flex h-6 w-6 items-center justify-center rounded-md text-destructive/70 hover:bg-destructive/20 transition-colors"
               aria-label="Dismiss error"
             >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <Icon name="close" size="sm" />
             </button>
           </div>
         </div>
       )}
 
       {trashedPrompts.length > 0 && (
-        <div className="rounded-[10px] border border-warning/30 bg-warning/10 px-4 py-3">
+        <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
           <div className="flex items-center gap-2">
-            <svg className="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
+            <Icon name="info" size="md" className="text-warning" />
             <span className="text-subheadline text-warning">
               Items in trash will be permanently deleted after the retention period. You can restore them before then.
             </span>
@@ -176,7 +146,7 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
       )}
 
       {trashedPrompts.length > 0 ? (
-        <div className="rounded-xl border bg-card shadow-macos-window overflow-hidden grid grid-cols-[1fr_8rem_7rem_6rem_auto] gap-x-4 auto-rows-auto">
+        <div className="rounded-xl border bg-card shadow-md overflow-hidden grid grid-cols-[1fr_8rem_7rem_6rem_auto] gap-x-4 auto-rows-auto">
           <div className="grid col-span-5 grid-cols-subgrid border-b bg-muted/30 px-4 py-3 text-eyebrow text-muted-foreground">
             <span>Title</span>
             <span className="text-center">Category</span>
@@ -196,9 +166,7 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted shrink-0">
-                      <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                      </svg>
+                      <Icon name="file" size="md" className="text-muted-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-subheadline font-medium truncate">{prompt.title}</p>
@@ -244,10 +212,8 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
       ) : (
         <Card className="border-dashed shadow-none">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
-              <svg className="h-7 w-7 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-              </svg>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+              <Icon name="trash" size="xl" className="text-muted-foreground" />
             </div>
             <h3 className="text-headline font-medium">Trash is empty</h3>
             <p className="mt-1 max-w-sm text-caption text-muted-foreground">Deleted prompts will appear here until permanently removed</p>
@@ -364,12 +330,10 @@ function TrashRowActions({
       <button
         ref={triggerRef}
         onClick={handleTriggerClick}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
         title="Actions"
       >
-        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-        </svg>
+        <Icon name="more" size="md" />
       </button>
 
       {open &&
@@ -379,7 +343,7 @@ function TrashRowActions({
             ref={menuRef}
             style={menuStyle}
             onMouseDown={stop}
-            className="rounded-[10px] border bg-popover p-1 text-popover-foreground shadow-macos-popover"
+            className="rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg"
           >
             <button
               onClick={(e) => {
@@ -389,15 +353,7 @@ function TrashRowActions({
               }}
               className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-subheadline hover:bg-muted focus:bg-muted transition-colors"
             >
-              <svg
-                className="h-3.5 w-3.5 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-              </svg>
+              <Icon name="reset" size="sm" className="shrink-0" />
               Restore
             </button>
             <div className="my-1 h-px bg-border" />
@@ -409,15 +365,7 @@ function TrashRowActions({
               }}
               className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-subheadline text-destructive hover:bg-destructive/10 focus:bg-destructive/10 transition-colors"
             >
-              <svg
-                className="h-3.5 w-3.5 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-              </svg>
+              <Icon name="delete" size="sm" className="shrink-0" />
               Delete Permanently
             </button>
           </div>,
@@ -457,7 +405,7 @@ function TrashDetailModal({
       {prompt.description && (
         <p className="text-subheadline text-muted-foreground">{prompt.description}</p>
       )}
-      <div className="rounded-[10px] border bg-muted/30 p-4 max-h-48 overflow-auto">
+      <div className="rounded-lg border bg-muted/30 p-4 max-h-48 overflow-auto">
         <pre className="whitespace-pre-wrap font-mono text-caption leading-relaxed text-foreground">
           {prompt.content}
         </pre>

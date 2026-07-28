@@ -1,7 +1,8 @@
 import { type ReactNode } from "react";
+import { Icon, type IconName } from "@/components/ui/icon";
 
 interface PageHeaderProps {
-  icon: ReactNode;
+  icon: IconName;
   title: string;
   subtitle: string;
   actions?: ReactNode;
@@ -29,21 +30,13 @@ export function PageHeader({ icon, title, subtitle, actions, backButton }: PageH
               onClick={backButton.onClick}
               aria-label={backButton.label}
               title={backButton.label}
-              className="flex h-8 w-8 items-center justify-center rounded-[8px] hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 cursor-pointer"
             >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
+              <Icon name="back" size="md" />
             </button>
           )}
-          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary/10">
-            {icon}
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+            <Icon name={icon} size="lg" className="text-primary" />
           </div>
           <div>
             <h1 className="text-headline font-semibold tracking-tight">{title}</h1>

@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Icon, type IconName } from "@/components/ui/icon";
 
 interface ActionItem {
   label: string;
-  icon: string;
+  icon: IconName;
   destructive?: boolean;
   onClick: () => void;
 }
@@ -75,21 +76,13 @@ export function ActionsMenu({ items, children }: ActionsMenuProps) {
           setOpen(false);
           item.onClick();
         }}
-        className={`flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 text-left text-subheadline transition-colors duration-150 ${
+        className={`flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-left text-subheadline transition-colors duration-150 ${
           item.destructive
             ? "text-destructive hover:bg-destructive/10"
             : "hover:bg-muted"
         }`}
       >
-        <svg
-          className="h-3.5 w-3.5 shrink-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={2}
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-        </svg>
+        <Icon name={item.icon} size="sm" className="shrink-0" />
         <span className="truncate">{item.label}</span>
       </button>,
     );
@@ -106,9 +99,7 @@ export function ActionsMenu({ items, children }: ActionsMenuProps) {
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
           title="Options"
         >
-          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-          </svg>
+          <Icon name="more" size="md" />
         </button>
       )}
 
@@ -118,7 +109,7 @@ export function ActionsMenu({ items, children }: ActionsMenuProps) {
             ref={menuRef}
             style={getPos()}
             onMouseDown={stop}
-            className="rounded-[10px] border border-border bg-popover/90 backdrop-blur-xl p-1 text-popover-foreground shadow-macos-popover"
+            className="rounded-lg border border-border bg-popover/90 backdrop-blur-xl p-1 text-popover-foreground shadow-lg"
           >
             {rendered}
           </div>,

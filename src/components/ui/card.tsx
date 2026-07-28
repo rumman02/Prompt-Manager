@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-/* macOS card: rounded-14, subtle border + shadow, elevated surface. */
+/* macOS card: rounded-xl (14px), subtle border + shadow, elevated surface. */
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -9,7 +9,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border bg-card text-card-foreground shadow-macos-window",
+      "rounded-xl border bg-card text-card-foreground shadow-md",
       className
     )}
     {...props}

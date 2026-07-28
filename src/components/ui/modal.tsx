@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { Icon } from "@/components/ui/icon";
 
 interface ModalProps {
   open: boolean;
@@ -22,16 +23,14 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative z-10 w-full ${maxWidth} mx-4 rounded-2xl bg-card/95 backdrop-blur-xl shadow-macos-popover border`}>
+      <div className={`relative z-10 w-full ${maxWidth} mx-4 rounded-2xl bg-card/95 backdrop-blur-xl shadow-lg border`}>
         <div className="flex items-center justify-between px-6 py-4">
           <h2 className="text-headline">{title}</h2>
           <button
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted transition-colors"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <Icon name="close" size="md" />
           </button>
         </div>
 
