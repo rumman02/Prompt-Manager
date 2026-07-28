@@ -1,0 +1,618 @@
+// Theme definitions for Prompt Manager
+// Each theme provides light and dark variants with full color tokens.
+// Colors are stored as hex and converted to HSL at runtime by SettingsContext.
+
+export interface ThemeColors {
+  // Surfaces
+  background: string;
+  foreground: string;
+  card: string;
+  cardForeground: string;
+  popover: string;
+  popoverForeground: string;
+  // Accent
+  primary: string;
+  primaryForeground: string;
+  // Secondary / grouped
+  secondary: string;
+  secondaryForeground: string;
+  muted: string;
+  mutedForeground: string;
+  accent: string;
+  accentForeground: string;
+  // Semantic
+  destructive: string;
+  destructiveForeground: string;
+  // Borders
+  border: string;
+  input: string;
+  ring: string;
+  // Extended
+  textSecondary: string;
+  accent2: string;          // split into --accent-2-h/s/l at runtime
+  // Code zone
+  codeBg: string;
+  codeBorder: string;
+  tokenSat: string;         // percentage, e.g. "70%"
+  tokenBgL: string;         // percentage, e.g. "95%"
+  tokenFgL: string;         // percentage, e.g. "30%"
+  tokenBorderL: string;     // percentage, e.g. "80%"
+  // Status
+  success: string;
+  warning: string;
+  tertiaryLabel: string;
+}
+
+export interface ThemeVariant {
+  name: string;
+  colors: ThemeColors;
+}
+
+export interface Theme {
+  id: string;
+  name: string;
+  description: string;
+  variants: {
+    light: ThemeVariant;
+    dark: ThemeVariant;
+  };
+}
+
+export const THEMES: Theme[] = [
+  // ── Apple (default) ──────────────────────────────────────────────
+  {
+    id: "apple",
+    name: "Apple",
+    description: "macOS Sonoma native appearance",
+    variants: {
+      light: {
+        name: "Light",
+        colors: {
+          background: "#ffffff",
+          foreground: "#000000",
+          card: "#ffffff",
+          cardForeground: "#000000",
+          popover: "#ffffff",
+          popoverForeground: "#000000",
+          primary: "#007aff",
+          primaryForeground: "#ffffff",
+          secondary: "#f5f5f7",
+          secondaryForeground: "#6e6e73",
+          muted: "#f5f5f7",
+          mutedForeground: "#6e6e73",
+          accent: "#f5f5f7",
+          accentForeground: "#000000",
+          destructive: "#ff3b30",
+          destructiveForeground: "#ffffff",
+          border: "#d2d2d7",
+          input: "#d2d2d7",
+          ring: "#007aff",
+          textSecondary: "#6e6e73",
+          accent2: "#e6a817",
+          codeBg: "#f5f5f7",
+          codeBorder: "#d2d2d7",
+          tokenSat: "70%",
+          tokenBgL: "95%",
+          tokenFgL: "30%",
+          tokenBorderL: "80%",
+          success: "#34c759",
+          warning: "#ff9500",
+          tertiaryLabel: "#aeaeb2",
+        },
+      },
+      dark: {
+        name: "Dark",
+        colors: {
+          background: "#1c1c1e",
+          foreground: "#ffffff",
+          card: "#2c2c2e",
+          cardForeground: "#ffffff",
+          popover: "#2c2c2e",
+          popoverForeground: "#ffffff",
+          primary: "#0a84ff",
+          primaryForeground: "#ffffff",
+          secondary: "#2c2c2e",
+          secondaryForeground: "#98989d",
+          muted: "#2c2c2e",
+          mutedForeground: "#98989d",
+          accent: "#2c2c2e",
+          accentForeground: "#ffffff",
+          destructive: "#ff453a",
+          destructiveForeground: "#ffffff",
+          border: "#38383a",
+          input: "#38383a",
+          ring: "#0a84ff",
+          textSecondary: "#98989d",
+          accent2: "#ffd60a",
+          codeBg: "#1c1c1e",
+          codeBorder: "#38383a",
+          tokenSat: "55%",
+          tokenBgL: "20%",
+          tokenFgL: "84%",
+          tokenBorderL: "32%",
+          success: "#30d158",
+          warning: "#ff9f0a",
+          tertiaryLabel: "#636366",
+        },
+      },
+    },
+  },
+
+  // ── Catppuccin ───────────────────────────────────────────────────
+  {
+    id: "catppuccin",
+    name: "Catppuccin",
+    description: "Soothing pastel theme",
+    variants: {
+      light: {
+        name: "Latte",
+        colors: {
+          background: "#eff1f5",
+          foreground: "#4c4f69",
+          card: "#e6e9ef",
+          cardForeground: "#4c4f69",
+          popover: "#e6e9ef",
+          popoverForeground: "#4c4f69",
+          primary: "#1e66f5",
+          primaryForeground: "#eff1f5",
+          secondary: "#ccd0da",
+          secondaryForeground: "#6c6f85",
+          muted: "#ccd0da",
+          mutedForeground: "#6c6f85",
+          accent: "#ccd0da",
+          accentForeground: "#4c4f69",
+          destructive: "#d20f39",
+          destructiveForeground: "#eff1f5",
+          border: "#ccd0da",
+          input: "#ccd0da",
+          ring: "#1e66f5",
+          textSecondary: "#6c6f85",
+          accent2: "#df8e1d",
+          codeBg: "#e6e9ef",
+          codeBorder: "#ccd0da",
+          tokenSat: "65%",
+          tokenBgL: "93%",
+          tokenFgL: "35%",
+          tokenBorderL: "78%",
+          success: "#40a02b",
+          warning: "#fe640b",
+          tertiaryLabel: "#9ca0b0",
+        },
+      },
+      dark: {
+        name: "Mocha",
+        colors: {
+          background: "#1e1e2e",
+          foreground: "#cdd6f4",
+          card: "#181825",
+          cardForeground: "#cdd6f4",
+          popover: "#181825",
+          popoverForeground: "#cdd6f4",
+          primary: "#89b4fa",
+          primaryForeground: "#1e1e2e",
+          secondary: "#313244",
+          secondaryForeground: "#a6adc8",
+          muted: "#313244",
+          mutedForeground: "#a6adc8",
+          accent: "#313244",
+          accentForeground: "#cdd6f4",
+          destructive: "#f38ba8",
+          destructiveForeground: "#1e1e2e",
+          border: "#313244",
+          input: "#313244",
+          ring: "#89b4fa",
+          textSecondary: "#a6adc8",
+          accent2: "#f9e2af",
+          codeBg: "#181825",
+          codeBorder: "#313244",
+          tokenSat: "55%",
+          tokenBgL: "20%",
+          tokenFgL: "84%",
+          tokenBorderL: "32%",
+          success: "#a6e3a1",
+          warning: "#fab387",
+          tertiaryLabel: "#6c7086",
+        },
+      },
+    },
+  },
+
+  // ── Tokyo Night ──────────────────────────────────────────────────
+  {
+    id: "tokyonight",
+    name: "Tokyo Night",
+    description: "Clean, vibrant dark theme",
+    variants: {
+      light: {
+        name: "Day",
+        colors: {
+          background: "#e1e2e7",
+          foreground: "#376099",
+          card: "#e9ebf0",
+          cardForeground: "#376099",
+          popover: "#e9ebf0",
+          popoverForeground: "#376099",
+          primary: "#2e7de9",
+          primaryForeground: "#e1e2e7",
+          secondary: "#c5c8d5",
+          secondaryForeground: "#8990b0",
+          muted: "#c5c8d5",
+          mutedForeground: "#8990b0",
+          accent: "#c5c8d5",
+          accentForeground: "#376099",
+          destructive: "#f52a65",
+          destructiveForeground: "#e1e2e7",
+          border: "#c5c8d5",
+          input: "#c5c8d5",
+          ring: "#2e7de9",
+          textSecondary: "#8990b0",
+          accent2: "#8c6c3e",
+          codeBg: "#e9ebf0",
+          codeBorder: "#c5c8d5",
+          tokenSat: "60%",
+          tokenBgL: "92%",
+          tokenFgL: "38%",
+          tokenBorderL: "76%",
+          success: "#485e30",
+          warning: "#b15c00",
+          tertiaryLabel: "#9aa2c3",
+        },
+      },
+      dark: {
+        name: "Night",
+        colors: {
+          background: "#1a1b26",
+          foreground: "#c0caf5",
+          card: "#24283b",
+          cardForeground: "#c0caf5",
+          popover: "#24283b",
+          popoverForeground: "#c0caf5",
+          primary: "#7aa2f7",
+          primaryForeground: "#1a1b26",
+          secondary: "#24283b",
+          secondaryForeground: "#565f89",
+          muted: "#24283b",
+          mutedForeground: "#565f89",
+          accent: "#24283b",
+          accentForeground: "#c0caf5",
+          destructive: "#f7768e",
+          destructiveForeground: "#1a1b26",
+          border: "#24283b",
+          input: "#24283b",
+          ring: "#7aa2f7",
+          textSecondary: "#565f89",
+          accent2: "#e0af68",
+          codeBg: "#24283b",
+          codeBorder: "#24283b",
+          tokenSat: "55%",
+          tokenBgL: "20%",
+          tokenFgL: "84%",
+          tokenBorderL: "32%",
+          success: "#9ece6a",
+          warning: "#e0af68",
+          tertiaryLabel: "#565f89",
+        },
+      },
+    },
+  },
+
+  // ── Gruvbox ──────────────────────────────────────────────────────
+  {
+    id: "gruvbox",
+    name: "Gruvbox",
+    description: "Retro groove color scheme",
+    variants: {
+      light: {
+        name: "Light",
+        colors: {
+          background: "#fbf1c7",
+          foreground: "#3c3836",
+          card: "#ebdbb2",
+          cardForeground: "#3c3836",
+          popover: "#ebdbb2",
+          popoverForeground: "#3c3836",
+          primary: "#427b58",
+          primaryForeground: "#fbf1c7",
+          secondary: "#d5c4a1",
+          secondaryForeground: "#7c6f64",
+          muted: "#d5c4a1",
+          mutedForeground: "#7c6f64",
+          accent: "#d5c4a1",
+          accentForeground: "#3c3836",
+          destructive: "#9d0006",
+          destructiveForeground: "#fbf1c7",
+          border: "#d5c4a1",
+          input: "#d5c4a1",
+          ring: "#427b58",
+          textSecondary: "#7c6f64",
+          accent2: "#b57614",
+          codeBg: "#ebdbb2",
+          codeBorder: "#d5c4a1",
+          tokenSat: "55%",
+          tokenBgL: "90%",
+          tokenFgL: "35%",
+          tokenBorderL: "72%",
+          success: "#79740e",
+          warning: "#b57614",
+          tertiaryLabel: "#a89984",
+        },
+      },
+      dark: {
+        name: "Dark",
+        colors: {
+          background: "#282828",
+          foreground: "#ebdbb2",
+          card: "#3c3836",
+          cardForeground: "#ebdbb2",
+          popover: "#3c3836",
+          popoverForeground: "#ebdbb2",
+          primary: "#b8bb26",
+          primaryForeground: "#282828",
+          secondary: "#3c3836",
+          secondaryForeground: "#a89984",
+          muted: "#3c3836",
+          mutedForeground: "#a89984",
+          accent: "#3c3836",
+          accentForeground: "#ebdbb2",
+          destructive: "#fb4934",
+          destructiveForeground: "#282828",
+          border: "#3c3836",
+          input: "#3c3836",
+          ring: "#b8bb26",
+          textSecondary: "#a89984",
+          accent2: "#fabd2f",
+          codeBg: "#3c3836",
+          codeBorder: "#3c3836",
+          tokenSat: "50%",
+          tokenBgL: "22%",
+          tokenFgL: "82%",
+          tokenBorderL: "34%",
+          success: "#b8bb26",
+          warning: "#fabd2f",
+          tertiaryLabel: "#928374",
+        },
+      },
+    },
+  },
+
+  // ── Material ─────────────────────────────────────────────────────
+  {
+    id: "material",
+    name: "Material",
+    description: "Material Design 3 color system",
+    variants: {
+      light: {
+        name: "Light",
+        colors: {
+          background: "#fefbff",
+          foreground: "#1c1b1f",
+          card: "#f4eff4",
+          cardForeground: "#1c1b1f",
+          popover: "#f4eff4",
+          popoverForeground: "#1c1b1f",
+          primary: "#6750a4",
+          primaryForeground: "#ffffff",
+          secondary: "#e8def8",
+          secondaryForeground: "#49454f",
+          muted: "#e8def8",
+          mutedForeground: "#49454f",
+          accent: "#e8def8",
+          accentForeground: "#1c1b1f",
+          destructive: "#b3261e",
+          destructiveForeground: "#ffffff",
+          border: "#cac4d0",
+          input: "#cac4d0",
+          ring: "#6750a4",
+          textSecondary: "#49454f",
+          accent2: "#6750a4",
+          codeBg: "#f4eff4",
+          codeBorder: "#cac4d0",
+          tokenSat: "45%",
+          tokenBgL: "94%",
+          tokenFgL: "32%",
+          tokenBorderL: "78%",
+          success: "#386a20",
+          warning: "#8c5000",
+          tertiaryLabel: "#79747e",
+        },
+      },
+      dark: {
+        name: "Dark",
+        colors: {
+          background: "#1c1b1f",
+          foreground: "#e6e1e5",
+          card: "#2b2930",
+          cardForeground: "#e6e1e5",
+          popover: "#2b2930",
+          popoverForeground: "#e6e1e5",
+          primary: "#d0bcff",
+          primaryForeground: "#1c1b1f",
+          secondary: "#4a4458",
+          secondaryForeground: "#cac4d0",
+          muted: "#4a4458",
+          mutedForeground: "#cac4d0",
+          accent: "#4a4458",
+          accentForeground: "#e6e1e5",
+          destructive: "#f2b8b5",
+          destructiveForeground: "#1c1b1f",
+          border: "#49454f",
+          input: "#49454f",
+          ring: "#d0bcff",
+          textSecondary: "#cac4d0",
+          accent2: "#d0bcff",
+          codeBg: "#2b2930",
+          codeBorder: "#49454f",
+          tokenSat: "50%",
+          tokenBgL: "22%",
+          tokenFgL: "85%",
+          tokenBorderL: "36%",
+          success: "#a8d8a8",
+          warning: "#ffb86c",
+          tertiaryLabel: "#938f99",
+        },
+      },
+    },
+  },
+
+  // ── GitHub ───────────────────────────────────────────────────────
+  {
+    id: "github",
+    name: "GitHub",
+    description: "Familiar GitHub color scheme",
+    variants: {
+      light: {
+        name: "Light",
+        colors: {
+          background: "#ffffff",
+          foreground: "#1f2328",
+          card: "#f6f8fa",
+          cardForeground: "#1f2328",
+          popover: "#f6f8fa",
+          popoverForeground: "#1f2328",
+          primary: "#0969da",
+          primaryForeground: "#ffffff",
+          secondary: "#eaeef2",
+          secondaryForeground: "#656d76",
+          muted: "#eaeef2",
+          mutedForeground: "#656d76",
+          accent: "#eaeef2",
+          accentForeground: "#1f2328",
+          destructive: "#cf222e",
+          destructiveForeground: "#ffffff",
+          border: "#d0d7de",
+          input: "#d0d7de",
+          ring: "#0969da",
+          textSecondary: "#656d76",
+          accent2: "#9a6700",
+          codeBg: "#f6f8fa",
+          codeBorder: "#d0d7de",
+          tokenSat: "55%",
+          tokenBgL: "95%",
+          tokenFgL: "30%",
+          tokenBorderL: "80%",
+          success: "#1a7f37",
+          warning: "#9a6700",
+          tertiaryLabel: "#8c959f",
+        },
+      },
+      dark: {
+        name: "Dark",
+        colors: {
+          background: "#0d1117",
+          foreground: "#e6edf3",
+          card: "#161b22",
+          cardForeground: "#e6edf3",
+          popover: "#161b22",
+          popoverForeground: "#e6edf3",
+          primary: "#58a6ff",
+          primaryForeground: "#0d1117",
+          secondary: "#21262d",
+          secondaryForeground: "#8b949e",
+          muted: "#21262d",
+          mutedForeground: "#8b949e",
+          accent: "#21262d",
+          accentForeground: "#e6edf3",
+          destructive: "#f85149",
+          destructiveForeground: "#0d1117",
+          border: "#30363d",
+          input: "#30363d",
+          ring: "#58a6ff",
+          textSecondary: "#8b949e",
+          accent2: "#d29922",
+          codeBg: "#161b22",
+          codeBorder: "#30363d",
+          tokenSat: "55%",
+          tokenBgL: "18%",
+          tokenFgL: "86%",
+          tokenBorderL: "30%",
+          success: "#3fb950",
+          warning: "#d29922",
+          tertiaryLabel: "#6e7681",
+        },
+      },
+    },
+  },
+
+  // ── OLED ─────────────────────────────────────────────────────────
+  {
+    id: "oled",
+    name: "OLED",
+    description: "Pure black for OLED displays",
+    variants: {
+      light: {
+        name: "Dark", // OLED is dark-only; light variant is same dark
+        colors: {
+          background: "#000000",
+          foreground: "#ffffff",
+          card: "#0a0a0a",
+          cardForeground: "#ffffff",
+          popover: "#0a0a0a",
+          popoverForeground: "#ffffff",
+          primary: "#0a84ff",
+          primaryForeground: "#000000",
+          secondary: "#1c1c1e",
+          secondaryForeground: "#8e8e93",
+          muted: "#1c1c1e",
+          mutedForeground: "#8e8e93",
+          accent: "#1c1c1e",
+          accentForeground: "#ffffff",
+          destructive: "#ff453a",
+          destructiveForeground: "#000000",
+          border: "#2c2c2e",
+          input: "#2c2c2e",
+          ring: "#0a84ff",
+          textSecondary: "#8e8e93",
+          accent2: "#ff9f0a",
+          codeBg: "#0a0a0a",
+          codeBorder: "#2c2c2e",
+          tokenSat: "55%",
+          tokenBgL: "12%",
+          tokenFgL: "88%",
+          tokenBorderL: "24%",
+          success: "#30d158",
+          warning: "#ff9f0a",
+          tertiaryLabel: "#636366",
+        },
+      },
+      dark: {
+        name: "OLED",
+        colors: {
+          background: "#000000",
+          foreground: "#ffffff",
+          card: "#0a0a0a",
+          cardForeground: "#ffffff",
+          popover: "#0a0a0a",
+          popoverForeground: "#ffffff",
+          primary: "#0a84ff",
+          primaryForeground: "#000000",
+          secondary: "#1c1c1e",
+          secondaryForeground: "#8e8e93",
+          muted: "#1c1c1e",
+          mutedForeground: "#8e8e93",
+          accent: "#1c1c1e",
+          accentForeground: "#ffffff",
+          destructive: "#ff453a",
+          destructiveForeground: "#000000",
+          border: "#2c2c2e",
+          input: "#2c2c2e",
+          ring: "#0a84ff",
+          textSecondary: "#8e8e93",
+          accent2: "#ff9f0a",
+          codeBg: "#0a0a0a",
+          codeBorder: "#2c2c2e",
+          tokenSat: "55%",
+          tokenBgL: "12%",
+          tokenFgL: "88%",
+          tokenBorderL: "24%",
+          success: "#30d158",
+          warning: "#ff9f0a",
+          tertiaryLabel: "#636366",
+        },
+      },
+    },
+  },
+];
+
+export function getTheme(id: string): Theme {
+  return THEMES.find((t) => t.id === id) || THEMES[0];
+}

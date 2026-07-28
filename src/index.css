@@ -116,6 +116,17 @@
   }
 }
 
+/* ── Theme preset classes (applied by SettingsContext) ──
+   These are empty because the actual values are set inline by JS.
+   They exist as documentation of the available theme hooks. */
+[data-theme="apple"] { }
+[data-theme="catppuccin"] { }
+[data-theme="tokyonight"] { }
+[data-theme="gruvbox"] { }
+[data-theme="material"] { }
+[data-theme="github"] { }
+[data-theme="oled"] { }
+
 /* ── Typography: SF Pro (Apple system) ── */
 @layer base {
   html {

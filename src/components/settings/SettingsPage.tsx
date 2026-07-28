@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { useSettings, type LandingPage } from "@/contexts/SettingsContext";
 import { ACCENT_PRESETS, LANGUAGES, DATE_FORMATS, LANDING_PAGES, FONT_FAMILIES, EDITOR_FONT_FAMILIES, FONT_SIZES } from "@/constants/settings";
+import { THEMES } from "@/constants/themes";
 
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -121,6 +122,76 @@ export function SettingsPage() {
           <div className="space-y-3">
             <div>
               <Label className="text-subheadline">Theme</Label>
+              <p className="text-footnote mt-0.5">
+                Choose from curated color themes
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {THEMES.map((theme) => {
+                const lightColors = theme.variants.light.colors;
+                const darkColors = theme.variants.dark.colors;
+                const isActive = settings.themePreset === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    onClick={() => updateSettings({ themePreset: theme.id })}
+                    className={`group relative flex items-start gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+                      isActive
+                        ? "border-primary bg-primary/5 shadow-macos-button"
+                        : "border-border hover:border-primary/30 hover:bg-muted/50"
+                    }`}
+                  >
+                    {/* Theme preview swatches */}
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <div
+                        className="h-5 w-10 rounded-md border border-black/10"
+                        style={{ background: lightColors.background }}
+                      >
+                        <div className="flex h-full items-center justify-center gap-0.5 px-1">
+                          <div className="h-2 w-2 rounded-full" style={{ background: lightColors.primary }} />
+                          <div className="h-2 w-2 rounded-full" style={{ background: lightColors.accent2 }} />
+                        </div>
+                      </div>
+                      <div
+                        className="h-5 w-10 rounded-md border border-white/10"
+                        style={{ background: darkColors.background }}
+                      >
+                        <div className="flex h-full items-center justify-center gap-0.5 px-1">
+                          <div className="h-2 w-2 rounded-full" style={{ background: darkColors.primary }} />
+                          <div className="h-2 w-2 rounded-full" style={{ background: darkColors.accent2 }} />
+                        </div>
+                      </div>
+                    </div>
+                    {/* Theme info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium truncate">{theme.name}</span>
+                        {isActive && (
+                          <svg className="h-3.5 w-3.5 text-primary shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{theme.description}</p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="text-[10px] font-medium text-muted-foreground">{theme.variants.light.name}</span>
+                        <svg className="h-3 w-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                        <span className="text-[10px] font-medium text-muted-foreground">{theme.variants.dark.name}</span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-subheadline">Appearance</Label>
               <p className="text-footnote mt-0.5">
                 Choose light, dark, or system appearance
               </p>
