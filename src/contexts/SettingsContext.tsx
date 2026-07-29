@@ -152,8 +152,13 @@ function applyThemeColors(root: HTMLElement, colors: ThemeColors, isDark: boolea
   set("--popover-foreground", `${popFg.h} ${popFg.s}% ${popFg.l}%`);
 
   // Primary (accent)
-  set("--primary", `${accent.h} ${accent.s}% ${accent.l}%`);
-  set("--primary-foreground", `${accent.h} ${accent.s > 0 ? 40 : 0}% ${accent.l > 75 ? 4.9 : 98}%`);
+  // In dark mode, ensure the accent has sufficient lightness for contrast
+  // against dark surfaces. Without this, dark accent colors (e.g. #1e293b,
+  // #000000) make text-primary and bg-primary/10 nearly invisible.
+  const MIN_DARKMODE_LIGHTNESS = 62;
+  const adjustedL = isDark ? Math.max(accent.l, MIN_DARKMODE_LIGHTNESS) : accent.l;
+  set("--primary", `${accent.h} ${accent.s}% ${adjustedL}%`);
+  set("--primary-foreground", `${accent.h} ${accent.s > 0 ? 40 : 0}% ${adjustedL > 75 ? 4.9 : 98}%`);
 
   // Secondary
   const sec = hexToHsl(colors.secondary);
