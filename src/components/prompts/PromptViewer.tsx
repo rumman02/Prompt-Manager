@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
+import { Select } from "@/components/ui/select";
+import { formatDate, VARIABLE_TOKEN_RE } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
-import type { PromptRow } from "@/types";
+import { renderCompiledMarkdown, type RenderedMarkdown } from "@/lib/markdown";
+import { usePrompts } from "@/hooks/usePrompts";
+import type { PromptRow, VariableSet } from "@/types";
 
 interface PromptViewerProps {
   prompt: PromptRow | null;
@@ -17,17 +20,106 @@ interface PromptViewerProps {
 export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavorite }: PromptViewerProps) {
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // false = rendered Markdown preview, true = raw compiled Markdown source.
+  const [showRaw, setShowRaw] = useState(false);
+
+  const { getPromptVariables, listVariableSets, setActiveVariableSet } = usePrompts();
+
+  // The viewed prompt's variable sets + the active set's saved values, hydrated
+  // whenever the prompt changes. get_prompt_variables filters by the active set,
+  // so the values are read after the sets (sequentially) below.
+  const [variableSets, setVariableSets] = useState<VariableSet[]>([]);
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+  const [activeSetId, setActiveSetId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!prompt) {
+      setVariableSets([]);
+      setVariableValues({});
+      setActiveSetId(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const sets = await listVariableSets(prompt.id);
+        if (cancelled) return;
+        setVariableSets(sets);
+        const active = sets.find((s) => s.isActive) ?? sets[0];
+        setActiveSetId(active?.id ?? null);
+        const values = await getPromptVariables(prompt.id);
+        if (!cancelled) setVariableValues(values);
+      } catch (e) {
+        console.error("Failed to load variable values:", e);
+        if (!cancelled) {
+          setVariableSets([]);
+          setVariableValues({});
+          setActiveSetId(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [prompt, listVariableSets, getPromptVariables]);
+
+  // One compile pass yields the raw compiled text (for clipboard/raw view), the
+  // sanitized + variable-highlighted HTML (for rendering), and the unfilled
+  // list (for the counter / helper text). Shares renderCompiledMarkdown with
+  // the editor's PreviewPanel — no second compiler.
+  const { text, html, unfilled }: RenderedMarkdown = useMemo(
+    () => renderCompiledMarkdown(prompt?.content ?? "", variableValues),
+    [prompt?.content, variableValues],
+  );
+
+  // A prompt with no {{placeholders}} doesn't need a set switcher — hide it.
+  // Reuses the shared VARIABLE_TOKEN_RE (.match resets lastIndex, so this is
+  // safe on the shared global regex).
+  const hasVariables = useMemo(
+    () => (prompt?.content.match(VARIABLE_TOKEN_RE)?.length ?? 0) > 0,
+    [prompt?.content],
+  );
+
+  // Switch the active set in the backend, then re-read its values so the
+  // compiled output re-renders with the new set's data.
+  const handleSelectSet = useCallback(
+    async (setId: number) => {
+      if (!prompt) return;
+      try {
+        await setActiveVariableSet(prompt.id, setId);
+        setActiveSetId(setId);
+        setVariableSets((prev) => prev.map((s) => ({ ...s, isActive: s.id === setId })));
+        setVariableValues(await getPromptVariables(prompt.id));
+      } catch (e) {
+        console.error("Failed to switch variable set:", e);
+      }
+    },
+    [prompt, setActiveVariableSet, getPromptVariables],
+  );
 
   if (!prompt) return null;
 
   const handleCopy = async () => {
-    const wrote = await copyToClipboard(prompt.content);
+    // Copy the COMPILED text (variables substituted), not the raw source.
+    const wrote = await copyToClipboard(text);
     if (!wrote) {
       toast.error("Couldn't copy to clipboard");
       return;
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+
+    // Non-blocking heads-up: copy succeeded, but if anything is unfilled the
+    // user should know the {{placeholders}} made it onto their clipboard.
+    if (unfilled.length > 0) {
+      toast(
+        unfilled.length === 1
+          ? "Copied with 1 unfilled variable"
+          : `Copied with ${unfilled.length} unfilled variables`,
+      );
+    } else {
+      toast.success("Copied to clipboard");
+    }
   };
 
   const handleDelete = () => {
@@ -108,32 +200,81 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
           )}
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-subheadline font-medium">Prompt Content</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopy}
-                className="h-7 text-xs gap-1.5"
-              >
-                {copied ? (
-                  <>
-                    <Icon name="check" size="sm" className="text-success" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Icon name="clipboard" size="sm" />
-                    Copy
-                  </>
+              <div className="flex items-center gap-1.5">
+                {/* Set switcher — only when there's at least one set AND the
+                    prompt actually uses variables, otherwise it's pure noise. */}
+                {hasVariables && variableSets.length > 0 && (
+                  <div className="w-44 min-w-0">
+                    <Select
+                      value={activeSetId !== null ? String(activeSetId) : ""}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        if (v) handleSelectSet(v);
+                      }}
+                      aria-label="Variable set"
+                      className="h-7 text-xs"
+                    >
+                      {variableSets.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                          {s.isActive ? " · active" : ""}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 )}
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowRaw((v) => !v)}
+                  className="h-7 text-xs gap-1.5"
+                  aria-pressed={showRaw}
+                  aria-label={showRaw ? "Show formatted preview" : "Show raw compiled Markdown"}
+                >
+                  {showRaw ? "Formatted" : "Raw"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopy}
+                  className="h-7 text-xs gap-1.5"
+                >
+                  {copied ? (
+                    <>
+                      <Icon name="check" size="sm" className="text-success" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="clipboard" size="sm" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="rounded-xl border border-border bg-muted/30 p-4">
-              <pre className="whitespace-pre-wrap font-code text-sm leading-relaxed text-foreground">
-                {prompt.content}
-              </pre>
+              {showRaw ? (
+                <pre className="whitespace-pre-wrap font-code text-sm leading-relaxed text-foreground">
+                  {text}
+                </pre>
+              ) : (
+                <div
+                  className="markdown-preview"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              )}
             </div>
+            {/* Same wording as PreviewPanel: unfilled placeholders copy as-is. */}
+            {unfilled.length > 0 && (
+              <p className="text-caption text-muted-foreground">
+                {unfilled.length === 1
+                  ? "1 variable is unfilled — its {{placeholder}} will be copied as-is."
+                  : `${unfilled.length} variables are unfilled — their {{placeholders}} will be copied as-is.`}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-4 text-caption text-muted-foreground pt-3 border-t border-border">
