@@ -38,6 +38,7 @@ function AppContent() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<PromptRow | null>(null);
   const [isEditorPageOpen, setIsEditorPageOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<PromptRow | null>(null);
@@ -148,6 +149,7 @@ function AppContent() {
   };
 
   const handleCategorySelect = async (category: string | null) => {
+    setSelectedTag(null);
     setSelectedCategory(category);
     if (category) {
       try {
@@ -159,6 +161,13 @@ function AppContent() {
     } else {
       refresh();
     }
+  };
+
+  const handleTagSelect = (tag: string | null) => {
+    setSelectedTag(tag);
+    setSelectedCategory(null);
+    refresh();
+    setActiveView("prompts");
   };
 
   const handleCreatePrompt = () => {
@@ -238,9 +247,21 @@ function AppContent() {
     setActiveView(previousView);
   };
 
-  const filteredPrompts = selectedCategory
-    ? prompts.filter((p) => p.category === selectedCategory)
-    : prompts;
+  const filteredPrompts = (() => {
+    let result = prompts;
+    if (selectedCategory) {
+      result = result.filter((p) => p.category === selectedCategory);
+    }
+    if (selectedTag) {
+      result = result.filter((p) =>
+        p.tags
+          ?.split(",")
+          .map((t) => t.trim())
+          .includes(selectedTag),
+      );
+    }
+    return result;
+  })();
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-secondary/30">
@@ -316,7 +337,13 @@ function AppContent() {
               onDuplicate={handleDuplicatePrompt}
               onToggleFavorite={handleToggleFavorite}
               showHeader
-              headerTitle={selectedCategory ? `Prompts: ${selectedCategory}` : "Prompts"}
+              headerTitle={
+                selectedTag
+                  ? `Prompts tagged "${selectedTag}"`
+                  : selectedCategory
+                    ? `Prompts: ${selectedCategory}`
+                    : "Prompts"
+              }
               headerSubtitle={`${filteredPrompts.length} prompt${filteredPrompts.length !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
               searchQuery={searchQuery}
               onSearch={handleSearch}
@@ -355,7 +382,7 @@ function AppContent() {
           )}
 
           {!isEditorPageOpen && activeView === "tags" && (
-            <TagsPage onRefresh={refresh} />
+            <TagsPage onRefresh={refresh} onTagSelect={handleTagSelect} />
           )}
 
           {!isEditorPageOpen && activeView === "trash" && (

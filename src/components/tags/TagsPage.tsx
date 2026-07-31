@@ -8,6 +8,7 @@ import { SearchBar } from "@/components/search-bar";
 import { Input } from "@/components/ui/input";
 import { resourceColor } from "@/constants/colors";
 import { ActionsMenu } from "@/components/ui/actions-menu";
+import { RenameDialog } from "@/components/ui/rename-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { Icon } from "@/components/ui/icon";
@@ -20,10 +21,12 @@ interface TagInfo {
 
 interface TagsPageProps {
   onRefresh: () => void;
+  /** Navigate to the Prompts view filtered to this tag. */
+  onTagSelect: (tag: string) => void;
 }
 
 
-export function TagsPage({ onRefresh }: TagsPageProps) {
+export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "count">("name");
@@ -32,6 +35,7 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
   const [newTags, setNewTags] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [renamingTag, setRenamingTag] = useState<string | null>(null);
 
   useEffect(() => {
     loadPrompts();
@@ -137,7 +141,10 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
 
   const handleRenameTag = async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
-    if (!trimmed || trimmed === oldName) return;
+    if (!trimmed || trimmed === oldName) {
+      setRenamingTag(null);
+      return;
+    }
     try {
       const promptsWithTag = prompts.filter((p) =>
         p.tags?.split(",").map((t) => t.trim()).includes(oldName)
@@ -159,8 +166,10 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
       }
       await loadPrompts();
       onRefresh();
+      setRenamingTag(null);
     } catch (e) {
       console.error("Failed to rename tag:", e);
+      setRenamingTag(null);
     }
   };
 
@@ -193,10 +202,8 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
               <TagCard
                 key={tag.name}
                 tag={tag}
-                onRename={(name) => {
-                  const newName = prompt(`Rename tag "${name}" to:`, name);
-                  if (newName?.trim()) handleRenameTag(name, newName.trim());
-                }}
+                onSelect={() => onTagSelect(tag.name)}
+                onRename={(name) => setRenamingTag(name)}
                 onDelete={() => handleDeleteTag(tag.name)}
               />
             ))}
@@ -212,7 +219,17 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
               {filteredTags.map((tag) => (
                 <div
                   key={tag.name}
-                  className="group grid col-span-3 grid-cols-subgrid gap-x-4 items-center px-4 py-2.5 hover:bg-muted/50 transition-colors"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onTagSelect(tag.name)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onTagSelect(tag.name);
+                    }
+                  }}
+                  title={`View prompts tagged "${tag.name}"`}
+                  className="group grid col-span-3 grid-cols-subgrid gap-x-4 items-center px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
@@ -227,13 +244,13 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
                       {tag.count} prompt{tag.count !== 1 ? "s" : ""}
                     </span>
                   </div>
-                  <div className="w-28 flex items-center justify-end">
+                  <div
+                    className="w-28 flex items-center justify-end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <ActionsMenu
                       items={[
-                        { label: "Rename", icon: "edit", onClick: () => {
-                          const newName = prompt(`Rename tag "${tag.name}" to:`, tag.name);
-                          if (newName?.trim()) handleRenameTag(tag.name, newName.trim());
-                        } },
+                        { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
                         { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
                       ]}
                     />
@@ -248,6 +265,19 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
           icon="tags"
           title={searchQuery ? "No tags found" : "No tags yet"}
           description={searchQuery ? `No tags match "${searchQuery}"` : "Add tags to your prompts to see them here"}
+        />
+      )}
+
+      {renamingTag !== null && (
+        <RenameDialog
+          open
+          currentName={renamingTag}
+          entityLabel="Tag"
+          existingNames={tags
+            .map((t) => t.name)
+            .filter((t) => t !== renamingTag)}
+          onClose={() => setRenamingTag(null)}
+          onSubmit={(newName) => handleRenameTag(renamingTag, newName)}
         />
       )}
 
@@ -274,16 +304,31 @@ export function TagsPage({ onRefresh }: TagsPageProps) {
 
 function TagCard({
   tag,
+  onSelect,
   onRename,
   onDelete,
 }: {
   tag: TagInfo;
+  onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
   const color = resourceColor(tag.name);
   return (
-    <Card className="group transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-label={`View prompts tagged "${tag.name}"`}
+      title={`View prompts tagged "${tag.name}"`}
+      className="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <CardContent className="p-3 flex items-center gap-3">
         <div
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
@@ -291,17 +336,21 @@ function TagCard({
           <Icon name="tags" size="md" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate">{tag.name}</div>
+          <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+            {tag.name}
+          </div>
           <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground whitespace-nowrap">
             {tag.count} prompt{tag.count !== 1 ? "s" : ""}
           </span>
         </div>
-        <ActionsMenu
-          items={[
-            { label: "Rename", icon: "edit", onClick: () => onRename(tag.name) },
-            { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
-          ]}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <ActionsMenu
+            items={[
+              { label: "Rename", icon: "edit", onClick: () => onRename(tag.name) },
+              { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
+            ]}
+          />
+        </div>
       </CardContent>
     </Card>
   );

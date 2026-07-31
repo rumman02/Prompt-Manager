@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { ActionsMenu } from "@/components/ui/actions-menu";
+import { RenameDialog } from "@/components/ui/rename-dialog";
 import { Icon } from "@/components/ui/icon";
 import { resourceColor } from "@/constants/colors";
 import { useCategories } from "@/hooks/useCategories";
@@ -34,6 +35,7 @@ export function CategoriesPage({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
+  const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -93,13 +95,18 @@ export function CategoriesPage({
 
   const handleRenameCategory = async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
-    if (!trimmed || trimmed === oldName) return;
+    if (!trimmed || trimmed === oldName) {
+      setRenamingCategory(null);
+      return;
+    }
     try {
       await renameCategory(oldName, trimmed);
       await loadCategories();
       await refreshPrompts();
+      setRenamingCategory(null);
     } catch (e) {
       console.error("Failed to rename category:", e);
+      setRenamingCategory(null);
     }
   };
 
@@ -145,10 +152,7 @@ export function CategoriesPage({
               onCategorySelect(cat.category);
               onViewChange("prompts");
             }}
-            onRename={(name) => {
-              const newName = prompt(`Rename category "${name}" to:`, name);
-              if (newName?.trim()) handleRenameCategory(name, newName.trim());
-            }}
+            onRename={(name) => setRenamingCategory(name)}
             onDelete={() => handleDeleteCategory(cat.category)}
           />
         ))}
@@ -171,6 +175,19 @@ export function CategoriesPage({
           </div>
         )}
       </div>
+
+      {renamingCategory !== null && (
+        <RenameDialog
+          open
+          currentName={renamingCategory}
+          entityLabel="Category"
+          existingNames={categories
+            .map((c) => c.category)
+            .filter((c) => c !== renamingCategory)}
+          onClose={() => setRenamingCategory(null)}
+          onSubmit={(newName) => handleRenameCategory(renamingCategory, newName)}
+        />
+      )}
 
       {isAddCategoryModalOpen && (
         <AddCategoryModal
@@ -215,7 +232,20 @@ function CategoryCard({
   );
 
   return (
-    <Card className="group relative transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-label={`View ${category.category} prompts`}
+      title={`View ${category.category} prompts`}
+      className="group relative cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <CardContent className="p-4 space-y-3">
         {/* row 1: icon + name + actions */}
         <div className="flex items-center gap-3">
@@ -224,17 +254,14 @@ function CategoryCard({
           >
             <Icon name="categories" size="md" />
           </div>
-          <button
-            onClick={onSelect}
-            className="min-w-0 flex-1 text-left"
-            title={`View ${category.category} prompts`}
-          >
+          <div className="min-w-0 flex-1 text-left">
             <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
               {category.category}
             </div>
-          </button>
+          </div>
 
           {/* ⋯ actions menu — fades in on hover */}
+          <div onClick={(e) => e.stopPropagation()}>
           <ActionsMenu
             items={[
               {
@@ -250,6 +277,7 @@ function CategoryCard({
               },
             ]}
           />
+          </div>
         </div>
 
         {/* row 2: pill badge with count */}
