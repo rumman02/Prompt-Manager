@@ -1,6 +1,6 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { compilePrompt, VARIABLE_TOKEN_RE, type CompileResult } from "@/lib/utils";
+import { compilePrompt, hashHue, VARIABLE_TOKEN_RE, type CompileResult } from "@/lib/utils";
 
 // marked is configured for synchronous, GFM-aware compilation. No extensions are
 // async, so `parse(src, { async: false })` returns a plain string (not a Promise).
@@ -35,6 +35,49 @@ function postProcessVariables(html: string): string {
   return segments
     .map((seg) => (seg.startsWith("<") ? seg : highlightTokens(seg)))
     .join("");
+}
+
+// Sentinels used to mark substituted variable values through the Markdown and
+// sanitize passes. Private-use codepoints: marked leaves them alone and
+// DOMPurify treats them as ordinary text, so they survive intact and can be
+// swapped for real markup afterwards.
+const VAL_START = "";
+const VAL_END = "";
+const VAL_MID = "";
+
+/**
+ * Second compile pass whose only job is to mark where variable values landed.
+ * Values containing a newline are left unmarked: a multi-line value can be
+ * split across separate block elements by marked, which would leave the
+ * sentinels in different parents and produce mis-nested spans.
+ */
+function compileWithValueMarkers(
+  content: string,
+  variableValues: Record<string, string>,
+): string {
+  return content.replace(VARIABLE_TOKEN_RE, (match, name: string) => {
+    const value = variableValues[name];
+    if (value === undefined || value.trim().length === 0) return match;
+    if (value.includes("\n")) return value;
+    return `${VAL_START}${hashHue(name)}${VAL_MID}${value}${VAL_END}`;
+  });
+}
+
+// Swap surviving sentinels for the real pill markup. Runs after DOMPurify, so
+// the span and its style attribute are ours and cannot be user-injected.
+function replaceValueMarkers(html: string): string {
+  const re = new RegExp(`${VAL_START}(\\d+)${VAL_MID}([\\s\\S]*?)${VAL_END}`, "g");
+  return html.replace(
+    re,
+    (_m, hue: string, inner: string) =>
+      `<span class="var-value" style="--token-hue:${hue}deg">${inner}</span>`,
+  );
+}
+
+// Safety net: strip any sentinel that did not get paired up, so raw
+// private-use characters can never leak into rendered output.
+function stripValueMarkers(text: string): string {
+  return text.split(VAL_START).join("").split(VAL_END).join("").split(VAL_MID).join("");
 }
 
 // Add rel="noopener noreferrer" to any anchor that opens in a new tab, so target="_blank"
@@ -74,18 +117,23 @@ export function renderCompiledMarkdown(
   variableValues: Record<string, string>,
 ): RenderedMarkdown {
   const compiled: CompileResult = compilePrompt(content, variableValues);
+  // Separate marked-up pass for rendering only; compiled.text stays clean
+  // because it is what the Copy button writes to the clipboard.
+  const markedSource = compileWithValueMarkers(content, variableValues);
 
   // Compile Markdown → HTML. Guard the DOM-dependent steps so a missing `window` degrades
   // to returning the raw compiled text rather than throwing.
-  let html = compiled.text;
+  let html = stripValueMarkers(markedSource);
   if (typeof window !== "undefined" && window?.document) {
-    const rawHtml = marked.parse(compiled.text, { async: false }) as string;
+    const rawHtml = marked.parse(markedSource, { async: false }) as string;
     html = DOMPurify.sanitize(rawHtml, {
       USE_PROFILES: { html: true },
       ADD_ATTR: ["target", "rel"],
     });
     html = addRelToExternalLinks(html);
     html = postProcessVariables(html);
+    html = replaceValueMarkers(html);
+    html = stripValueMarkers(html);
   }
 
   return { text: compiled.text, html, unfilled: compiled.unfilled };

@@ -49,6 +49,18 @@ export interface ContentStats {
 // three never drift apart.
 export const VARIABLE_TOKEN_RE = /\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g;
 
+/** Map a variable name to a stable hue for its token pill. Shared by the
+ *  editor overlay and the compiled preview so a given name is always the
+ *  same color in both. */
+export function hashHue(name: string): number {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  // spread across the wheel but avoid the amber reserved for --accent-2 (approx 32)
+  return h % 330;
+}
+
 export interface CompileResult {
   /** Prompt content with saved values substituted; unfilled vars stay as {{name}}. */
   text: string;

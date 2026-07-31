@@ -295,6 +295,45 @@
   box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.6);
 }
 
+/* A substituted variable VALUE in the compiled preview. Same per-name hue as
+   the editor token so a value can be traced back to the variable it came
+   from, but solid (not dashed) because it is filled. */
+.var-value {
+  --hue: var(--token-hue, 220deg);
+  border-radius: 4px;
+  padding: 0 2px;
+  color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
+  background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
+  box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
+}
+
+/* Switching variable sets pulses every value pill once, so which text
+   actually changed is obvious without hunting. */
+@keyframes var-value-flash {
+  0% {
+    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
+    box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
+  }
+  35% {
+    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.95);
+    box-shadow: inset 0 0 0 2px hsl(var(--hue) var(--token-sat) var(--token-border-l));
+  }
+  100% {
+    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
+    box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
+  }
+}
+
+.vars-flash .var-value {
+  animation: var-value-flash 1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vars-flash .var-value {
+    animation: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -480,5 +519,9 @@
    global .var-token--empty styles already handle color/border; this just ensures
    inline flow and vertical alignment inside prose. */
 .markdown-preview .var-token--empty {
+  vertical-align: baseline;
+}
+
+.markdown-preview .var-value {
   vertical-align: baseline;
 }

@@ -1,5 +1,5 @@
 import { useRef, useCallback, useMemo, type Ref, type TextareaHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { cn, hashHue } from "@/lib/utils";
 
 interface HighlightedTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "style"> {
   value: string;
@@ -9,17 +9,6 @@ interface HighlightedTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextA
    *  of growing with content via resize-y. The textarea scrolls internally. */
   fill?: boolean;
   ref?: Ref<HTMLTextAreaElement>;
-}
-
-// Deterministic hash → hue. Same variable name always maps to the same color,
-// so {{audience}}, {{audiences}}, {{audiencez}} read as distinct, traceable tokens.
-function hashHue(name: string): number {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) {
-    h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  }
-  // spread across the wheel but avoid the amber reserved for --accent-2 (≈32)
-  return h % 330;
 }
 
 /**

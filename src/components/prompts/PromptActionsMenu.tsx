@@ -11,6 +11,8 @@ import {
 import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
+import { copyToClipboard } from "@/lib/clipboard";
+import { toast } from "sonner";
 
 interface PromptActionsMenuProps {
   prompt: PromptRow;
@@ -114,7 +116,7 @@ export const PromptActionsMenu = forwardRef<
   const menuStyle = ((): React.CSSProperties => {
     if (!ctxPos) return {};
     const W = 176; // 11rem
-    const H = 132; // approx max height
+    const H = 168; // approx max height
     let left = ctxPos.x;
     let top = ctxPos.y + 4;
     if (triggerRef.current && !ctxPos) {
@@ -153,6 +155,17 @@ export const PromptActionsMenu = forwardRef<
     onDuplicate(prompt.id);
   };
 
+  const handleCopy = async (e: React.MouseEvent) => {
+    stop(e);
+    closeMenu();
+    const wrote = await copyToClipboard(prompt.content);
+    if (wrote) {
+      toast.success("Copied to clipboard");
+    } else {
+      toast.error("Couldn't copy to clipboard");
+    }
+  };
+
   const handleDelete = (e: React.MouseEvent) => {
     stop(e);
     closeMenu();
@@ -177,6 +190,9 @@ export const PromptActionsMenu = forwardRef<
             onMouseDown={stop}
             className="rounded-lg border border-border bg-popover/90 backdrop-blur-xl p-1 text-popover-foreground shadow-lg"
           >
+            <MenuItem icon="clipboard" onClick={handleCopy}>
+              Copy
+            </MenuItem>
             <MenuItem icon="edit" onClick={handleEdit}>
               Edit
             </MenuItem>

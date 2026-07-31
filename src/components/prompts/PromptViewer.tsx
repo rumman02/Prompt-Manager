@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { renderCompiledMarkdown, type RenderedMarkdown } from "@/lib/markdown";
 import { usePrompts } from "@/hooks/usePrompts";
+import { useResizable } from "@/hooks/useResizable";
 import type { PromptRow, VariableSet } from "@/types";
 
 interface PromptViewerProps {
@@ -22,6 +23,25 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // false = rendered Markdown preview, true = raw compiled Markdown source.
   const [showRaw, setShowRaw] = useState(false);
+
+  // Bumped on every variable-set switch. Used as a React key so the preview
+  // subtree remounts, which restarts the CSS flash animation (re-adding a
+  // class alone would not retrigger it).
+  const [flashKey, setFlashKey] = useState(0);
+
+  // Stable bounds so the panel starts at 60% width, with the resize caps
+  // computed once per mount instead of every render.
+  const [bounds] = useState(() => ({
+    initial: Math.round(window.innerWidth * 0.6),
+    min: 576,
+    max: Math.round(window.innerWidth * 0.8),
+  }));
+  const { width, onResizeStart, isResizing } = useResizable({
+    initial: bounds.initial,
+    min: bounds.min,
+    max: bounds.max,
+    side: "right",
+  });
 
   const { getPromptVariables, listVariableSets, setActiveVariableSet } = usePrompts();
 
@@ -90,6 +110,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
         setActiveSetId(setId);
         setVariableSets((prev) => prev.map((s) => ({ ...s, isActive: s.id === setId })));
         setVariableValues(await getPromptVariables(prompt.id));
+        setFlashKey((n) => n + 1);
       } catch (e) {
         console.error("Failed to switch variable set:", e);
       }
@@ -130,7 +151,17 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
   return (
     <div className="fixed inset-0 z-50 flex items-stretch justify-end">
       <div className="absolute inset-0 bg-black/20 backdrop-blur-md" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-xl bg-card/90 backdrop-blur-xl border-l border-border flex flex-col shadow-lg animate-in slide-in-from-right duration-300">
+      <div
+        style={{ width, minWidth: 576, maxWidth: "80vw" }}
+        className="relative z-10 bg-card/90 backdrop-blur-xl border-l border-border flex flex-col shadow-lg animate-in slide-in-from-right duration-300"
+      >
+        <div
+          onMouseDown={onResizeStart}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panel"
+          className={`absolute left-0 top-0 bottom-0 z-20 w-1.5 cursor-col-resize transition-colors hover:bg-primary/30 active:bg-primary/40 ${isResizing ? "bg-primary/30" : ""}`}
+        />
         <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
           <div className="flex-1 min-w-0">
             <h2 className="text-headline truncate">{prompt.title}</h2>
@@ -262,7 +293,8 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
                 </pre>
               ) : (
                 <div
-                  className="markdown-preview"
+                  key={`vars-${flashKey}`}
+                  className={`markdown-preview ${flashKey > 0 ? "vars-flash" : ""}`}
                   dangerouslySetInnerHTML={{ __html: html }}
                 />
               )}

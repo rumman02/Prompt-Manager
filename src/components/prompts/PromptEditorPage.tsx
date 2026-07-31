@@ -615,10 +615,10 @@ export function PromptEditorPage({
       <PageHeader
         icon="edit"
         backButton={{ label: "Back", onClick: onBack }}
-        title={isEditing ? "Edit Prompt" : "Create New Prompt"}
+        title={isEditing ? (title.trim() || "Untitled Prompt") : "Create New Prompt"}
         subtitle={
           isEditing
-            ? "Update your prompt details below"
+            ? (description.trim() || "No description")
             : "Fill in the details to create a new prompt"
         }
         actions={
