@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { PromptRow } from "@/types";
+import type { PromptRow, VariableSet } from "@/types";
 
 export function usePrompts() {
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
@@ -73,11 +73,14 @@ export function usePrompts() {
     await invoke("toggle_favorite", { id });
   }, []);
 
-  // Variable values are stored as {name: value} pairs scoped to a prompt.
-  // getPromptVariables returns them as (name, value) tuples from the backend;
-  // we flatten into a record for easy lookups in the UI.
+  // Variable values are stored as {name: value} pairs scoped to a prompt's
+  // ACTIVE variable set (the backend filters by it). getPromptVariables returns
+  // them as (name, value) tuples from the backend; we flatten into a record for
+  // easy lookups in the UI.
   const getPromptVariables = useCallback(async (id: number) => {
-    const rows = await invoke<[string, string][]>("get_prompt_variables", { id });
+    const rows = await invoke<[string, string][]>("get_prompt_variables", {
+      promptId: id,
+    });
     const record: Record<string, string> = {};
     for (const [name, value] of rows) {
       record[name] = value;
@@ -85,8 +88,34 @@ export function usePrompts() {
     return record;
   }, []);
 
-  const savePromptVariable = useCallback(async (id: number, name: string, value: string) => {
-    await invoke("save_prompt_variable", { promptId: id, name, value });
+  const savePromptVariable = useCallback(
+    async (promptId: number, setId: number, name: string, value: string) => {
+      await invoke("save_prompt_variable", { promptId, setId, name, value });
+    },
+    []
+  );
+
+  // ── Variable sets ─────────────────────────────────────────────────────────
+  // One prompt can hold many named sets of variable values; the UI switches the
+  // active set to read/write a different set of values for the same prompt.
+
+  const createVariableSet = useCallback(async (promptId: number, name: string) => {
+    return await invoke<number>("create_variable_set", { promptId, name });
+  }, []);
+
+  const listVariableSets = useCallback(async (promptId: number) => {
+    const rows = await invoke<[number, string, boolean][]>("list_variable_sets", {
+      promptId,
+    });
+    return rows.map(([id, name, isActive]) => ({ id, name, isActive }));
+  }, []);
+
+  const setActiveVariableSet = useCallback(async (promptId: number, setId: number) => {
+    await invoke("set_active_variable_set", { promptId, setId });
+  }, []);
+
+  const deleteVariableSet = useCallback(async (setId: number) => {
+    await invoke("delete_variable_set", { setId });
   }, []);
 
   return {
@@ -102,5 +131,9 @@ export function usePrompts() {
     toggleFavorite,
     getPromptVariables,
     savePromptVariable,
+    createVariableSet,
+    listVariableSets,
+    setActiveVariableSet,
+    deleteVariableSet,
   };
 }

@@ -286,11 +286,12 @@ fn rename_prompt_version(
 fn save_prompt_variable(
     app_handle: tauri::AppHandle,
     prompt_id: i64,
+    set_id: i64,
     name: String,
     value: String,
 ) -> Result<(), String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
-    db.upsert_prompt_variable(prompt_id, &name, &value)
+    db.upsert_prompt_variable(prompt_id, set_id, &name, &value)
         .map_err(|e| e.to_string())
 }
 
@@ -302,6 +303,45 @@ fn get_prompt_variables(
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
     db.get_prompt_variables(prompt_id)
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn create_variable_set(
+    app_handle: tauri::AppHandle,
+    prompt_id: i64,
+    name: String,
+) -> Result<i64, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.create_variable_set(prompt_id, &name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_variable_sets(
+    app_handle: tauri::AppHandle,
+    prompt_id: i64,
+) -> Result<Vec<(i64, String, bool)>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.list_variable_sets(prompt_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn set_active_variable_set(
+    app_handle: tauri::AppHandle,
+    prompt_id: i64,
+    set_id: i64,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.set_active_variable_set(prompt_id, set_id)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_variable_set(
+    app_handle: tauri::AppHandle,
+    set_id: i64,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.delete_variable_set(set_id).map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -354,6 +394,10 @@ pub fn run() {
             rename_prompt_version,
             save_prompt_variable,
             get_prompt_variables,
+            create_variable_set,
+            list_variable_sets,
+            set_active_variable_set,
+            delete_variable_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

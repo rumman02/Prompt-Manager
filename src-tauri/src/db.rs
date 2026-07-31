@@ -1,4 +1,4 @@
-use rusqlite::{Connection, Result, Row};
+use rusqlite::{Connection, OptionalExtension, Result, Row};
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
@@ -195,48 +195,107 @@ impl Database {
             [],
         )?;
 
-        // Create prompt_variables table — stores user-entered values for each
-        // {{variable}} detected (or custom) in a prompt, scoped to the prompt so
-        // they cascade-delete with it. Unique (prompt_id, name) so a variable has
-        // exactly one value per prompt; UPSERT semantics in upsert_prompt_variable.
+        // Create variable_sets table — named collections of variable values for a
+        // prompt. One prompt has many sets; exactly one (is_active=1) is the set
+        // the editor reads/writes by default. Must be created before
+        // prompt_variables (its rows are FK targets for prompt_variables.set_id).
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS prompt_variables (
+            "CREATE TABLE IF NOT EXISTS variable_sets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 prompt_id INTEGER NOT NULL,
                 name TEXT NOT NULL,
-                value TEXT DEFAULT '',
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                is_active INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE
             )",
             [],
         )?;
         self.conn.execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_variables_name
-             ON prompt_variables(prompt_id, name)",
+            "CREATE INDEX IF NOT EXISTS idx_variable_sets_prompt_id ON variable_sets(prompt_id)",
             [],
         )?;
 
+        // Create prompt_variables table — stores user-entered values for each
+        // {{variable}} detected (or custom) in a prompt, scoped to (prompt, set)
+        // so the same variable can hold a different value per variable set.
+        // Unique (prompt_id, set_id, name) so a variable has exactly one value
+        // per set; UPSERT semantics in upsert_prompt_variable.
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS prompt_variables (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                prompt_id INTEGER NOT NULL,
+                set_id INTEGER,
+                name TEXT NOT NULL,
+                value TEXT DEFAULT '',
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE,
+                FOREIGN KEY (set_id) REFERENCES variable_sets(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        // Migration: databases created before variable sets have no set_id
+        // column. Add it, then upgrade the unique index from (prompt_id, name)
+        // to (prompt_id, set_id, name) so two sets can each hold a value for the
+        // same variable name.
+        let has_set_id: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info('prompt_variables') WHERE name = 'set_id')",
+            [],
+            |row| row.get(0),
+        )?;
+        if !has_set_id {
+            self.conn
+                .execute("ALTER TABLE prompt_variables ADD COLUMN set_id INTEGER", [])?;
+        }
+        self.conn.execute("DROP INDEX IF EXISTS idx_prompt_variables_name", [])?;
+        self.conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_prompt_variables_name
+             ON prompt_variables(prompt_id, set_id, name)",
+            [],
+        )?;
+
+        // Backfill: prompts that already had saved variables before this feature
+        // get a default set, and their values are migrated into it so nothing is
+        // orphaned.
+        let orphan_prompts: Vec<i64> = self
+            .conn
+            .prepare("SELECT DISTINCT prompt_id FROM prompt_variables WHERE set_id IS NULL")?
+            .query_map([], |row| row.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        for prompt_id in orphan_prompts {
+            let set_id = self.get_or_create_default_set(prompt_id)?;
+            self.conn.execute(
+                "UPDATE prompt_variables SET set_id = ?1 WHERE prompt_id = ?2 AND set_id IS NULL",
+                rusqlite::params![set_id, prompt_id],
+            )?;
+        }
+
         Ok(())
     }
 
-    /// Insert or update the value of a single variable for a prompt.
-    /// The UNIQUE index on (prompt_id, name) makes this idempotent — re-saving
-    /// the same variable updates its value + timestamp rather than duplicating.
-    pub fn upsert_prompt_variable(&self, prompt_id: i64, name: &str, value: &str) -> Result<()> {
+    /// Insert or update the value of a single variable for a prompt's set.
+    /// The UNIQUE index on (prompt_id, set_id, name) makes this idempotent —
+    /// re-saving the same variable in the same set updates its value +
+    /// timestamp rather than duplicating.
+    pub fn upsert_prompt_variable(&self, prompt_id: i64, set_id: i64, name: &str, value: &str) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO prompt_variables (prompt_id, name, value)
-             VALUES (?1, ?2, ?3)
-             ON CONFLICT(prompt_id, name)
+            "INSERT INTO prompt_variables (prompt_id, set_id, name, value)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(prompt_id, set_id, name)
              DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP",
-            rusqlite::params![prompt_id, name, value],
+            rusqlite::params![prompt_id, set_id, name, value],
         )?;
         Ok(())
     }
 
-    /// Fetch all saved variable values for a prompt, returned as (name, value) pairs.
+    /// Fetch the active set's saved variable values for a prompt, returned as
+    /// (name, value) pairs. Prompts with no active set return an empty list.
     pub fn get_prompt_variables(&self, prompt_id: i64) -> Result<Vec<(String, String)>> {
         let mut stmt = self.conn.prepare(
-            "SELECT name, value FROM prompt_variables WHERE prompt_id = ?1",
+            "SELECT pv.name, pv.value FROM prompt_variables pv
+             JOIN variable_sets vs ON vs.id = pv.set_id
+             WHERE pv.prompt_id = ?1 AND vs.is_active = 1",
         )?;
         let rows = stmt
             .query_map([prompt_id], |row| {
@@ -244,6 +303,124 @@ impl Database {
             })?
             .collect::<Vec<_>>();
         Ok(rows.into_iter().filter_map(|r| r.ok()).collect())
+    }
+
+    // ── Variable sets ─────────────────────────────────────────────────────────
+    // One prompt can hold many named sets of variable values; exactly one set is
+    // active at a time, and the editor reads/writes the active set's values.
+
+    /// Create a named set for a prompt. The first set created for a prompt (or
+    /// any set created while the prompt has no active set) becomes active.
+    pub fn create_variable_set(&self, prompt_id: i64, name: &str) -> Result<i64> {
+        let has_active: i64 = self.conn.query_row(
+            "SELECT COUNT(*) FROM variable_sets WHERE prompt_id = ?1 AND is_active = 1",
+            [prompt_id],
+            |row| row.get(0),
+        )?;
+        self.conn.execute(
+            "INSERT INTO variable_sets (prompt_id, name, is_active) VALUES (?1, ?2, ?3)",
+            rusqlite::params![prompt_id, name, if has_active == 0 { 1 } else { 0 }],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    /// List a prompt's sets as (id, name, is_active) ordered by creation time.
+    pub fn list_variable_sets(&self, prompt_id: i64) -> Result<Vec<(i64, String, bool)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, is_active FROM variable_sets WHERE prompt_id = ?1 ORDER BY created_at, id",
+        )?;
+        let rows = stmt
+            .query_map([prompt_id], |row| {
+                Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, i64>(2)? != 0,
+                ))
+            })?
+            .collect::<Vec<_>>();
+        Ok(rows.into_iter().filter_map(|r| r.ok()).collect())
+    }
+
+    /// Mark `set_id` as the prompt's active set, clearing the flag on the rest.
+    pub fn set_active_variable_set(&self, prompt_id: i64, set_id: i64) -> Result<()> {
+        self.conn.execute(
+            "UPDATE variable_sets SET is_active = 0 WHERE prompt_id = ?1",
+            [prompt_id],
+        )?;
+        self.conn.execute(
+            "UPDATE variable_sets SET is_active = 1 WHERE id = ?1 AND prompt_id = ?2",
+            rusqlite::params![set_id, prompt_id],
+        )?;
+        Ok(())
+    }
+
+    /// Delete a set and its saved values. If it was the active set, the most
+    /// recently created remaining set becomes active (or none if it was the last).
+    pub fn delete_variable_set(&self, set_id: i64) -> Result<()> {
+        let prompt_id: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT prompt_id FROM variable_sets WHERE id = ?1",
+                [set_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let Some(prompt_id) = prompt_id else { return Ok(()) };
+
+        let was_active: i64 = self.conn.query_row(
+            "SELECT is_active FROM variable_sets WHERE id = ?1",
+            [set_id],
+            |row| row.get(0),
+        )?;
+
+        // Foreign keys are not enforced (no PRAGMA foreign_keys=ON), so delete
+        // the set's values explicitly.
+        self.conn.execute("DELETE FROM prompt_variables WHERE set_id = ?1", [set_id])?;
+        self.conn.execute("DELETE FROM variable_sets WHERE id = ?1", [set_id])?;
+
+        if was_active == 1 {
+            let next: Option<i64> = self
+                .conn
+                .query_row(
+                    "SELECT id FROM variable_sets WHERE prompt_id = ?1 ORDER BY created_at DESC, id DESC LIMIT 1",
+                    [prompt_id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if let Some(next_id) = next {
+                self.set_active_variable_set(prompt_id, next_id)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// The prompt's active set, creating a "Default" set (active) if it has
+    /// none. Used by the migration backfill so pre-feature values get a home.
+    fn get_or_create_default_set(&self, prompt_id: i64) -> Result<i64> {
+        let active: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM variable_sets WHERE prompt_id = ?1 AND is_active = 1 ORDER BY id LIMIT 1",
+                [prompt_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if let Some(id) = active {
+            return Ok(id);
+        }
+        let first: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT id FROM variable_sets WHERE prompt_id = ?1 ORDER BY created_at, id LIMIT 1",
+                [prompt_id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if let Some(id) = first {
+            self.set_active_variable_set(prompt_id, id)?;
+            return Ok(id);
+        }
+        self.create_variable_set(prompt_id, "Default")
     }
 
     fn row_to_prompt(row: &Row) -> Result<Prompt> {
@@ -383,6 +560,13 @@ impl Database {
         // FTS sync needed here. Keeping this as a plain DELETE means empty_trash's
         // loop can't be aborted by a broken FTS write on databases that pre-date
         // the migration.
+        // Foreign keys aren't enforced (no PRAGMA foreign_keys=ON), so remove
+        // the prompt's variable sets and values explicitly; they would otherwise
+        // linger after the prompt row is gone.
+        self.conn
+            .execute("DELETE FROM variable_sets WHERE prompt_id = ?1", [id])?;
+        self.conn
+            .execute("DELETE FROM prompt_variables WHERE prompt_id = ?1", [id])?;
         self.conn
             .execute("DELETE FROM prompts WHERE id = ?1", [id])?;
         Ok(())

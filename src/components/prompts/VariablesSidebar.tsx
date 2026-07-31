@@ -1,8 +1,10 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
+import type { VariableSet } from "@/types";
 
 interface VariablesSidebarProps {
   content: string;
@@ -17,6 +19,16 @@ interface VariablesSidebarProps {
       it resets when toggling panels. */
   expandedName: string | null;
   onToggleExpand: (name: string) => void;
+  /** The prompt's named variable sets; the active one is read/written. */
+  variableSets: VariableSet[];
+  /** Currently active set id, or null when the prompt has no sets yet. */
+  activeSetId: number | null;
+  /** Switch which set the editor reads/writes (parent reloads values). */
+  onSelectSet: (setId: number) => void;
+  /** Create a new named set (stays inactive unless it's the first). */
+  onCreateSet: (name: string) => void;
+  /** Delete a set and its saved values. */
+  onDeleteSet: (setId: number) => void;
 }
 
 /** A variable detected in the prompt content (read-only, derived). */
@@ -41,6 +53,11 @@ export function VariablesSidebar({
   onSaveVariable,
   expandedName,
   onToggleExpand,
+  variableSets,
+  activeSetId,
+  onSelectSet,
+  onCreateSet,
+  onDeleteSet,
 }: VariablesSidebarProps) {
   const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
   const [newName, setNewName] = useState("");
@@ -50,6 +67,9 @@ export function VariablesSidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDefault, setEditDefault] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  // Variable-set creation (inline name form shown by the dropdown's + button).
+  const [showCreateSet, setShowCreateSet] = useState(false);
+  const [newSetName, setNewSetName] = useState("");
 
   // Local draft values for the open textarea(s). These mirror what the user is
   // typing and are the source of truth for the textarea; the debounce/blur in
@@ -57,6 +77,14 @@ export function VariablesSidebar({
   // values when a row expands so external changes (e.g. reload) are reflected.
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Latest-value mirrors for the unmount flush below. The flush effect runs
+  // only once with mount-time closures; the refs keep it reading the freshest
+  // drafts (a set switch remounts this component, so stale drafts would
+  // otherwise overwrite the set the user just typed into).
+  const draftValuesRef = useRef(draftValues);
+  draftValuesRef.current = draftValues;
+  const variableValuesRef = useRef(variableValues);
+  variableValuesRef.current = variableValues;
 
   // Extract variables from content using regex pattern {{variableName}}
   const extractedVariables = useMemo(() => {
@@ -181,13 +209,15 @@ export function VariablesSidebar({
   );
 
   // Flush any pending debounced saves when the component unmounts (e.g. user
-  // switches panels or navigates away) so the latest value is never lost.
+  // switches panels, navigates away, or switches variable sets) so the latest
+  // value is never lost. Reads drafts via the refs to avoid mount-time stale
+  // closures (see above).
   useEffect(() => {
     const timers = debounceTimers.current;
     return () => {
       for (const name of Object.keys(timers)) {
         clearTimeout(timers[name]);
-        const value = draftValues[name] ?? variableValues[name] ?? "";
+        const value = draftValuesRef.current[name] ?? variableValuesRef.current[name] ?? "";
         onSaveVariable(name, value);
       }
     };
@@ -197,6 +227,25 @@ export function VariablesSidebar({
 
   const handleRowActivate = (name: string) => {
     onToggleExpand(name);
+  };
+
+  // --- Variable set switching / management ----------------------------------
+
+  const activeSet = variableSets.find((s) => s.id === activeSetId) ?? null;
+
+  const confirmCreateSet = () => {
+    const trimmed = newSetName.trim();
+    if (!trimmed) return;
+    onCreateSet(trimmed);
+    setNewSetName("");
+    setShowCreateSet(false);
+  };
+
+  const handleDeleteSet = () => {
+    if (activeSetId === null) return;
+    const label = activeSet ? `"${activeSet.name}"` : "this set";
+    if (!confirm(`Delete variable set ${label}? Its saved values for this prompt will be removed.`)) return;
+    onDeleteSet(activeSetId);
   };
 
   return (
@@ -291,6 +340,102 @@ export function VariablesSidebar({
         <p className="text-caption text-muted-foreground">
           Use {"{{variable_name}}"} syntax in your prompt
         </p>
+      </div>
+
+      {/* Variable sets — one prompt can hold many named value sets; the dropdown
+          switches the active set, and the + / × buttons create / delete one. */}
+      <div className="border-b border-border px-3 py-2 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <Select
+              value={activeSetId !== null ? String(activeSetId) : ""}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (v) onSelectSet(v);
+              }}
+              disabled={promptId === null || variableSets.length === 0}
+              aria-label="Variable set"
+              className="h-7 text-xs"
+            >
+              {variableSets.length === 0 && <option value="">No sets</option>}
+              {variableSets.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {s.isActive ? " · active" : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 w-7 p-0 flex-shrink-0"
+            onClick={() => setShowCreateSet((v) => !v)}
+            disabled={promptId === null}
+            title="Create variable set"
+          >
+            <Icon name="add" size="sm" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 w-7 p-0 flex-shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={handleDeleteSet}
+            disabled={promptId === null || activeSetId === null}
+            title="Delete active variable set"
+          >
+            <Icon name="close" size="sm" />
+          </Button>
+        </div>
+
+        {showCreateSet && (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={newSetName}
+              onChange={(e) => setNewSetName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  confirmCreateSet();
+                }
+                if (e.key === "Escape") {
+                  setShowCreateSet(false);
+                  setNewSetName("");
+                }
+              }}
+              autoFocus
+              placeholder="Set name, e.g. Client A…"
+              className="flex-1 min-w-0 rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            <Button
+              size="sm"
+              className="h-7 px-2 text-xs flex-shrink-0"
+              onClick={confirmCreateSet}
+              disabled={!newSetName.trim()}
+            >
+              Create
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 flex-shrink-0"
+              onClick={() => {
+                setShowCreateSet(false);
+                setNewSetName("");
+              }}
+              title="Cancel"
+            >
+              <Icon name="close" size="sm" />
+            </Button>
+          </div>
+        )}
+
+        {promptId === null && (
+          <p className="text-caption text-warning">
+            Save the prompt first to create variable sets.
+          </p>
+        )}
       </div>
 
       {/* Variable list */}

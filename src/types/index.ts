@@ -29,4 +29,10 @@ export interface PromptVersion {
   created_at: string;
 }
 
+export interface VariableSet {
+  id: number;
+  name: string;
+  isActive: boolean;
+}
+
 export type ViewMode = "list" | "grid";

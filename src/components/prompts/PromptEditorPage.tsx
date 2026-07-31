@@ -21,7 +21,7 @@ import {
 import { useSettings } from "@/contexts/SettingsContext";
 import { usePrompts } from "@/hooks/usePrompts";
 import { getContentStats } from "@/lib/utils";
-import type { PromptRow, PromptVersion } from "@/types";
+import type { PromptRow, PromptVersion, VariableSet } from "@/types";
 import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 
 // micro-label used above each field for a consistent, tracked-out technical feel
@@ -204,12 +204,25 @@ export function PromptEditorPage({
   const [description, setDescription] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const { getPromptVariables, savePromptVariable } = usePrompts();
+  const {
+    getPromptVariables,
+    savePromptVariable,
+    createVariableSet,
+    listVariableSets,
+    setActiveVariableSet,
+    deleteVariableSet,
+  } = usePrompts();
 
   // Accordion state — which detected variable's value editor is open. Owned
   // here so it resets when the prompt changes.
   const [expandedVariable, setExpandedVariable] = useState<string | null>(null);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+  // The prompt's variable sets and the one currently being read/written.
+  const [variableSets, setVariableSets] = useState<VariableSet[]>([]);
+  const [activeSetId, setActiveSetId] = useState<number | null>(null);
+  // Dedupe concurrent "ensure a set exists" refreshes (hydration + a save that
+  // lands before hydration finishes) so they can't both create a Default set.
+  const variableSetsLoadingRef = useRef<Promise<number | null> | null>(null);
 
   // ── Split-pane layout state, persisted globally via Settings. ──
   const { settings, updateSettings } = useSettings();
@@ -231,16 +244,59 @@ export function PromptEditorPage({
     [updateSettings],
   );
 
+  // Load (or lazily create) the prompt's sets, guaranteeing exactly one active
+  // set exists, and return its id. Shared so concurrent callers coalesce.
+  const refreshVariableSets = useCallback(
+    (pid: number): Promise<number | null> => {
+      if (variableSetsLoadingRef.current) return variableSetsLoadingRef.current;
+      const p = (async () => {
+        let sets = await listVariableSets(pid);
+        if (sets.length === 0) {
+          const id = await createVariableSet(pid, "Default");
+          sets = [{ id, name: "Default", isActive: true }];
+        } else if (!sets.some((s) => s.isActive)) {
+          await setActiveVariableSet(pid, sets[0].id);
+          sets = sets.map((s, i) => ({ ...s, isActive: i === 0 }));
+        }
+        setVariableSets(sets);
+        const active = sets.find((s) => s.isActive) ?? sets[0];
+        setActiveSetId(active?.id ?? null);
+        return active?.id ?? null;
+      })().finally(() => {
+        variableSetsLoadingRef.current = null;
+      });
+      variableSetsLoadingRef.current = p;
+      return p;
+    },
+    [listVariableSets, createVariableSet, setActiveVariableSet]
+  );
+
   useEffect(() => {
+    setExpandedVariable(null);
     if (prompt) {
       setTitle(prompt.title);
       setContent(prompt.content);
       setCategory(prompt.category || "");
       setTags(prompt.tags || "");
       setDescription(prompt.description || "");
-      getPromptVariables(prompt.id)
-        .then(setVariableValues)
-        .catch(() => setVariableValues({}));
+      let cancelled = false;
+      (async () => {
+        try {
+          // Ensure a set exists before loading values — get_prompt_variables
+          // filters by the active set, so an empty set list would read as "no
+          // values" even for a prompt that already has saved ones.
+          await refreshVariableSets(prompt.id);
+          if (cancelled) return;
+          const values = await getPromptVariables(prompt.id);
+          if (!cancelled) setVariableValues(values);
+        } catch (e) {
+          console.error("Failed to load variable values:", e);
+          if (!cancelled) setVariableValues({});
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     } else {
       setTitle("");
       setContent("");
@@ -248,21 +304,79 @@ export function PromptEditorPage({
       setTags("");
       setDescription("");
       setVariableValues({});
+      setVariableSets([]);
+      setActiveSetId(null);
     }
-    setExpandedVariable(null);
-  }, [prompt, getPromptVariables]);
+  }, [prompt, refreshVariableSets, getPromptVariables]);
 
   const handleSaveVariable = useCallback(
     async (name: string, value: string) => {
       if (!prompt) return;
       try {
-        await savePromptVariable(prompt.id, name, value);
+        // Guard: a fast-typing user can trigger a save before the sets finish
+        // hydrating; ensure there's a set to write into first.
+        let setId = activeSetId;
+        if (setId === null) {
+          setId = await refreshVariableSets(prompt.id);
+        }
+        if (setId === null) return;
+        await savePromptVariable(prompt.id, setId, name, value);
         setVariableValues((prev) => ({ ...prev, [name]: value }));
       } catch (e) {
         console.error("Failed to save variable value:", e);
       }
     },
-    [prompt, savePromptVariable],
+    [prompt, activeSetId, refreshVariableSets, savePromptVariable]
+  );
+
+  const handleSelectSet = useCallback(
+    async (setId: number) => {
+      if (!prompt) return;
+      try {
+        await setActiveVariableSet(prompt.id, setId);
+        setVariableSets((prev) => prev.map((s) => ({ ...s, isActive: s.id === setId })));
+        setActiveSetId(setId);
+        setVariableValues(await getPromptVariables(prompt.id));
+      } catch (e) {
+        console.error("Failed to switch variable set:", e);
+      }
+    },
+    [prompt, setActiveVariableSet, getPromptVariables]
+  );
+
+  const handleCreateSet = useCallback(
+    async (name: string) => {
+      if (!prompt) return;
+      try {
+        await createVariableSet(prompt.id, name);
+        const sets = await listVariableSets(prompt.id);
+        setVariableSets(sets);
+        const active = sets.find((s) => s.isActive) ?? sets[0];
+        setActiveSetId(active?.id ?? null);
+      } catch (e) {
+        console.error("Failed to create variable set:", e);
+      }
+    },
+    [prompt, createVariableSet, listVariableSets]
+  );
+
+  const handleDeleteSet = useCallback(
+    async (setId: number) => {
+      if (!prompt) return;
+      try {
+        await deleteVariableSet(setId);
+        const sets = await listVariableSets(prompt.id);
+        setVariableSets(sets);
+        const active = sets.find((s) => s.isActive) ?? sets[0];
+        setActiveSetId(active?.id ?? null);
+        // The active set may have switched (deleting it promotes another), so
+        // reload the values the editor and preview show.
+        setVariableValues(await getPromptVariables(prompt.id));
+      } catch (e) {
+        console.error("Failed to delete variable set:", e);
+      }
+    },
+    [prompt, deleteVariableSet, listVariableSets, getPromptVariables]
   );
 
   const handleToggleExpandVariable = useCallback((name: string) => {
@@ -441,6 +555,9 @@ export function PromptEditorPage({
         case "variables":
           return (
             <VariablesSidebar
+              // Remount on set switch so in-flight draft values (which belong to
+              // the previous set) don't linger in the editor's textareas.
+              key={activeSetId ?? "no-set"}
               content={content}
               onInsertVariable={handleInsertVariable}
               promptId={prompt?.id ?? null}
@@ -448,6 +565,11 @@ export function PromptEditorPage({
               onSaveVariable={handleSaveVariable}
               expandedName={expandedVariable}
               onToggleExpand={handleToggleExpandVariable}
+              variableSets={variableSets}
+              activeSetId={activeSetId}
+              onSelectSet={handleSelectSet}
+              onCreateSet={handleCreateSet}
+              onDeleteSet={handleDeleteSet}
             />
           );
         case "history":
@@ -473,6 +595,8 @@ export function PromptEditorPage({
       description,
       categories,
       variableValues,
+      variableSets,
+      activeSetId,
       expandedVariable,
       prompt?.id,
       isEditing,
@@ -480,6 +604,9 @@ export function PromptEditorPage({
       handleSaveVariable,
       handleToggleExpandVariable,
       handleRestoreVersion,
+      handleSelectSet,
+      handleCreateSet,
+      handleDeleteSet,
     ],
   );
 
