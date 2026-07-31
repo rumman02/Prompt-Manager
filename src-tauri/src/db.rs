@@ -1,3 +1,4 @@
+use crate::demo;
 use rusqlite::{Connection, OptionalExtension, Result, Row};
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
@@ -928,94 +929,88 @@ impl Database {
         self.get_prompt_version(id)
     }
 
+    /// Seed the demo library. Bumping DEMO_SEED_VERSION wipes the previous demo
+    /// content and reseeds, so an existing dev database picks up new demo data
+    /// instead of being skipped by the old "only seed when empty" check.
     pub fn seed_demo_prompts(&self) -> Result<()> {
-        let count: i64 = self
+        const DEMO_SEED_VERSION: i64 = 2;
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+            [],
+        )?;
+
+        let seeded: i64 = self
             .conn
-            .query_row("SELECT COUNT(*) FROM prompts", [], |row| row.get(0))?;
-        if count > 0 {
+            .query_row(
+                "SELECT CAST(value AS INTEGER) FROM app_meta WHERE key = 'demo_seed_version'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        if seeded >= DEMO_SEED_VERSION {
             return Ok(());
         }
 
-        let demo_prompts: Vec<(&str, &str, Option<&str>, Option<&str>, Option<&str>)> = vec![
-            (
-                "Code Review Assistant",
-                "You are an expert code reviewer. Analyze the following code and provide:\n1. A summary of what the code does\n2. Potential bugs or issues\n3. Performance improvements\n4. Security vulnerabilities\n5. Style and readability suggestions\n\nCode to review:\n```\n{{code}}\n```",
-                Some("Development"),
-                Some("code,review,debugging"),
-                Some("Reviews code for bugs, performance, security, and style"),
-            ),
-            (
-                "Blog Post Writer",
-                "Write a comprehensive blog post about {{topic}}. The post should:\n- Have an engaging headline\n- Include an introduction that hooks the reader\n- Contain 3-5 main sections with subheadings\n- Use examples and data to support claims\n- End with a strong conclusion and call-to-action\n- Be approximately {{word_count}} words\n- Target audience: {{audience}}\nTone: {{tone}}",
-                Some("Writing"),
-                Some("blog,content,seo"),
-                Some("Generates SEO-optimized blog posts with structured sections"),
-            ),
-            (
-                "Data Analysis Explainer",
-                "You are a data analyst. Given the following dataset or results, provide:\n1. Key findings and insights\n2. Notable trends or patterns\n3. Potential correlations\n4. Actionable recommendations\n5. Visualizations that would best represent this data\n\nData:\n{{data}}\n\nContext: {{context}}\n\nExplain this to a {{audience_level}} audience.",
-                Some("Data Science"),
-                Some("data,analysis,insights"),
-                Some("Analyzes data and explains findings for different audiences"),
-            ),
-            (
-                "Creative Story Generator",
-                "Write a {{genre}} story with the following elements:\n- Setting: {{setting}}\n- Main character: {{character}}\n- Conflict: {{conflict}}\n- Theme: {{theme}}\n\nThe story should be approximately {{length}} words and written in a {{style}} style. Include vivid descriptions, natural dialogue, and a satisfying resolution.",
-                Some("Creative Writing"),
-                Some("story,creative,fiction"),
-                Some("Generates creative stories with customizable elements"),
-            ),
-            (
-                "Email Campaign Copy",
-                "Write a marketing email campaign for {{product_service}}. Include:\n1. 3 subject line options (A/B/C testing)\n2. Preview text\n3. Engaging opening\n4. Value proposition\n5. Social proof or testimonial placeholder\n6. Clear call-to-action\n7. P.S. line for urgency\n\nTarget audience: {{audience}}\nTone: {{tone}}\nGoal: {{goal}}",
-                Some("Marketing"),
-                Some("email,campaign,copywriting"),
-                Some("Creates marketing email copy with subject lines and CTAs"),
-            ),
-            (
-                "Lesson Plan Creator",
-                "Create a detailed lesson plan for teaching {{subject}} to {{grade_level}} students.\n\nInclude:\n- Learning objectives (3-5 measurable goals)\n- Materials needed\n- Warm-up activity (5-10 minutes)\n- Main instruction (direct teaching + guided practice)\n- Independent practice activity\n- Assessment/check for understanding\n- Differentiation strategies\n- Extension activities\n- Homework assignment\n\nDuration: {{duration}}\nStandards: {{standards}}",
-                Some("Education"),
-                Some("lesson,teaching,curriculum"),
-                Some("Generates structured lesson plans with objectives and activities"),
-            ),
-            (
-                "Meeting Summarizer",
-                "Summarize the following meeting transcript/notes and provide:\n1. Key decisions made\n2. Action items (with owners and deadlines)\n3. Open questions or unresolved issues\n4. Next meeting agenda suggestions\n\nMeeting notes:\n{{notes}}\n\nFormat the output as a professional summary suitable for sharing with stakeholders.",
-                Some("Productivity"),
-                Some("meeting,summary,notes"),
-                Some("Summarizes meetings into decisions, action items, and follow-ups"),
-            ),
-            (
-                "Technical Documentation",
-                "Write clear technical documentation for {{feature_api}}. Include:\n1. Overview and purpose\n2. Prerequisites\n3. Installation/setup instructions\n4. Usage examples with code snippets\n5. Configuration options\n6. Error handling and troubleshooting\n7. FAQ section\n8. Changelog\n\nTarget audience: {{audience}}\nFormat: Markdown\nTone: Professional but approachable",
-                Some("Development"),
-                Some("docs,api,technical-writing"),
-                Some("Creates comprehensive technical documentation with examples"),
-            ),
-            (
-                "Social Media Content",
-                "Create a week's worth of social media content for {{platform}} about {{topic}}.\n\nFor each day, provide:\n- Post copy (platform-appropriate length)\n- Hashtag suggestions\n- Visual/image description\n- Engagement question or CTA\n- Best posting time\n\nBrand voice: {{tone}}\nTarget audience: {{audience}}\nGoals: {{goals}}",
-                Some("Marketing"),
-                Some("social,content,scheduling"),
-                Some("Generates weekly social media content calendars"),
-            ),
-            (
-                "SQL Query Optimizer",
-                "You are a database optimization expert. Analyze the following SQL query and:\n1. Explain what the query does\n2. Identify performance bottlenecks\n3. Suggest indexes to improve performance\n4. Provide an optimized version\n5. Explain the improvements made\n\nDatabase: {{database_type}}\nQuery:\n```sql\n{{query}}\n```\n\nTable schema (if available): {{schema}}",
-                Some("Data Science"),
-                Some("sql,database,optimization"),
-                Some("Optimizes SQL queries and suggests performance improvements"),
-            ),
-        ];
+        // Replace any earlier demo content. Child rows are removed explicitly
+        // because ON DELETE CASCADE only fires when foreign keys are enabled.
+        self.conn.execute("DELETE FROM prompt_variables", [])?;
+        self.conn.execute("DELETE FROM variable_sets", [])?;
+        self.conn.execute("DELETE FROM prompt_versions", [])?;
+        self.conn.execute("DELETE FROM prompts", [])?;
+        self.conn
+            .execute("DELETE FROM sqlite_sequence WHERE name IN ('prompts', 'prompt_versions', 'variable_sets', 'prompt_variables')", [])
+            .ok();
 
-        for (title, content, category, tags, description) in demo_prompts {
+        for demo in demo::all() {
+            let created = format!("-{} days", demo.days_ago);
             self.conn.execute(
-                "INSERT INTO prompts (title, content, category, tags, description)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-                rusqlite::params![title, content, category, tags, description],
+                "INSERT INTO prompts (title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, datetime('now', ?7), datetime('now', ?7), NULL)",
+                rusqlite::params![
+                    demo.title,
+                    demo.content,
+                    demo.category,
+                    demo.tags,
+                    demo.description,
+                    if demo.is_favorite { 1 } else { 0 },
+                    created,
+                ],
             )?;
+            let prompt_id = self.conn.last_insert_rowid();
+
+            for set in demo.var_sets {
+                let set_id = self.create_variable_set(prompt_id, set.name)?;
+                for (name, value) in set.values {
+                    self.upsert_prompt_variable(prompt_id, set_id, name, value)?;
+                }
+            }
+
+            for version in demo.versions {
+                self.save_prompt_version(
+                    prompt_id,
+                    demo.title,
+                    version.content,
+                    Some(demo.category),
+                    Some(demo.tags),
+                    Some(demo.description),
+                    Some(version.message),
+                )?;
+            }
+
+            if demo.trashed {
+                self.conn.execute(
+                    "UPDATE prompts SET deleted_at = datetime('now', '-2 days') WHERE id = ?1",
+                    [prompt_id],
+                )?;
+            }
         }
+
+        self.conn.execute(
+            "INSERT INTO app_meta (key, value) VALUES ('demo_seed_version', ?1)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            [DEMO_SEED_VERSION.to_string()],
+        )?;
 
         Ok(())
     }

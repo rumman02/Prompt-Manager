@@ -1,4 +1,5 @@
 pub mod db;
+pub mod demo;
 
 // Version control commands
 
