@@ -300,7 +300,7 @@ function AppContent() {
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-hidden">
           {isEditorPageOpen && (
             <PromptEditorPage
               prompt={editingPrompt}
@@ -331,6 +331,7 @@ function AppContent() {
             <PromptList
               prompts={filteredPrompts}
               viewMode={viewMode}
+              onViewModeChange={setViewMode}
               onSelect={setSelectedPrompt}
               onEdit={handleEditPrompt}
               onDelete={handleDeletePrompt}

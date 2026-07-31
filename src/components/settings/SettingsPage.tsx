@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/dropdown";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -202,15 +202,12 @@ export function SettingsPage() {
                 <Label className="text-subheadline">UI Font</Label>
                 <p className="text-footnote mt-0.5">Application interface font family</p>
               </div>
-              <Select
+              <Dropdown
                 value={settings.fontFamily}
-                onChange={(e) => updateSettings({ fontFamily: e.target.value })}
+                onChange={(v) => updateSettings({ fontFamily: v })}
                 className="w-48"
-              >
-                {FONT_FAMILIES.map((f) => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
-                ))}
-              </Select>
+                options={FONT_FAMILIES.map((f) => ({ value: f.value, label: f.label }))}
+              />
             </div>
 
             <Separator />
@@ -220,15 +217,12 @@ export function SettingsPage() {
                 <Label className="text-subheadline">Editor Font</Label>
                 <p className="text-footnote mt-0.5">Code editor monospace font</p>
               </div>
-              <Select
+              <Dropdown
                 value={settings.editorFontFamily}
-                onChange={(e) => updateSettings({ editorFontFamily: e.target.value })}
+                onChange={(v) => updateSettings({ editorFontFamily: v })}
                 className="w-48"
-              >
-                {EDITOR_FONT_FAMILIES.map((f) => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
-                ))}
-              </Select>
+                options={EDITOR_FONT_FAMILIES.map((f) => ({ value: f.value, label: f.label }))}
+              />
             </div>
 
             <Separator />
@@ -238,15 +232,12 @@ export function SettingsPage() {
                 <Label className="text-subheadline">Base Font Size</Label>
                 <p className="text-footnote mt-0.5">Scale the app's text size</p>
               </div>
-              <Select
+              <Dropdown
                 value={settings.fontSize}
-                onChange={(e) => updateSettings({ fontSize: e.target.value })}
+                onChange={(v) => updateSettings({ fontSize: v })}
                 className="w-28"
-              >
-                {FONT_SIZES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </Select>
+                options={FONT_SIZES.map((s) => ({ value: s.value, label: s.label }))}
+              />
             </div>
           </div>
         </CardContent>
@@ -264,31 +255,21 @@ export function SettingsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="language">Language</Label>
-              <Select
+              <Dropdown
                 id="language"
                 value={settings.language}
-                onChange={(e) => updateSettings({ language: e.target.value })}
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.label}
-                  </option>
-                ))}
-              </Select>
+                onChange={(v) => updateSettings({ language: v })}
+                options={LANGUAGES.map((lang) => ({ value: lang.code, label: lang.label }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateFormat">Date Format</Label>
-              <Select
+              <Dropdown
                 id="dateFormat"
                 value={settings.dateFormat}
-                onChange={(e) => updateSettings({ dateFormat: e.target.value })}
-              >
-                {DATE_FORMATS.map((fmt) => (
-                  <option key={fmt.value} value={fmt.value}>
-                    {fmt.label}
-                  </option>
-                ))}
-              </Select>
+                onChange={(v) => updateSettings({ dateFormat: v })}
+                options={DATE_FORMATS.map((fmt) => ({ value: fmt.value, label: fmt.label }))}
+              />
             </div>
           </div>
         </CardContent>
@@ -359,17 +340,18 @@ export function SettingsPage() {
                 }
                 className="w-24"
               />
-              <Select
+              <Dropdown
                 value={settings.trashTimeoutUnit}
-                onChange={(e) =>
-                  updateSettings({ trashTimeoutUnit: e.target.value as "days" | "weeks" | "months" })
+                onChange={(v) =>
+                  updateSettings({ trashTimeoutUnit: v as "days" | "weeks" | "months" })
                 }
                 className="w-32"
-              >
-                <option value="days">Days</option>
-                <option value="weeks">Weeks</option>
-                <option value="months">Months</option>
-              </Select>
+                options={[
+                  { value: "days", label: "Days" },
+                  { value: "weeks", label: "Weeks" },
+                  { value: "months", label: "Months" },
+                ]}
+              />
             </div>
             <div className="rounded-xl border bg-muted/30 px-4 py-3">
               <div className="flex items-center gap-2">

@@ -11,6 +11,7 @@ import { ActionsMenu } from "@/components/ui/actions-menu";
 import { RenameDialog } from "@/components/ui/rename-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
+import { Dropdown } from "@/components/ui/dropdown";
 import { Icon } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
 
@@ -393,19 +394,13 @@ function AddTagsModal({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="prompt-select">Select Prompt</Label>
-          <select
+          <Dropdown
             id="prompt-select"
-            value={selectedPromptId ?? ""}
-            onChange={(e) => setSelectedPromptId(Number(e.target.value) || null)}
-            className="flex h-8 w-full rounded-sm border border-input bg-background px-3 py-1.5 pr-8 text-sm shadow-macos-inset ring-offset-background appearance-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <option value="">Choose a prompt...</option>
-            {prompts.map((prompt) => (
-              <option key={prompt.id} value={prompt.id}>
-                {prompt.title}
-              </option>
-            ))}
-          </select>
+            value={selectedPromptId ? String(selectedPromptId) : ""}
+            onChange={(v) => setSelectedPromptId(v ? Number(v) : null)}
+            options={prompts.map((prompt) => ({ value: String(prompt.id), label: prompt.title }))}
+            placeholder="Choose a prompt..."
+          />
         </div>
 
         {selectedPromptId && (

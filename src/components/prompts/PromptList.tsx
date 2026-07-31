@@ -50,7 +50,7 @@ export function PromptList({
   onSearchFocused,
 }: PromptListProps) {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {showHeader && headerTitle && (
         <PageHeader
           icon="prompts"
@@ -59,21 +59,6 @@ export function PromptList({
           actions={
             (onSearch || onCreatePrompt || onViewModeChange) ? (
               <div className="flex items-center gap-3">
-                {onSearch && (
-                  <SearchBar
-                    value={searchQuery ?? ""}
-                    onChange={onSearch}
-                    placeholder="Search prompts..."
-                    autoFocus={autoFocusSearch}
-                    onFocus={onSearchFocused}
-                  />
-                )}
-                {onCreatePrompt && (
-                  <Button onClick={onCreatePrompt} className="gap-2">
-                    <Icon name="add" size="sm" />
-                    Add Prompt
-                  </Button>
-                )}
                 {onViewModeChange && (
                   <div className="inline-flex h-8 rounded-lg bg-muted p-1 shadow-macos-inset">
                     <button
@@ -98,12 +83,27 @@ export function PromptList({
                     </button>
                   </div>
                 )}
+                {onSearch && (
+                  <SearchBar
+                    value={searchQuery ?? ""}
+                    onChange={onSearch}
+                    placeholder="Search prompts..."
+                    autoFocus={autoFocusSearch}
+                    onFocus={onSearchFocused}
+                  />
+                )}
+                {onCreatePrompt && (
+                  <Button onClick={onCreatePrompt} className="gap-2">
+                    <Icon name="add" size="sm" />
+                    Add Prompt
+                  </Button>
+                )}
               </div>
             ) : undefined
           }
         />
       )}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 min-h-0 overflow-auto p-6">
         {prompts.length === 0 ? (
           <EmptyPromptsState
             icon="prompts"

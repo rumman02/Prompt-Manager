@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
@@ -347,24 +347,20 @@ export function VariablesSidebar({
       <div className="border-b border-border px-3 py-2 space-y-2">
         <div className="flex items-center gap-2">
           <div className="flex-1 min-w-0">
-            <Select
+            <Dropdown
               value={activeSetId !== null ? String(activeSetId) : ""}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (v) onSelectSet(v);
+              onChange={(v) => {
+                const num = Number(v);
+                if (num) onSelectSet(num);
               }}
               disabled={promptId === null || variableSets.length === 0}
-              aria-label="Variable set"
+              placeholder="No sets"
               className="h-7 text-xs"
-            >
-              {variableSets.length === 0 && <option value="">No sets</option>}
-              {variableSets.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                  {s.isActive ? " · active" : ""}
-                </option>
-              ))}
-            </Select>
+              options={variableSets.map((s) => ({
+                value: String(s.id),
+                label: `${s.name}${s.isActive ? " · active" : ""}`,
+              }))}
+            />
           </div>
           <Button
             size="sm"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
+import { Dropdown } from "@/components/ui/dropdown";
 import { formatDate, VARIABLE_TOKEN_RE } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
@@ -238,22 +238,18 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
                     prompt actually uses variables, otherwise it's pure noise. */}
                 {hasVariables && variableSets.length > 0 && (
                   <div className="w-44 min-w-0">
-                    <Select
+                    <Dropdown
                       value={activeSetId !== null ? String(activeSetId) : ""}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        if (v) handleSelectSet(v);
+                      onChange={(v) => {
+                        const num = Number(v);
+                        if (num) handleSelectSet(num);
                       }}
-                      aria-label="Variable set"
                       className="h-7 text-xs"
-                    >
-                      {variableSets.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                          {s.isActive ? " · active" : ""}
-                        </option>
-                      ))}
-                    </Select>
+                      options={variableSets.map((s) => ({
+                        value: String(s.id),
+                        label: `${s.name}${s.isActive ? " · active" : ""}`,
+                      }))}
+                    />
                   </div>
                 )}
                 <Button

@@ -3,8 +3,11 @@ import { PromptList } from "@/components/prompts/PromptList";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
+import { Dropdown } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
+import { Label } from "@/components/ui/label";
+import { Modal } from "@/components/ui/modal";
 import type { PromptRow } from "@/types";
 
 interface FavoritesPageProps {
@@ -29,8 +32,14 @@ export function FavoritesPage({
   onToggleFavorite,
 }: FavoritesPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const allFavorites = useMemo(
     () => prompts.filter((p) => p.is_favorite),
+    [prompts]
+  );
+  const nonFavorites = useMemo(
+    () => prompts.filter((p) => !p.is_favorite),
     [prompts]
   );
   const favoritePrompts = useMemo(() => {
@@ -56,7 +65,7 @@ export function FavoritesPage({
               onChange={setSearchQuery}
               placeholder="Search favorites..."
             />
-            <Button disabled className="gap-2 opacity-50">
+            <Button className="gap-2" onClick={() => setIsAddModalOpen(true)}>
               <Icon name="add" size="sm" />
               Add Favorite
             </Button>
@@ -86,6 +95,58 @@ export function FavoritesPage({
           onCreatePrompt={undefined}
         />
       )}
+
+      <Modal
+        open={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setSelectedId(null);
+        }}
+        title="Add Favorite"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsAddModalOpen(false);
+                setSelectedId(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={!selectedId}
+              onClick={() => {
+                if (selectedId) onToggleFavorite(selectedId);
+                setIsAddModalOpen(false);
+                setSelectedId(null);
+              }}
+            >
+              Add Favorite
+            </Button>
+          </>
+        }
+      >
+        {nonFavorites.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            All prompts are already favorited.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="add-favorite-prompt">Select Prompt</Label>
+            <Dropdown
+              id="add-favorite-prompt"
+              value={selectedId !== null ? String(selectedId) : ""}
+              onChange={(value) => setSelectedId(Number(value))}
+              options={nonFavorites.map((p) => ({
+                value: String(p.id),
+                label: p.title,
+              }))}
+              placeholder="Choose a prompt..."
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
