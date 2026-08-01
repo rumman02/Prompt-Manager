@@ -22,7 +22,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
       {STAT_CONFIGS.map((config, index) => (
         <Card key={config.title} className="border-0 shadow-none bg-transparent">
-          <CardContent className="flex items-center gap-4 p-4 pt-4">
+          <CardContent className="flex items-center gap-4 p-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Icon name={config.icon as IconName} size="lg" className="text-primary" />
             </div>

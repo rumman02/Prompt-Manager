@@ -514,7 +514,7 @@ export function PromptEditorPage({
                   />
                 </div>
 
-                <div className="space-y-1">
+                <div className="w-fit space-y-1">
                   <FieldLabel htmlFor="icon">Icon</FieldLabel>
                   <IconPickerButton value={icon} onSelect={setIcon} onClear={() => setIcon(null)} fallback="file" />
                 </div>

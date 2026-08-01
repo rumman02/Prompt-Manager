@@ -37,17 +37,27 @@ export function PromptCard({
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex items-start gap-2.5 min-w-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+          <div className="flex items-start gap-3 min-w-0">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0 mt-0.5"
+              aria-hidden="true"
+            >
               <Icon
                 name={isIconName(prompt.icon) ? prompt.icon : "file"}
                 size="md"
                 className="text-primary"
               />
             </div>
-            <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors min-w-0">
-              {prompt.title}
-            </CardTitle>
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors min-w-0">
+                {prompt.title}
+              </CardTitle>
+              {prompt.category && (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
+                  {prompt.category}
+                </span>
+              )}
+            </div>
           </div>
           <PromptActionsMenu
             ref={actionsRef}
@@ -59,11 +69,6 @@ export function PromptCard({
             className="opacity-0 group-hover:opacity-100 transition-opacity"
           />
         </div>
-        {prompt.category && (
-          <span className="ml-[42px] inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
-            {prompt.category}
-          </span>
-        )}
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground leading-relaxed">

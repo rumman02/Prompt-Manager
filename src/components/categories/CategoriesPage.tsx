@@ -262,13 +262,16 @@ function CategoryCard({
       <CardContent className="p-4 space-y-3">
         {/* row 1: icon + name + actions */}
         <div className="flex items-center gap-3">
-          <span onClick={(e) => e.stopPropagation()}>
+          <span
+            onClick={(e) => e.stopPropagation()}
+          >
             <IconPickerButton
               value={icon}
               onSelect={onSetIcon}
               onClear={onClearIcon}
               fallback="categories"
               className={`${color.bg} ${color.text}`}
+              ariaLabel={`Change icon for ${category.category}`}
             />
           </span>
           <div className="min-w-0 flex-1 text-left">

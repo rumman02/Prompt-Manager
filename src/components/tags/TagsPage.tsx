@@ -240,13 +240,16 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                   className="group grid col-span-3 grid-cols-subgrid gap-x-4 items-center px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span onClick={(e) => e.stopPropagation()}>
+                    <span
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <IconPickerButton
                         value={tagIcons[tag.name] ?? null}
                         onSelect={(icon) => setTagIcon(tag.name, icon)}
                         onClear={() => clearTagIcon(tag.name)}
                         fallback="tags"
                         className={`${resourceColor(tag.name).bg} ${resourceColor(tag.name).text}`}
+                        ariaLabel={`Change icon for ${tag.name}`}
                       />
                     </span>
                     <span className="text-sm font-medium truncate">{tag.name}</span>
@@ -348,13 +351,16 @@ function TagCard({
       className="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <CardContent className="p-3 flex items-center gap-3">
-        <span onClick={(e) => e.stopPropagation()}>
+        <span
+          onClick={(e) => e.stopPropagation()}
+        >
           <IconPickerButton
             value={icon}
             onSelect={onSetIcon}
             onClear={onClearIcon}
             fallback="tags"
             className={`${color.bg} ${color.text}`}
+            ariaLabel={`Change icon for ${tag.name}`}
           />
         </span>
         <div className="min-w-0 flex-1">

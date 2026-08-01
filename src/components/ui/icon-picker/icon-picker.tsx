@@ -139,6 +139,8 @@ export interface IconPickerButtonProps {
   className?: string;
   /** Optional label rendered next to the swatch. */
   label?: string;
+  /** Accessible name for the trigger, e.g. "Change icon for Marketing". */
+  ariaLabel?: string;
 }
 
 export function IconPickerButton({
@@ -148,6 +150,7 @@ export function IconPickerButton({
   fallback,
   className,
   label,
+  ariaLabel,
 }: IconPickerButtonProps) {
   const [open, setOpen] = useState(false);
 
@@ -155,8 +158,8 @@ export function IconPickerButton({
     <div className={cn("flex items-center gap-3", className)}>
       <button
         type="button"
-        title="Change icon"
-        aria-label="Change icon"
+        title={ariaLabel ?? "Change icon"}
+        aria-label={ariaLabel ?? "Change icon"}
         onClick={() => setOpen(true)}
         className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary border border-transparent hover:border-border transition-colors"
       >
