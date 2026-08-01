@@ -273,6 +273,29 @@ fn clear_entity_icon(
 }
 
 #[tauri::command]
+fn set_entity_color(
+    app_handle: tauri::AppHandle,
+    entity_type: String,
+    entity_name: String,
+    color: String,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.set_entity_color(&entity_type, &entity_name, &color)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn clear_entity_color(
+    app_handle: tauri::AppHandle,
+    entity_type: String,
+    entity_name: String,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.clear_entity_color(&entity_type, &entity_name)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn get_entity_icons(
     app_handle: tauri::AppHandle,
     entity_type: String,
@@ -686,6 +709,8 @@ pub fn run() {
             rename_category,
             set_entity_icon,
             clear_entity_icon,
+            set_entity_color,
+            clear_entity_color,
             get_entity_icons,
             save_prompt_version,
             get_prompt_versions,

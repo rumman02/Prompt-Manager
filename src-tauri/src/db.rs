@@ -27,6 +27,7 @@ pub struct CategoryCount {
 pub struct EntityIcon {
     pub name: String,
     pub icon: String,
+    pub color: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -254,10 +255,19 @@ impl Database {
                 entity_type TEXT NOT NULL,
                 entity_name TEXT NOT NULL,
                 icon TEXT NOT NULL,
+                color TEXT,
                 PRIMARY KEY (entity_type, entity_name)
             )",
             [],
         )?;
+
+        // Migration: databases created before entity colors have no color
+        // column. Error-tolerant so it's a no-op when the column already
+        // exists (fresh databases get it from the CREATE TABLE above).
+        let _ = self.conn.execute(
+            "ALTER TABLE entity_icons ADD COLUMN color TEXT",
+            [],
+        );
 
         // Migration: databases created before variable sets have no set_id
         // column. Add it, then upgrade the unique index from (prompt_id, name)
@@ -896,16 +906,39 @@ impl Database {
         Ok(())
     }
 
+    /// Upsert the accent color for a named entity. `entity_type` is
+    /// "category" or "tag". The icon is written as an empty string (the
+    /// frontend treats that as "no custom icon") because icon is NOT NULL in
+    /// databases created before the color column existed.
+    pub fn set_entity_color(&self, entity_type: &str, entity_name: &str, color: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO entity_icons (entity_type, entity_name, icon, color) VALUES (?1, ?2, '', ?3)
+             ON CONFLICT(entity_type, entity_name) DO UPDATE SET color = excluded.color",
+            rusqlite::params![entity_type, entity_name, color],
+        )?;
+        Ok(())
+    }
+
+    /// Remove a custom color so the entity falls back to the theme accent.
+    pub fn clear_entity_color(&self, entity_type: &str, entity_name: &str) -> Result<()> {
+        self.conn.execute(
+            "UPDATE entity_icons SET color = NULL WHERE entity_type = ?1 AND entity_name = ?2",
+            rusqlite::params![entity_type, entity_name],
+        )?;
+        Ok(())
+    }
+
     /// All custom icons for one entity type, as (name, icon) pairs.
     pub fn get_entity_icons(&self, entity_type: &str) -> Result<Vec<EntityIcon>> {
         let mut stmt = self.conn.prepare(
-            "SELECT entity_name, icon FROM entity_icons WHERE entity_type = ?1",
+            "SELECT entity_name, icon, color FROM entity_icons WHERE entity_type = ?1",
         )?;
         let icons = stmt
             .query_map([entity_type], |row| {
                 Ok(EntityIcon {
                     name: row.get(0)?,
                     icon: row.get(1)?,
+                    color: row.get(2)?,
                 })
             })?
             .filter_map(|r| r.ok())

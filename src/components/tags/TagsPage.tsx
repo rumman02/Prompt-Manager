@@ -6,14 +6,15 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Input } from "@/components/ui/input";
-import { resourceColor } from "@/constants/colors";
+import { resourceColor, type ResourceColorKey } from "@/constants/colors";
 import { ActionsMenu } from "@/components/ui/actions-menu";
+import { ContextMenu } from "@/components/ui/context-menu";
+import { EntityEditDialog } from "@/components/ui/entity-edit-dialog";
 import { RenameDialog } from "@/components/ui/rename-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { Dropdown } from "@/components/ui/dropdown";
 import { Icon, type IconName } from "@/components/ui/icon";
-import { IconPickerButton } from "@/components/ui/icon-picker";
 import { useEntityIcons } from "@/hooks/useEntityIcons";
 import type { PromptRow } from "@/types";
 
@@ -30,8 +31,15 @@ interface TagsPageProps {
 
 
 export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
-  const { icons: tagIcons, setIcon: setTagIcon, clearIcon: clearTagIcon } =
-    useEntityIcons("tag");
+  const {
+    icons: tagIcons,
+    colors,
+    setIcon: setTagIcon,
+    clearIcon: clearTagIcon,
+    setColor,
+    clearColor,
+    load: loadTagIcons,
+  } = useEntityIcons("tag");
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "count">("name");
@@ -41,6 +49,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [renamingTag, setRenamingTag] = useState<string | null>(null);
+  const [editingTag, setEditingTag] = useState<string | null>(null);
 
   useEffect(() => {
     loadPrompts();
@@ -178,6 +187,38 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
     }
   };
 
+  const handleEditTag = async (next: {
+    name: string;
+    icon: IconName | null;
+    color: ResourceColorKey | null;
+  }) => {
+    const oldName = editingTag;
+    if (!oldName) return;
+    try {
+      if (next.icon !== (tagIcons[oldName] ?? null)) {
+        await (next.icon
+          ? setTagIcon(oldName, next.icon)
+          : clearTagIcon(oldName));
+      }
+      if (next.color !== (colors[oldName] ?? null)) {
+        await (next.color ? setColor(oldName, next.color) : clearColor(oldName));
+      }
+      if (next.name && next.name !== oldName) {
+        // Rename rewrites the tag on every affected prompt (tags are a
+        // comma-separated string). Icon/color were applied to the OLD name
+        // above, before the rename.
+        await handleRenameTag(oldName, next.name);
+      }
+      await loadPrompts();
+      onRefresh();
+      await loadTagIcons();
+      setEditingTag(null);
+    } catch (e) {
+      console.error("Failed to edit tag:", e);
+      setEditingTag(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
@@ -204,16 +245,25 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredTags.map((tag) => (
-              <TagCard
+              <ContextMenu
                 key={tag.name}
-                tag={tag}
-                onSelect={() => onTagSelect(tag.name)}
-                onRename={(name) => setRenamingTag(name)}
-                onDelete={() => handleDeleteTag(tag.name)}
-                icon={tagIcons[tag.name] ?? null}
-                onSetIcon={(icon) => setTagIcon(tag.name, icon)}
-                onClearIcon={() => clearTagIcon(tag.name)}
-              />
+                className="contents"
+                items={[
+                  { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
+                  { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
+                  { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
+                ]}
+              >
+                <TagCard
+                  tag={tag}
+                  onSelect={() => onTagSelect(tag.name)}
+                  onRename={(name) => setRenamingTag(name)}
+                  onDelete={() => handleDeleteTag(tag.name)}
+                  onEdit={() => setEditingTag(tag.name)}
+                  icon={tagIcons[tag.name] ?? null}
+                  colorKey={colors[tag.name] ?? null}
+                />
+              </ContextMenu>
             ))}
           </div>
         ) : (
@@ -224,54 +274,58 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
               <span className="w-28 text-right">Actions</span>
             </div>
             <div className="grid col-span-3 grid-cols-subgrid divide-y contents">
-              {filteredTags.map((tag) => (
-                <div
-                  key={tag.name}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onTagSelect(tag.name)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onTagSelect(tag.name);
-                    }
-                  }}
-                  title={`View prompts tagged "${tag.name}"`}
-                  className="group grid col-span-3 grid-cols-subgrid gap-x-4 items-center px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <IconPickerButton
-                        value={tagIcons[tag.name] ?? null}
-                        onSelect={(icon) => setTagIcon(tag.name, icon)}
-                        onClear={() => clearTagIcon(tag.name)}
-                        fallback="tags"
-                        className={`${resourceColor(tag.name).bg} ${resourceColor(tag.name).text}`}
-                        ariaLabel={`Change icon for ${tag.name}`}
-                      />
-                    </span>
-                    <span className="text-sm font-medium truncate">{tag.name}</span>
-                  </div>
-                  <div className="w-28 flex items-center justify-center">
-                    <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                      {tag.count} prompt{tag.count !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div
-                    className="w-28 flex items-center justify-end"
-                    onClick={(e) => e.stopPropagation()}
+              {filteredTags.map((tag) => {
+                const color = resourceColor(colors[tag.name] ?? null);
+                return (
+                  <ContextMenu
+                    key={tag.name}
+                    className="contents"
+                    items={[
+                      { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
+                      { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
+                      { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
+                    ]}
                   >
-                    <ActionsMenu
-                      items={[
-                        { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
-                        { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
-                      ]}
-                    />
-                  </div>
-                </div>
-              ))}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onTagSelect(tag.name)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onTagSelect(tag.name);
+                        }
+                      }}
+                      title={`View prompts tagged "${tag.name}"`}
+                      className="group grid col-span-3 grid-cols-subgrid gap-x-4 items-center px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}>
+                          <Icon name={tagIcons[tag.name] ?? "tags"} size="md" />
+                        </span>
+                        <span className="text-sm font-medium truncate">{tag.name}</span>
+                      </div>
+                      <div className="w-28 flex items-center justify-center">
+                        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
+                          {tag.count} prompt{tag.count !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div
+                        className="w-28 flex items-center justify-end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ActionsMenu
+                          items={[
+                            { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
+                            { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
+                            { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  </ContextMenu>
+                );
+              })}
             </div>
           </div>
         )
@@ -293,6 +347,22 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
             .filter((t) => t !== renamingTag)}
           onClose={() => setRenamingTag(null)}
           onSubmit={(newName) => handleRenameTag(renamingTag, newName)}
+        />
+      )}
+
+      {editingTag !== null && (
+        <EntityEditDialog
+          open
+          entityLabel="Tag"
+          currentName={editingTag}
+          currentIcon={tagIcons[editingTag] ?? null}
+          currentColor={colors[editingTag] ?? null}
+          fallbackIcon="tags"
+          existingNames={tags
+            .map((t) => t.name)
+            .filter((n) => n !== editingTag)}
+          onClose={() => setEditingTag(null)}
+          onSubmit={handleEditTag}
         />
       )}
 
@@ -322,19 +392,19 @@ function TagCard({
   onSelect,
   onRename,
   onDelete,
+  onEdit,
   icon,
-  onSetIcon,
-  onClearIcon,
+  colorKey,
 }: {
   tag: TagInfo;
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
+  onEdit: () => void;
   icon: IconName | null;
-  onSetIcon: (icon: IconName) => void;
-  onClearIcon: () => void;
+  colorKey: ResourceColorKey | null;
 }) {
-  const color = resourceColor(tag.name);
+  const color = resourceColor(colorKey);
   return (
     <Card
       role="button"
@@ -351,17 +421,8 @@ function TagCard({
       className="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <CardContent className="p-3 flex items-center gap-3">
-        <span
-          onClick={(e) => e.stopPropagation()}
-        >
-          <IconPickerButton
-            value={icon}
-            onSelect={onSetIcon}
-            onClear={onClearIcon}
-            fallback="tags"
-            className={`${color.bg} ${color.text}`}
-            ariaLabel={`Change icon for ${tag.name}`}
-          />
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}>
+          <Icon name={icon ?? "tags"} size="md" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
@@ -374,6 +435,7 @@ function TagCard({
         <div onClick={(e) => e.stopPropagation()}>
           <ActionsMenu
             items={[
+              { label: "Edit", icon: "edit", onClick: onEdit },
               { label: "Rename", icon: "edit", onClick: () => onRename(tag.name) },
               { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
             ]}

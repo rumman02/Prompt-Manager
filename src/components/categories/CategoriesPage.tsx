@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { ActionsMenu } from "@/components/ui/actions-menu";
+import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
+import { EntityEditDialog } from "@/components/ui/entity-edit-dialog";
 import { RenameDialog } from "@/components/ui/rename-dialog";
 import { Icon, type IconName } from "@/components/ui/icon";
-import { IconPickerButton } from "@/components/ui/icon-picker";
-import { resourceColor } from "@/constants/colors";
+import { resourceColor, type ResourceColorKey } from "@/constants/colors";
 import { useCategories } from "@/hooks/useCategories";
 import { useEntityIcons } from "@/hooks/useEntityIcons";
 import type { CategoryCount, PromptRow } from "@/types";
@@ -31,8 +32,15 @@ export function CategoriesPage({
 }: CategoriesPageProps) {
   const { categories, loadCategories, addCategory, deleteCategory, renameCategory } =
     useCategories();
-  const { icons: categoryIcons, setIcon: setCategoryIcon, clearIcon: clearCategoryIcon } =
-    useEntityIcons("category");
+  const {
+    icons: categoryIcons,
+    colors,
+    load: loadCategoryIcons,
+    setIcon: setCategoryIcon,
+    clearIcon: clearCategoryIcon,
+    setColor,
+    clearColor,
+  } = useEntityIcons("category");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "count">("name");
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
@@ -40,6 +48,7 @@ export function CategoriesPage({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -114,6 +123,37 @@ export function CategoriesPage({
     }
   };
 
+  const handleEditCategory = async (next: {
+    name: string;
+    icon: IconName | null;
+    color: ResourceColorKey | null;
+  }) => {
+    const oldName = editingCategory;
+    if (!oldName) return;
+    try {
+      // Apply icon and color to the OLD name BEFORE renaming — the Rust
+      // rename_category carries the entity_icons row across to the new name.
+      if (next.icon !== (categoryIcons[oldName] ?? null)) {
+        await (next.icon
+          ? setCategoryIcon(oldName, next.icon)
+          : clearCategoryIcon(oldName));
+      }
+      if (next.color !== (colors[oldName] ?? null)) {
+        await (next.color ? setColor(oldName, next.color) : clearColor(oldName));
+      }
+      if (next.name && next.name !== oldName) {
+        await renameCategory(oldName, next.name);
+      }
+      await loadCategories();
+      await refreshPrompts();
+      await loadCategoryIcons();
+      setEditingCategory(null);
+    } catch (e) {
+      console.error("Failed to edit category:", e);
+      setEditingCategory(null);
+    }
+  };
+
   const handleDeleteCategory = async (category: string) => {
     if (!confirm(`Delete category "${category}"? This will remove the category from all prompts in it.`)) return;
     try {
@@ -158,9 +198,9 @@ export function CategoriesPage({
             }}
             onRename={(name) => setRenamingCategory(name)}
             onDelete={() => handleDeleteCategory(cat.category)}
+            onEdit={() => setEditingCategory(cat.category)}
             icon={categoryIcons[cat.category] ?? null}
-            onSetIcon={(ic) => setCategoryIcon(cat.category, ic)}
-            onClearIcon={() => clearCategoryIcon(cat.category)}
+            colorKey={colors[cat.category] ?? null}
           />
         ))}
         {filteredCategories.length === 0 && categories.length > 0 && (
@@ -196,6 +236,22 @@ export function CategoriesPage({
         />
       )}
 
+      {editingCategory !== null && (
+        <EntityEditDialog
+          open
+          entityLabel="Category"
+          currentName={editingCategory}
+          currentIcon={categoryIcons[editingCategory] ?? null}
+          currentColor={colors[editingCategory] ?? null}
+          fallbackIcon="categories"
+          existingNames={categories
+            .map((c) => c.category)
+            .filter((c) => c !== editingCategory)}
+          onClose={() => setEditingCategory(null)}
+          onSubmit={handleEditCategory}
+        />
+      )}
+
       {isAddCategoryModalOpen && (
         <AddCategoryModal
           newCategoryName={newCategoryName}
@@ -220,20 +276,25 @@ function CategoryCard({
   onSelect,
   onRename,
   onDelete,
+  onEdit,
   icon,
-  onSetIcon,
-  onClearIcon,
+  colorKey,
 }: {
   category: CategoryCount;
   prompts: PromptRow[];
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
+  onEdit: () => void;
   icon: IconName | null;
-  onSetIcon: (icon: IconName) => void;
-  onClearIcon: () => void;
+  colorKey: ResourceColorKey | null;
 }) {
-  const color = resourceColor(category.category);
+  const color = resourceColor(colorKey);
+  const menuItems: ContextMenuItem[] = [
+    { label: "Edit", icon: "edit", onClick: onEdit },
+    { label: "Rename", icon: "edit", onClick: () => onRename(category.category) },
+    { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
+  ];
   const previewTitles = useMemo(
     () =>
       prompts
@@ -245,84 +306,65 @@ function CategoryCard({
   );
 
   return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      aria-label={`View ${category.category} prompts`}
-      title={`View ${category.category} prompts`}
-      className="group relative cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-    >
-      <CardContent className="p-4 space-y-3">
-        {/* row 1: icon + name + actions */}
-        <div className="flex items-center gap-3">
-          <span
-            onClick={(e) => e.stopPropagation()}
-          >
-            <IconPickerButton
-              value={icon}
-              onSelect={onSetIcon}
-              onClear={onClearIcon}
-              fallback="categories"
-              className={`${color.bg} ${color.text}`}
-              ariaLabel={`Change icon for ${category.category}`}
-            />
-          </span>
-          <div className="min-w-0 flex-1 text-left">
-            <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
-              {category.category}
+    <ContextMenu items={menuItems}>
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
+        aria-label={`View ${category.category} prompts`}
+        title={`View ${category.category} prompts`}
+        className="group relative cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <CardContent className="p-4 space-y-3">
+          {/* row 1: icon + name + actions */}
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
+            >
+              <Icon name={icon ?? "categories"} size="md" />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                {category.category}
+              </div>
+            </div>
+
+            {/* ⋯ actions menu — fades in on hover */}
+            <div onClick={(e) => e.stopPropagation()}>
+              <ActionsMenu items={menuItems} />
             </div>
           </div>
 
-          {/* ⋯ actions menu — fades in on hover */}
-          <div onClick={(e) => e.stopPropagation()}>
-          <ActionsMenu
-            items={[
-              {
-                label: "Rename",
-                icon: "edit",
-                onClick: () => onRename(category.category),
-              },
-              {
-                label: "Delete",
-                icon: "delete",
-                onClick: onDelete,
-                destructive: true,
-              },
-            ]}
-          />
+          {/* row 2: pill badge with count */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
+              {category.count} prompt{category.count !== 1 ? "s" : ""}
+            </span>
           </div>
-        </div>
 
-        {/* row 2: pill badge with count */}
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-            {category.count} prompt{category.count !== 1 ? "s" : ""}
-          </span>
-        </div>
-
-        {/* row 3: preview of prompt titles in this category */}
-        {previewTitles.length > 0 && (
-          <div className="space-y-1 pt-1 border-t border-border/60">
-            {previewTitles.map((title, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground"
-              >
-                <span className="h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
-                <span className="truncate">{title}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {/* row 3: preview of prompt titles in this category */}
+          {previewTitles.length > 0 && (
+            <div className="space-y-1 pt-1 border-t border-border/60">
+              {previewTitles.map((title, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <span className="h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
+                  <span className="truncate">{title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </ContextMenu>
   );
 }
 
