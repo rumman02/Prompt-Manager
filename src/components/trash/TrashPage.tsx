@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { formatDate, truncate } from "@/lib/utils";
-import { Icon } from "@/components/ui/icon";
+import { Icon, isIconName } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
 
 interface TrashPageProps {
@@ -165,8 +165,8 @@ export function TrashPage({ onRefresh }: TrashPageProps) {
                   onClick={() => setSelectedPrompt(prompt)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted shrink-0">
-                      <Icon name="file" size="md" className="text-muted-foreground" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                      <Icon name={isIconName(prompt.icon) ? prompt.icon : "file"} size="md" className="text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-subheadline font-medium truncate">{prompt.title}</p>

@@ -1,0 +1,1 @@
+export { VaultSetupScreen } from "./VaultSetupScreen";

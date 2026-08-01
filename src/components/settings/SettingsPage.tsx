@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RenameDialog } from "@/components/ui/rename-dialog";
+import { useVault } from "@/contexts/VaultContext";
+import type { VaultEntry } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dropdown } from "@/components/ui/dropdown";
@@ -14,8 +17,11 @@ import { THEMES } from "@/constants/themes";
 
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
+  const { vaults, activeVault, createVault, openVault, switchVault, renameVault, removeVault, revealVault } = useVault();
   const [saved, setSaved] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [renamingVault, setRenamingVault] = useState<VaultEntry | null>(null);
+  const otherVaults = vaults.filter((v) => v.id !== activeVault?.id && v.exists);
 
   const handleSave = () => {
     setSaved(true);
@@ -46,6 +52,153 @@ export function SettingsPage() {
       />
       <div className="flex-1 overflow-auto p-6">
       <div className="mx-auto max-w-3xl space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Icon name="folder" size="lg" className="text-primary" />
+            Vault
+          </CardTitle>
+          <CardDescription>Your prompts are stored as a database inside a folder you choose</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <div>
+              <Label className="text-subheadline">Active Vault</Label>
+              <p className="text-footnote mt-0.5">The database currently in use</p>
+            </div>
+            {activeVault ? (
+              <div className="rounded-xl border bg-muted/30 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Icon name="check" size="md" className="text-primary" />
+                  <span className="text-sm font-medium">{activeVault.name}</span>
+                </div>
+                <p
+                  className="mt-1 truncate font-mono text-xs text-muted-foreground"
+                  title={activeVault.path}
+                >
+                  {activeVault.path}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No vault is active.</p>
+            )}
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-subheadline">Vault Actions</Label>
+              <p className="text-footnote mt-0.5">Switch, open, create, or reveal your vault folders</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Dropdown
+                value=""
+                onChange={(v) => switchVault(v)}
+                className="w-48"
+                placeholder="Switch vault…"
+                disabled={otherVaults.length === 0}
+                options={otherVaults.map((v) => ({ value: v.id, label: v.name }))}
+              />
+              <Button variant="outline" onClick={openVault} className="gap-2">
+                <Icon name="folder" size="md" />
+                Open existing vault…
+              </Button>
+              <Button variant="outline" onClick={createVault} className="gap-2">
+                <Icon name="add" size="md" />
+                Create new vault…
+              </Button>
+              {activeVault && (
+                <Button
+                  variant="outline"
+                  onClick={() => revealVault(activeVault.id)}
+                  className="gap-2"
+                >
+                  <Icon name="search" size="md" />
+                  Reveal in Finder
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-subheadline">Registered Vaults</Label>
+              <p className="text-footnote mt-0.5">
+                Renaming and removing only affects this list — files on disk are never deleted
+              </p>
+            </div>
+            <div className="space-y-2">
+              {vaults.length === 0 && (
+                <p className="text-sm text-muted-foreground">No vaults registered yet.</p>
+              )}
+              {vaults.map((vault) => {
+                const isActive = activeVault?.id === vault.id;
+                const missing = !vault.exists;
+                return (
+                  <div
+                    key={vault.id}
+                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
+                      missing ? "border-border opacity-60" : "border-border"
+                    }`}
+                  >
+                    <Icon
+                      name={isActive ? "check" : "folder"}
+                      size="md"
+                      className={`shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">{vault.name}</span>
+                        {isActive && (
+                          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            Active
+                          </span>
+                        )}
+                        {missing && (
+                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            Missing
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
+                        title={vault.path}
+                      >
+                        {vault.path}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRenamingVault(vault)}
+                        className="gap-1.5"
+                      >
+                        <Icon name="edit" size="sm" />
+                        Rename
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeVault(vault.id)}
+                        className="gap-1.5 text-muted-foreground hover:text-destructive"
+                        title="Removes from the list only — files on disk are not deleted"
+                      >
+                        <Icon name="delete" size="sm" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -388,6 +541,22 @@ export function SettingsPage() {
           )}
         </Button>
       </div>
+
+      <RenameDialog
+        open={!!renamingVault}
+        currentName={renamingVault?.name ?? ""}
+        entityLabel="Vault"
+        existingNames={vaults
+          .filter((v) => v.id !== renamingVault?.id)
+          .map((v) => v.name)}
+        onClose={() => setRenamingVault(null)}
+        onSubmit={async (newName) => {
+          if (renamingVault) {
+            await renameVault(renamingVault.id, newName);
+            setRenamingVault(null);
+          }
+        }}
+      />
       </div>
       </div>
       </div>

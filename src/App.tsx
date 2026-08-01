@@ -16,6 +16,8 @@ import { AgentsPage } from "@/components/agents";
 import { SkillsPage } from "@/components/skills";
 import { FavoritesPage } from "@/components/favorites";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
+import { VaultProvider, useVault } from "@/contexts/VaultContext";
+import { VaultSetupScreen } from "@/components/vault";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster, toast } from "sonner";
 import type { PromptRow, CategoryCount } from "@/types";
@@ -267,21 +269,6 @@ function AppContent() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-secondary/30">
-      <Toaster
-        theme={settings.theme === "dark" ? "dark" : "light"}
-        position="bottom-right"
-        richColors
-        toastOptions={{
-          style: {
-            borderRadius: "14px",
-            backdropFilter: "blur(20px)",
-            background: settings.theme === "dark" ? "rgba(44, 44, 46, 0.9)" : "rgba(255, 255, 255, 0.9)",
-            border: `1px solid ${settings.theme === "dark" ? "rgba(72, 72, 74, 0.5)" : "rgba(210, 210, 215, 0.5)"}`,
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.16)",
-            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
-          },
-        }}
-      />
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -409,12 +396,53 @@ function AppContent() {
   );
 }
 
+/**
+ * Gate: waits for the vault status, shows the first-run setup screen when no
+ * vault is active, otherwise renders the app. Toaster lives here so toasts
+ * also work on the setup screen.
+ */
+function AppGate() {
+  const { loading, needsSetup, activeVault } = useVault();
+  const { settings } = useSettings();
+
+  return (
+    <>
+      <Toaster
+        theme={settings.theme === "dark" ? "dark" : "light"}
+        position="bottom-right"
+        richColors
+        toastOptions={{
+          style: {
+            borderRadius: "14px",
+            backdropFilter: "blur(20px)",
+            background: settings.theme === "dark" ? "rgba(44, 44, 46, 0.9)" : "rgba(255, 255, 255, 0.9)",
+            border: `1px solid ${settings.theme === "dark" ? "rgba(72, 72, 74, 0.5)" : "rgba(210, 210, 215, 0.5)"}`,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.16)",
+            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+          },
+        }}
+      />
+      {loading ? (
+        <div className="flex h-screen w-screen items-center justify-center bg-secondary/30">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        </div>
+      ) : needsSetup || activeVault === null ? (
+        <VaultSetupScreen />
+      ) : (
+        <AppContent />
+      )}
+    </>
+  );
+}
+
 export function App() {
   return (
-    <SettingsProvider>
-      <TooltipProvider>
-        <AppContent />
-      </TooltipProvider>
-    </SettingsProvider>
+    <VaultProvider>
+      <SettingsProvider>
+        <TooltipProvider>
+          <AppGate />
+        </TooltipProvider>
+      </SettingsProvider>
+    </VaultProvider>
   );
 }

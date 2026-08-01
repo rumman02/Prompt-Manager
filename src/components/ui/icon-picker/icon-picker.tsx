@@ -161,9 +161,9 @@ export function IconPickerButton({
         title={ariaLabel ?? "Change icon"}
         aria-label={ariaLabel ?? "Change icon"}
         onClick={() => setOpen(true)}
-        className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary border border-transparent hover:border-border transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-transparent hover:border-border transition-colors shrink-0"
       >
-        <Icon name={value ?? fallback ?? "file"} size="lg" />
+        <Icon name={value ?? fallback ?? "file"} size="md" />
       </button>
       {label && <span className="text-sm text-muted-foreground">{label}</span>}
       <IconPicker

@@ -1,7 +1,6 @@
 use crate::demo;
 use rusqlite::{Connection, OptionalExtension, Result, Row};
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Prompt {
@@ -50,11 +49,8 @@ pub struct Database {
 
 impl Database {
     pub fn new(app_handle: &tauri::AppHandle) -> Result<Self> {
-        let path = app_handle
-            .path()
-            .app_data_dir()
-            .expect("Failed to get app data dir")
-            .join("prompts.db");
+        let path = crate::vault::active_db_path(app_handle)
+            .ok_or_else(|| rusqlite::Error::InvalidPath("no active vault selected".into()))?;
 
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).ok();

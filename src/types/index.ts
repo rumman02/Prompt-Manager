@@ -37,3 +37,5 @@ export interface VariableSet {
 }
 
 export type ViewMode = "list" | "grid";
+
+export * from "./vault";
