@@ -10,7 +10,6 @@ import { resourceColor, type ResourceColorKey } from "@/constants/colors";
 import { ActionsMenu } from "@/components/ui/actions-menu";
 import { ContextMenu } from "@/components/ui/context-menu";
 import { EntityEditDialog } from "@/components/ui/entity-edit-dialog";
-import { RenameDialog } from "@/components/ui/rename-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { Dropdown } from "@/components/ui/dropdown";
@@ -48,7 +47,6 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
   const [newTags, setNewTags] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [renamingTag, setRenamingTag] = useState<string | null>(null);
   const [editingTag, setEditingTag] = useState<string | null>(null);
 
   useEffect(() => {
@@ -156,7 +154,6 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
   const handleRenameTag = async (oldName: string, newName: string) => {
     const trimmed = newName.trim();
     if (!trimmed || trimmed === oldName) {
-      setRenamingTag(null);
       return;
     }
     try {
@@ -180,10 +177,8 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
       }
       await loadPrompts();
       onRefresh();
-      setRenamingTag(null);
     } catch (e) {
       console.error("Failed to rename tag:", e);
-      setRenamingTag(null);
     }
   };
 
@@ -250,14 +245,12 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                 className="contents"
                 items={[
                   { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
-                  { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
                   { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
                 ]}
               >
                 <TagCard
                   tag={tag}
                   onSelect={() => onTagSelect(tag.name)}
-                  onRename={(name) => setRenamingTag(name)}
                   onDelete={() => handleDeleteTag(tag.name)}
                   onEdit={() => setEditingTag(tag.name)}
                   icon={tagIcons[tag.name] ?? null}
@@ -282,7 +275,6 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                     className="contents"
                     items={[
                       { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
-                      { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
                       { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
                     ]}
                   >
@@ -317,7 +309,6 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                         <ActionsMenu
                           items={[
                             { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
-                            { label: "Rename", icon: "edit", onClick: () => setRenamingTag(tag.name) },
                             { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
                           ]}
                         />
@@ -334,19 +325,6 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
           icon="tags"
           title={searchQuery ? "No tags found" : "No tags yet"}
           description={searchQuery ? `No tags match "${searchQuery}"` : "Add tags to your prompts to see them here"}
-        />
-      )}
-
-      {renamingTag !== null && (
-        <RenameDialog
-          open
-          currentName={renamingTag}
-          entityLabel="Tag"
-          existingNames={tags
-            .map((t) => t.name)
-            .filter((t) => t !== renamingTag)}
-          onClose={() => setRenamingTag(null)}
-          onSubmit={(newName) => handleRenameTag(renamingTag, newName)}
         />
       )}
 
@@ -390,7 +368,6 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
 function TagCard({
   tag,
   onSelect,
-  onRename,
   onDelete,
   onEdit,
   icon,
@@ -398,7 +375,6 @@ function TagCard({
 }: {
   tag: TagInfo;
   onSelect: () => void;
-  onRename: (name: string) => void;
   onDelete: () => void;
   onEdit: () => void;
   icon: IconName | null;
@@ -436,7 +412,6 @@ function TagCard({
           <ActionsMenu
             items={[
               { label: "Edit", icon: "edit", onClick: onEdit },
-              { label: "Rename", icon: "edit", onClick: () => onRename(tag.name) },
               { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
             ]}
           />

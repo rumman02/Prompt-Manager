@@ -10,7 +10,6 @@ import { Modal } from "@/components/ui/modal";
 import { ActionsMenu } from "@/components/ui/actions-menu";
 import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
 import { EntityEditDialog } from "@/components/ui/entity-edit-dialog";
-import { RenameDialog } from "@/components/ui/rename-dialog";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { resourceColor, type ResourceColorKey } from "@/constants/colors";
 import { useCategories } from "@/hooks/useCategories";
@@ -47,7 +46,6 @@ export function CategoriesPage({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
-  const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
 
   useEffect(() => {
@@ -103,23 +101,6 @@ export function CategoriesPage({
       console.error("Failed to add category:", e);
     } finally {
       setIsAddingCategory(false);
-    }
-  };
-
-  const handleRenameCategory = async (oldName: string, newName: string) => {
-    const trimmed = newName.trim();
-    if (!trimmed || trimmed === oldName) {
-      setRenamingCategory(null);
-      return;
-    }
-    try {
-      await renameCategory(oldName, trimmed);
-      await loadCategories();
-      await refreshPrompts();
-      setRenamingCategory(null);
-    } catch (e) {
-      console.error("Failed to rename category:", e);
-      setRenamingCategory(null);
     }
   };
 
@@ -196,7 +177,6 @@ export function CategoriesPage({
               onCategorySelect(cat.category);
               onViewChange("prompts");
             }}
-            onRename={(name) => setRenamingCategory(name)}
             onDelete={() => handleDeleteCategory(cat.category)}
             onEdit={() => setEditingCategory(cat.category)}
             icon={categoryIcons[cat.category] ?? null}
@@ -222,19 +202,6 @@ export function CategoriesPage({
           </div>
         )}
       </div>
-
-      {renamingCategory !== null && (
-        <RenameDialog
-          open
-          currentName={renamingCategory}
-          entityLabel="Category"
-          existingNames={categories
-            .map((c) => c.category)
-            .filter((c) => c !== renamingCategory)}
-          onClose={() => setRenamingCategory(null)}
-          onSubmit={(newName) => handleRenameCategory(renamingCategory, newName)}
-        />
-      )}
 
       {editingCategory !== null && (
         <EntityEditDialog
@@ -274,7 +241,6 @@ function CategoryCard({
   category,
   prompts,
   onSelect,
-  onRename,
   onDelete,
   onEdit,
   icon,
@@ -283,7 +249,6 @@ function CategoryCard({
   category: CategoryCount;
   prompts: PromptRow[];
   onSelect: () => void;
-  onRename: (name: string) => void;
   onDelete: () => void;
   onEdit: () => void;
   icon: IconName | null;
@@ -292,7 +257,6 @@ function CategoryCard({
   const color = resourceColor(colorKey);
   const menuItems: ContextMenuItem[] = [
     { label: "Edit", icon: "edit", onClick: onEdit },
-    { label: "Rename", icon: "edit", onClick: () => onRename(category.category) },
     { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
   ];
   const previewTitles = useMemo(

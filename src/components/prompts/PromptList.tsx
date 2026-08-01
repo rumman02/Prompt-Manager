@@ -1,10 +1,11 @@
-import { type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { PromptGrid } from "./PromptGrid";
 import { PromptListTable } from "./PromptListTable";
 import { EmptyPromptsState } from "./EmptyPromptsState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
+import { Dropdown, type DropdownOption } from "@/components/ui/dropdown";
 import { Icon } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
 
@@ -21,6 +22,7 @@ interface PromptListProps {
   headerTitle?: string;
   headerIcon?: ReactNode;
   headerSubtitle?: string;
+  backButton?: { label: string; onClick: () => void };
   onLoadDemo?: () => void;
   searchQuery?: string;
   onSearch?: (query: string) => void;
@@ -42,6 +44,7 @@ export function PromptList({
   headerTitle,
   headerIcon,
   headerSubtitle,
+  backButton,
   onLoadDemo,
   searchQuery,
   onSearch,
@@ -49,6 +52,31 @@ export function PromptList({
   autoFocusSearch,
   onSearchFocused,
 }: PromptListProps) {
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  // Category options derived from the prompts actually passed in.
+  const categoryOptions = useMemo<DropdownOption[]>(() => {
+    const seen = new Set<string>();
+    const categories: string[] = [];
+    for (const prompt of prompts) {
+      const category = prompt.category?.trim();
+      if (category && !seen.has(category)) {
+        seen.add(category);
+        categories.push(category);
+      }
+    }
+    categories.sort((a, b) => a.localeCompare(b));
+    return [
+      { value: "all", label: "All categories" },
+      ...categories.map((category) => ({ value: category, label: category })),
+    ];
+  }, [prompts]);
+
+  const visiblePrompts = useMemo(() => {
+    if (categoryFilter === "all") return prompts;
+    return prompts.filter((prompt) => prompt.category?.trim() === categoryFilter);
+  }, [prompts, categoryFilter]);
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {showHeader && headerTitle && (
@@ -56,9 +84,16 @@ export function PromptList({
           icon="prompts"
           title={headerTitle}
           subtitle={headerSubtitle ?? "Browse your prompts"}
+          backButton={backButton}
           actions={
             (onSearch || onCreatePrompt || onViewModeChange) ? (
               <div className="flex items-center gap-3">
+                <Dropdown
+                  value={categoryFilter}
+                  onChange={setCategoryFilter}
+                  options={categoryOptions}
+                  className="w-40"
+                />
                 {onViewModeChange && (
                   <div className="inline-flex h-8 rounded-lg bg-muted p-1 shadow-macos-inset">
                     <button
@@ -112,7 +147,7 @@ export function PromptList({
           />
         ) : viewMode === "grid" ? (
           <PromptGrid
-            prompts={prompts}
+            prompts={visiblePrompts}
             onSelect={onSelect}
             onEdit={onEdit}
             onDelete={onDelete}
@@ -121,7 +156,7 @@ export function PromptList({
           />
         ) : (
           <PromptListTable
-            prompts={prompts}
+            prompts={visiblePrompts}
             onSelect={onSelect}
             onEdit={onEdit}
             onDelete={onDelete}

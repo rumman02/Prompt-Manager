@@ -47,6 +47,7 @@ function AppContent() {
   const [previousView, setPreviousView] = useState<ViewType>("prompts");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [activeView, setActiveView] = useState<ViewType>(initialView);
+  const [promptsOrigin, setPromptsOrigin] = useState<"categories" | "tags" | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const loadPrompts = useCallback(async () => {
@@ -169,6 +170,7 @@ function AppContent() {
     setSelectedTag(tag);
     setSelectedCategory(null);
     refresh();
+    setPromptsOrigin("tags");
     setActiveView("prompts");
   };
 
@@ -272,8 +274,15 @@ function AppContent() {
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        activeView={activeView}
-        onViewChange={setActiveView}
+        activeView={activeView === "prompts" && promptsOrigin ? promptsOrigin : activeView}
+        onViewChange={(v) => {
+          // Leaving a category/tag drill-down via the sidebar: clear the
+          // drill-down state so a plain Prompts click shows all prompts.
+          setPromptsOrigin(null);
+          setSelectedCategory(null);
+          setSelectedTag(null);
+          setActiveView(v);
+        }}
         categories={categories}
         selectedCategory={selectedCategory}
         onCategorySelect={handleCategorySelect}
@@ -338,6 +347,19 @@ function AppContent() {
               searchQuery={searchQuery}
               onSearch={handleSearch}
               onCreatePrompt={handleCreatePrompt}
+              backButton={
+                promptsOrigin
+                  ? {
+                      label: promptsOrigin === "categories" ? "Back to Categories" : "Back to Tags",
+                      onClick: () => {
+                        setActiveView(promptsOrigin);
+                        setPromptsOrigin(null);
+                        setSelectedCategory(null);
+                        setSelectedTag(null);
+                      },
+                    }
+                  : undefined
+              }
             />
           )}
 
@@ -366,7 +388,10 @@ function AppContent() {
             <CategoriesPage
               selectedCategory={selectedCategory}
               onCategorySelect={setSelectedCategory}
-              onViewChange={setActiveView}
+              onViewChange={(v) => {
+                if (v === "prompts") setPromptsOrigin("categories");
+                setActiveView(v);
+              }}
               onLoadDemo={handleLoadDemoPrompts}
             />
           )}
