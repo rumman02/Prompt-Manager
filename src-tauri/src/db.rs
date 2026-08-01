@@ -11,6 +11,7 @@ pub struct Prompt {
     pub category: Option<String>,
     pub tags: Option<String>,
     pub description: Option<String>,
+    pub icon: Option<String>,
     pub is_favorite: bool,
     pub created_at: String,
     pub updated_at: String,
@@ -21,6 +22,12 @@ pub struct Prompt {
 pub struct CategoryCount {
     pub category: String,
     pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EntityIcon {
+    pub name: String,
+    pub icon: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -83,6 +90,7 @@ impl Database {
                 category TEXT,
                 tags TEXT,
                 description TEXT,
+                icon TEXT DEFAULT NULL,
                 is_favorite INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -94,6 +102,13 @@ impl Database {
         // Add is_favorite column if it doesn't exist (migration)
         let _ = self.conn.execute(
             "ALTER TABLE prompts ADD COLUMN is_favorite INTEGER DEFAULT 0",
+            [],
+        );
+
+        // Add icon column if it doesn't exist (migration). Stores a semantic
+        // icon-registry key chosen by the user; NULL means "use the default".
+        let _ = self.conn.execute(
+            "ALTER TABLE prompts ADD COLUMN icon TEXT DEFAULT NULL",
             [],
         );
 
@@ -231,6 +246,19 @@ impl Database {
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE CASCADE,
                 FOREIGN KEY (set_id) REFERENCES variable_sets(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        // Create entity_icons table — generic key-value store for custom icons
+        // on named entities (categories and tags), which have no tables of their
+        // own. Keys are (entity_type, entity_name); NULL/missing means "default".
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS entity_icons (
+                entity_type TEXT NOT NULL,
+                entity_name TEXT NOT NULL,
+                icon TEXT NOT NULL,
+                PRIMARY KEY (entity_type, entity_name)
             )",
             [],
         )?;
@@ -432,10 +460,11 @@ impl Database {
             category: row.get(3)?,
             tags: row.get(4)?,
             description: row.get(5)?,
-            is_favorite: row.get(6)?,
-            created_at: row.get(7)?,
-            updated_at: row.get(8)?,
-            deleted_at: row.get(9)?,
+            icon: row.get(6)?,
+            is_favorite: row.get(7)?,
+            created_at: row.get(8)?,
+            updated_at: row.get(9)?,
+            deleted_at: row.get(10)?,
         })
     }
 
@@ -446,11 +475,12 @@ impl Database {
         category: Option<&str>,
         tags: Option<&str>,
         description: Option<&str>,
+        icon: Option<&str>,
     ) -> Result<Prompt> {
         self.conn.execute(
-            "INSERT INTO prompts (title, content, category, tags, description)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
-            rusqlite::params![title, content, category, tags, description],
+            "INSERT INTO prompts (title, content, category, tags, description, icon)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![title, content, category, tags, description, icon],
         )?;
 
         let id = self.conn.last_insert_rowid();
@@ -466,12 +496,13 @@ impl Database {
             original.category.as_deref(),
             original.tags.as_deref(),
             original.description.as_deref(),
+            original.icon.as_deref(),
         )
     }
 
     pub fn get_all_prompts(&self) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+            "SELECT id, title, content, category, tags, description, icon, is_favorite, created_at, updated_at, deleted_at
              FROM prompts WHERE deleted_at IS NULL ORDER BY updated_at DESC",
         )?;
 
@@ -485,7 +516,7 @@ impl Database {
 
     pub fn get_prompt(&self, id: i64) -> Result<Prompt> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+            "SELECT id, title, content, category, tags, description, icon, is_favorite, created_at, updated_at, deleted_at
              FROM prompts WHERE id = ?1 AND deleted_at IS NULL",
         )?;
 
@@ -501,6 +532,7 @@ impl Database {
         category: Option<&str>,
         tags: Option<&str>,
         description: Option<&str>,
+        icon: Option<&str>,
     ) -> Result<()> {
         let mut updates: Vec<String> = Vec::new();
         let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
@@ -524,6 +556,10 @@ impl Database {
         if let Some(d) = description {
             updates.push("description = ?".to_string());
             params.push(Box::new(d.to_string()));
+        }
+        if let Some(i) = icon {
+            updates.push("icon = ?".to_string());
+            params.push(Box::new(i.to_string()));
         }
 
         if updates.is_empty() {
@@ -575,7 +611,7 @@ impl Database {
 
     pub fn get_trashed_prompts(&self) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+            "SELECT id, title, content, category, tags, description, icon, is_favorite, created_at, updated_at, deleted_at
              FROM prompts WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC",
         )?;
 
@@ -637,7 +673,7 @@ impl Database {
     pub fn search_prompts(&self, query: &str) -> Result<Vec<Prompt>> {
         let search_pattern = format!("%{}%", query);
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+            "SELECT id, title, content, category, tags, description, icon, is_favorite, created_at, updated_at, deleted_at
              FROM prompts
              WHERE deleted_at IS NULL AND title LIKE ?1
              ORDER BY title ASC",
@@ -653,7 +689,7 @@ impl Database {
 
     pub fn get_prompts_by_category(&self, category: &str) -> Result<Vec<Prompt>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, title, content, category, tags, description, is_favorite, created_at, updated_at, deleted_at
+            "SELECT id, title, content, category, tags, description, icon, is_favorite, created_at, updated_at, deleted_at
              FROM prompts WHERE category = ?1 AND deleted_at IS NULL ORDER BY updated_at DESC",
         )?;
 
@@ -824,6 +860,11 @@ impl Database {
             "UPDATE prompts SET category = NULL WHERE category = ?1",
             [category],
         )?;
+        // Drop the category's custom icon so it doesn't linger orphaned.
+        self.conn.execute(
+            "DELETE FROM entity_icons WHERE entity_type = 'category' AND entity_name = ?1",
+            [category],
+        )?;
         Ok(())
     }
 
@@ -832,7 +873,48 @@ impl Database {
             "UPDATE prompts SET category = ?1, updated_at = CURRENT_TIMESTAMP WHERE category = ?2",
             rusqlite::params![new_name, old_name],
         )?;
+        // Carry the category's custom icon over to the new name.
+        self.conn.execute(
+            "UPDATE entity_icons SET entity_name = ?1 WHERE entity_type = 'category' AND entity_name = ?2",
+            rusqlite::params![new_name, old_name],
+        )?;
         Ok(())
+    }
+
+    /// Upsert the icon for a named entity. `entity_type` is "category" or "tag".
+    pub fn set_entity_icon(&self, entity_type: &str, entity_name: &str, icon: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO entity_icons (entity_type, entity_name, icon) VALUES (?1, ?2, ?3)
+             ON CONFLICT(entity_type, entity_name) DO UPDATE SET icon = excluded.icon",
+            rusqlite::params![entity_type, entity_name, icon],
+        )?;
+        Ok(())
+    }
+
+    /// Remove a custom icon so the entity falls back to its default.
+    pub fn clear_entity_icon(&self, entity_type: &str, entity_name: &str) -> Result<()> {
+        self.conn.execute(
+            "DELETE FROM entity_icons WHERE entity_type = ?1 AND entity_name = ?2",
+            rusqlite::params![entity_type, entity_name],
+        )?;
+        Ok(())
+    }
+
+    /// All custom icons for one entity type, as (name, icon) pairs.
+    pub fn get_entity_icons(&self, entity_type: &str) -> Result<Vec<EntityIcon>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT entity_name, icon FROM entity_icons WHERE entity_type = ?1",
+        )?;
+        let icons = stmt
+            .query_map([entity_type], |row| {
+                Ok(EntityIcon {
+                    name: row.get(0)?,
+                    icon: row.get(1)?,
+                })
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(icons)
     }
 
     // Version control methods

@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Icon, isIconName } from "@/components/ui/icon";
 import { formatDate, getContentStats, truncate } from "@/lib/utils";
 import {
   PromptActionsMenu,
@@ -36,9 +37,18 @@ export function PromptCard({
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors">
-            {prompt.title}
-          </CardTitle>
+          <div className="flex items-start gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+              <Icon
+                name={isIconName(prompt.icon) ? prompt.icon : "file"}
+                size="md"
+                className="text-primary"
+              />
+            </div>
+            <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors min-w-0">
+              {prompt.title}
+            </CardTitle>
+          </div>
           <PromptActionsMenu
             ref={actionsRef}
             prompt={prompt}
@@ -50,7 +60,7 @@ export function PromptCard({
           />
         </div>
         {prompt.category && (
-          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
+          <span className="ml-[42px] inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary whitespace-nowrap">
             {prompt.category}
           </span>
         )}

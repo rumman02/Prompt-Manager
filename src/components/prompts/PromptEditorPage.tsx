@@ -7,7 +7,8 @@ import { HighlightedTextarea } from "@/components/prompts/HighlightedTextarea";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
 import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
 import { PreviewPanel } from "@/components/prompts/PreviewPanel";
-import { Icon } from "@/components/ui/icon";
+import { Icon, isIconName, type IconName } from "@/components/ui/icon";
+import { IconPickerButton } from "@/components/ui/icon-picker";
 import {
   SplitPane,
   makePane,
@@ -91,6 +92,7 @@ export interface PromptFormData {
   category: string;
   tags: string;
   description: string;
+  icon: string | null;
 }
 
 interface PromptEditorPageProps {
@@ -202,6 +204,7 @@ export function PromptEditorPage({
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState<IconName | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const {
@@ -279,6 +282,7 @@ export function PromptEditorPage({
       setCategory(prompt.category || "");
       setTags(prompt.tags || "");
       setDescription(prompt.description || "");
+      setIcon(isIconName(prompt.icon) ? prompt.icon : null);
       let cancelled = false;
       (async () => {
         try {
@@ -303,6 +307,7 @@ export function PromptEditorPage({
       setCategory("");
       setTags("");
       setDescription("");
+      setIcon(null);
       setVariableValues({});
       setVariableSets([]);
       setActiveSetId(null);
@@ -387,7 +392,7 @@ export function PromptEditorPage({
     if (!title.trim() || !content.trim()) return;
     setSaveError(null);
     try {
-      await onSave({ title, content, category, tags, description });
+      await onSave({ title, content, category, tags, description, icon });
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
     }
@@ -509,6 +514,11 @@ export function PromptEditorPage({
                   />
                 </div>
 
+                <div className="space-y-1">
+                  <FieldLabel htmlFor="icon">Icon</FieldLabel>
+                  <IconPickerButton value={icon} onSelect={setIcon} onClear={() => setIcon(null)} fallback="file" />
+                </div>
+
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1">
                     <FieldLabel htmlFor="category">Category</FieldLabel>
@@ -593,6 +603,7 @@ export function PromptEditorPage({
       category,
       tags,
       description,
+      icon,
       categories,
       variableValues,
       variableSets,

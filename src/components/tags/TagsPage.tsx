@@ -12,7 +12,9 @@ import { RenameDialog } from "@/components/ui/rename-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { IconPickerButton } from "@/components/ui/icon-picker";
+import { useEntityIcons } from "@/hooks/useEntityIcons";
 import type { PromptRow } from "@/types";
 
 interface TagInfo {
@@ -28,6 +30,8 @@ interface TagsPageProps {
 
 
 export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
+  const { icons: tagIcons, setIcon: setTagIcon, clearIcon: clearTagIcon } =
+    useEntityIcons("tag");
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "count">("name");
@@ -206,6 +210,9 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                 onSelect={() => onTagSelect(tag.name)}
                 onRename={(name) => setRenamingTag(name)}
                 onDelete={() => handleDeleteTag(tag.name)}
+                icon={tagIcons[tag.name] ?? null}
+                onSetIcon={(icon) => setTagIcon(tag.name, icon)}
+                onClearIcon={() => clearTagIcon(tag.name)}
               />
             ))}
           </div>
@@ -233,11 +240,15 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                   className="group grid col-span-3 grid-cols-subgrid gap-x-4 items-center px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${resourceColor(tag.name).bg} ${resourceColor(tag.name).text}`}
-                    >
-                      <Icon name="tags" size="sm" />
-                    </div>
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <IconPickerButton
+                        value={tagIcons[tag.name] ?? null}
+                        onSelect={(icon) => setTagIcon(tag.name, icon)}
+                        onClear={() => clearTagIcon(tag.name)}
+                        fallback="tags"
+                        className={`${resourceColor(tag.name).bg} ${resourceColor(tag.name).text}`}
+                      />
+                    </span>
                     <span className="text-sm font-medium truncate">{tag.name}</span>
                   </div>
                   <div className="w-28 flex items-center justify-center">
@@ -308,11 +319,17 @@ function TagCard({
   onSelect,
   onRename,
   onDelete,
+  icon,
+  onSetIcon,
+  onClearIcon,
 }: {
   tag: TagInfo;
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
+  icon: IconName | null;
+  onSetIcon: (icon: IconName) => void;
+  onClearIcon: () => void;
 }) {
   const color = resourceColor(tag.name);
   return (
@@ -331,11 +348,15 @@ function TagCard({
       className="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <CardContent className="p-3 flex items-center gap-3">
-        <div
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
-        >
-          <Icon name="tags" size="md" />
-        </div>
+        <span onClick={(e) => e.stopPropagation()}>
+          <IconPickerButton
+            value={icon}
+            onSelect={onSetIcon}
+            onClear={onClearIcon}
+            fallback="tags"
+            className={`${color.bg} ${color.text}`}
+          />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
             {tag.name}

@@ -19,11 +19,11 @@ fn test_empty_trash_basic() {
 
     // Insert 3 active + 3 trashed prompts
     for i in 0..3 {
-        db.create_prompt(&format!("active-{}", i), "active", None, None, None).unwrap();
+        db.create_prompt(&format!("active-{}", i), "active", None, None, None, None).unwrap();
     }
     // Create then soft-delete
     for i in 0..3 {
-        let p = db.create_prompt(&format!("trashed-{}", i), "trashed", None, None, None).unwrap();
+        let p = db.create_prompt(&format!("trashed-{}", i), "trashed", None, None, None, None).unwrap();
         db.delete_prompt(p.id).unwrap();
     }
 

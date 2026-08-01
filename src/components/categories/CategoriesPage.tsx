@@ -9,9 +9,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { ActionsMenu } from "@/components/ui/actions-menu";
 import { RenameDialog } from "@/components/ui/rename-dialog";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { IconPickerButton } from "@/components/ui/icon-picker";
 import { resourceColor } from "@/constants/colors";
 import { useCategories } from "@/hooks/useCategories";
+import { useEntityIcons } from "@/hooks/useEntityIcons";
 import type { CategoryCount, PromptRow } from "@/types";
 
 interface CategoriesPageProps {
@@ -29,6 +31,8 @@ export function CategoriesPage({
 }: CategoriesPageProps) {
   const { categories, loadCategories, addCategory, deleteCategory, renameCategory } =
     useCategories();
+  const { icons: categoryIcons, setIcon: setCategoryIcon, clearIcon: clearCategoryIcon } =
+    useEntityIcons("category");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "count">("name");
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
@@ -154,6 +158,9 @@ export function CategoriesPage({
             }}
             onRename={(name) => setRenamingCategory(name)}
             onDelete={() => handleDeleteCategory(cat.category)}
+            icon={categoryIcons[cat.category] ?? null}
+            onSetIcon={(ic) => setCategoryIcon(cat.category, ic)}
+            onClearIcon={() => clearCategoryIcon(cat.category)}
           />
         ))}
         {filteredCategories.length === 0 && categories.length > 0 && (
@@ -213,12 +220,18 @@ function CategoryCard({
   onSelect,
   onRename,
   onDelete,
+  icon,
+  onSetIcon,
+  onClearIcon,
 }: {
   category: CategoryCount;
   prompts: PromptRow[];
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
+  icon: IconName | null;
+  onSetIcon: (icon: IconName) => void;
+  onClearIcon: () => void;
 }) {
   const color = resourceColor(category.category);
   const previewTitles = useMemo(
@@ -249,11 +262,15 @@ function CategoryCard({
       <CardContent className="p-4 space-y-3">
         {/* row 1: icon + name + actions */}
         <div className="flex items-center gap-3">
-          <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
-          >
-            <Icon name="categories" size="md" />
-          </div>
+          <span onClick={(e) => e.stopPropagation()}>
+            <IconPickerButton
+              value={icon}
+              onSelect={onSetIcon}
+              onClear={onClearIcon}
+              fallback="categories"
+              className={`${color.bg} ${color.text}`}
+            />
+          </span>
           <div className="min-w-0 flex-1 text-left">
             <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
               {category.category}

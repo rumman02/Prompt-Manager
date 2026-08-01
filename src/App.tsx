@@ -212,6 +212,7 @@ function AppContent() {
           category: data.category || null,
           tags: data.tags || null,
           description: data.description || null,
+          icon: data.icon || null,
         });
       } else {
         await invoke("create_prompt", {
@@ -220,6 +221,7 @@ function AppContent() {
           category: data.category || null,
           tags: data.tags || null,
           description: data.description || null,
+          icon: data.icon || null,
         });
       }
       if (editingPrompt) {

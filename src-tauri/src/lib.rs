@@ -27,10 +27,18 @@ fn create_prompt(
     category: Option<String>,
     tags: Option<String>,
     description: Option<String>,
+    icon: Option<String>,
 ) -> Result<db::Prompt, String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
-    db.create_prompt(&title, &content, category.as_deref(), tags.as_deref(), description.as_deref())
-        .map_err(|e| e.to_string())
+    db.create_prompt(
+        &title,
+        &content,
+        category.as_deref(),
+        tags.as_deref(),
+        description.as_deref(),
+        icon.as_deref(),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -54,6 +62,7 @@ fn update_prompt(
     category: Option<String>,
     tags: Option<String>,
     description: Option<String>,
+    icon: Option<String>,
 ) -> Result<(), String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
     db.update_prompt(
@@ -63,6 +72,7 @@ fn update_prompt(
         category.as_deref(),
         tags.as_deref(),
         description.as_deref(),
+        icon.as_deref(),
     )
     .map_err(|e| e.to_string())
 }
@@ -231,6 +241,38 @@ fn rename_category(
 }
 
 #[tauri::command]
+fn set_entity_icon(
+    app_handle: tauri::AppHandle,
+    entity_type: String,
+    entity_name: String,
+    icon: String,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.set_entity_icon(&entity_type, &entity_name, &icon)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn clear_entity_icon(
+    app_handle: tauri::AppHandle,
+    entity_type: String,
+    entity_name: String,
+) -> Result<(), String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.clear_entity_icon(&entity_type, &entity_name)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_entity_icons(
+    app_handle: tauri::AppHandle,
+    entity_type: String,
+) -> Result<Vec<db::EntityIcon>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_entity_icons(&entity_type).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn save_prompt_version(
     app_handle: tauri::AppHandle,
     prompt_id: i64,
@@ -389,6 +431,9 @@ pub fn run() {
             add_category,
             delete_category,
             rename_category,
+            set_entity_icon,
+            clear_entity_icon,
+            get_entity_icons,
             save_prompt_version,
             get_prompt_versions,
             delete_prompt_version,

@@ -17,7 +17,7 @@ fn test_variable_set_crud_and_active_semantics() {
     let db = fresh_db(path);
 
     let prompt = db
-        .create_prompt("Test", "Hello {{name}}", None, None, None)
+        .create_prompt("Test", "Hello {{name}}", None, None, None, None)
         .unwrap();
 
     // No sets yet → no values, empty list.
@@ -135,7 +135,7 @@ fn test_variable_sets_cascade_on_prompt_delete() {
     let path = "/tmp/test_variable_sets_3.db";
     let db = fresh_db(path);
 
-    let prompt = db.create_prompt("Doomed", "Hi {{name}}", None, None, None).unwrap();
+    let prompt = db.create_prompt("Doomed", "Hi {{name}}", None, None, None, None).unwrap();
     let set_a = db.create_variable_set(prompt.id, "A").unwrap();
     let set_b = db.create_variable_set(prompt.id, "B").unwrap();
     db.upsert_prompt_variable(prompt.id, set_a, "name", "Alice").unwrap();

@@ -24,6 +24,7 @@ export function usePrompts() {
     category: string;
     tags: string;
     description: string;
+    icon?: string | null;
   }) => {
     await invoke("create_prompt", {
       title: data.title,
@@ -31,6 +32,7 @@ export function usePrompts() {
       category: data.category || null,
       tags: data.tags || null,
       description: data.description || null,
+      icon: data.icon ?? null,
     });
   }, []);
 
@@ -40,6 +42,7 @@ export function usePrompts() {
     category?: string;
     tags?: string;
     description?: string;
+    icon?: string | null;
   }) => {
     await invoke("update_prompt", {
       id,
@@ -48,6 +51,7 @@ export function usePrompts() {
       category: data.category ?? null,
       tags: data.tags ?? null,
       description: data.description ?? null,
+      icon: data.icon ?? null,
     });
   }, []);
 

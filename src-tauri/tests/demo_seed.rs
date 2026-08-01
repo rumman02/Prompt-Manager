@@ -146,7 +146,7 @@ fn test_seed_replaces_legacy_demo_rows() {
     let db = fresh_db(path);
 
     // Pre-existing user content must be wiped by the version-bumped reseed.
-    db.create_prompt("Legacy Prompt", "old content", None, None, None).unwrap();
+    db.create_prompt("Legacy Prompt", "old content", None, None, None, None).unwrap();
     db.seed_demo_prompts().unwrap();
 
     let active = db.get_all_prompts().unwrap();
