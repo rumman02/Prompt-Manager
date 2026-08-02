@@ -2,9 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sidebar, type ViewType } from "@/components/sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { Header } from "@/components/layout/Header";
 import { CommandPalette } from "@/components/layout/CommandPalette";
-import { VIEW_TITLES } from "@/constants/nav";
 import { StatsCards } from "@/components/stats-cards";
 import { CategoryChart } from "@/components/category-chart";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -289,11 +287,6 @@ function AppContent() {
       />
 
       <SidebarInset className="bg-transparent">
-        <Header
-          title={VIEW_TITLES[effectiveView]}
-          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          onCreatePrompt={handleCreatePrompt}
-        />
         <div className="flex-1 overflow-hidden">
           {isEditorPageOpen && (
             <PromptEditorPage

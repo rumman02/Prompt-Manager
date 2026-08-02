@@ -18,15 +18,3 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "tags", label: "Tags", icon: "tags" },
   { id: "trash", label: "Trash", icon: "trash" },
 ];
-
-export const VIEW_TITLES: Record<ViewType, string> = {
-  dashboard: "Dashboard",
-  prompts: "Prompts",
-  agents: "Agents",
-  skills: "Skills",
-  favorites: "Favorites",
-  categories: "Categories",
-  tags: "Tags",
-  trash: "Trash",
-  settings: "Settings",
-};
