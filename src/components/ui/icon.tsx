@@ -1,20 +1,3 @@
-/**
- * ─────────────────────────────────────────────────────────────────────────────
- * Centralized Icon System — Lucide Icons
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * Single source of truth for all iconography in the app.
- *
- * • Library:     Lucide React (lucide-react)
- * • Stroke width: 1.5px (default) — matches Apple SF Symbols optical weight
- * • Sizes:        xs=12  sm=14  md=16  lg=20  xl=24  (design token scale)
- * • Color:        inherits via currentColor — set with text-* utility classes
- * • Optical align: -ml-0.5 on list-row icons to compensate for stroke inset
- *
- * Never use inline <svg>, emoji, or mixed icon libraries. Import the Lucide
- * component here and wrap it through <Icon> for consistent sizing.
- */
-
 import {
   LayoutDashboard,
   Bot,
@@ -137,19 +120,21 @@ import {
 } from "lucide-react";
 
 // ── Size token map ──────────────────────────────────────────────────────────
+// Inline icons default to "md" = 16px = shadcn's size-4. The named tokens are
+// kept so existing callers using `size="sm"` etc. keep resolving.
 export const ICON_SIZES = {
-  xs: 12,   // inline micro-indicators (e.g. meta badges)
-  sm: 14,   // dense UI (list rows, menu items, tags)
-  md: 16,   // standard UI (buttons, inputs, nav)
-  lg: 20,   // section headers, prominent actions
-  xl: 24,   // empty-state heroes, theme previews
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 20,
+  xl: 24,
 } as const;
 
 export type IconSize = keyof typeof ICON_SIZES;
 
 // ── Icon registry ───────────────────────────────────────────────────────────
-// Maps semantic names to Lucide components. Use these in components for
-// consistency and easy future swapping.
+// Maps semantic names to Lucide components. The Icon component looks the name
+// up here and delegates to the lucide-react component directly.
 export const ICON_MAP = {
   // Navigation
   dashboard: LayoutDashboard,
@@ -284,7 +269,7 @@ export const ICON_MAP = {
   wand: Wand2,
   workflow: Workflow,
   wrench: Wrench,
-} as const;
+} as const satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICON_MAP;
 
@@ -330,6 +315,9 @@ export function isIconName(value: string | null | undefined): value is IconName 
 }
 
 // ── Icon component ──────────────────────────────────────────────────────────
+// Thin, typed wrapper over lucide-react: resolves the name through ICON_MAP and
+// renders the lucide component with shadcn-consistent defaults (16px / size-4
+// inline, strokeWidth 2). Color comes from `currentColor` via text-* classes.
 
 interface IconProps {
   name: IconName;
@@ -342,7 +330,7 @@ interface IconProps {
 export function Icon({
   name,
   size = "md",
-  className = "",
+  className,
   strokeWidth,
   fill = "none",
 }: IconProps) {
@@ -352,133 +340,13 @@ export function Icon({
   return (
     <LucideComp
       size={pixelSize}
-      strokeWidth={strokeWidth ?? (fill === "currentColor" ? 0 : 1.5)}
+      strokeWidth={strokeWidth ?? 2}
       className={className}
       fill={fill}
       stroke="currentColor"
+      aria-hidden="true"
     />
   );
 }
-
-// ── Re-export individual icons for direct import ────────────────────────────
-export {
-  LayoutDashboard,
-  Bot,
-  Zap,
-  List,
-  FolderOpen,
-  Heart,
-  Tag,
-  Trash2,
-  Settings,
-  Search,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  X,
-  Pencil,
-  Copy,
-  Star,
-  AlertCircle,
-  Info,
-  Check,
-  FileText,
-  MoreVertical,
-  ArrowRight,
-  RotateCcw,
-  Save,
-  Palette,
-  Sun,
-  Moon,
-  Monitor,
-  Globe,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Sparkles,
-  Variable,
-  History,
-  Eye,
-  GripVertical,
-  Columns2,
-  Rows2,
-  Minimize2,
-  Clipboard,
-  Hash,
-  Code,
-  Terminal,
-  Braces,
-  BookOpen,
-  Book,
-  Bug,
-  Beaker,
-  Brain,
-  Briefcase,
-  Building2,
-  Calendar,
-  ChartBar,
-  CircleDot,
-  Cloud,
-  Compass,
-  Cpu,
-  Database,
-  Feather,
-  FileCode,
-  FilePen,
-  FlaskConical,
-  Flag,
-  Folder,
-  Gauge,
-  Gift,
-  GraduationCap,
-  Hammer,
-  Headphones,
-  Image,
-  Inbox,
-  Key,
-  Languages,
-  Layers,
-  Lightbulb,
-  Link,
-  Lock,
-  Mail,
-  MapPin,
-  Megaphone,
-  MessageSquare,
-  Music,
-  Newspaper,
-  Notebook,
-  Package,
-  Paintbrush,
-  PenTool,
-  Percent,
-  PieChart,
-  Play,
-  Puzzle,
-  Quote,
-  Radar,
-  Receipt,
-  Rocket,
-  Ruler,
-  ScrollText,
-  Server,
-  Shapes,
-  Shield,
-  ShoppingCart,
-  Shuffle,
-  Signpost,
-  Speech,
-  Split,
-  Sprout,
-  Target,
-  Timer,
-  ToyBrick,
-  TrendingUp,
-  Trophy,
-  Users,
-  Wand2,
-  Workflow,
-  Wrench,
-};
 
 export type { LucideIcon };

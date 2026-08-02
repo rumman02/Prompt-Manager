@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
 
 interface PageHeaderProps {
   icon: IconName;
@@ -14,33 +15,30 @@ interface PageHeaderProps {
   };
 }
 
-/* macOS toolbar-style header: large title, subtle surface, back button. */
 export function PageHeader({ icon, title, subtitle, actions, backButton }: PageHeaderProps) {
   return (
-    <div className="flex flex-col bg-card shrink-0">
-      {/* Top strip — spans full width, draggable, sits under the macOS traffic lights */}
-      <div className="h-8 shrink-0" data-tauri-drag-region />
-
-      {/* Main header row */}
-      <div className="flex h-16 items-center justify-between px-6" data-tauri-drag-region>
+    <div className="flex shrink-0 flex-col border-b bg-card">
+      <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-3">
           {backButton && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={backButton.onClick}
               aria-label={backButton.label}
               title={backButton.label}
-              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 cursor-pointer"
+              className="cursor-pointer"
             >
               <Icon name="back" size="md" />
-            </button>
+            </Button>
           )}
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
             <Icon name={icon} size="lg" className="text-primary" />
           </div>
           <div>
-            <h1 className="text-headline font-semibold tracking-tight">{title}</h1>
-            <p className="text-caption text-muted-foreground">{subtitle}</p>
+            <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
         </div>
         {actions && (

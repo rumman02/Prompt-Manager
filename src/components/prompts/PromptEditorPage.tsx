@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { FormInput } from "@/components/ui/form-field";
-import { TagPreview } from "@/components/ui/tag-preview";
 import { HighlightedTextarea } from "@/components/prompts/HighlightedTextarea";
 import { VersionHistorySidebar } from "@/components/prompts/VersionHistorySidebar";
 import { VariablesSidebar } from "@/components/prompts/VariablesSidebar";
@@ -28,9 +31,9 @@ import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 // micro-label used above each field for a consistent, tracked-out technical feel
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="text-eyebrow block">
+    <Label htmlFor={htmlFor} className="text-xs font-medium text-muted-foreground">
       {children}
-    </label>
+    </Label>
   );
 }
 
@@ -55,7 +58,7 @@ function MetaStatsBar({
     <PanelStatusBar>
       {items.map((label, i) => (
         <span key={i} className="flex items-center gap-x-2.5">
-          {i > 0 && <span aria-hidden className="h-3 w-px bg-border" />}
+          {i > 0 && <Separator orientation="vertical" className="h-3" />}
           <span>{label}</span>
         </span>
       ))}
@@ -78,7 +81,7 @@ function EditStatsBar({ content }: { content: string }) {
     <PanelStatusBar>
       {items.map((label, i) => (
         <span key={i} className="flex items-center gap-x-2.5">
-          {i > 0 && <span aria-hidden className="h-3 w-px bg-border" />}
+          {i > 0 && <Separator orientation="vertical" className="h-3" />}
           <span className="tabular-nums">{label}</span>
         </span>
       ))}
@@ -478,6 +481,7 @@ export function PromptEditorPage({
                 id="content"
                 value={content}
                 onChange={setContent}
+                aria-label="Prompt content"
                 placeholder={"Write your prompt here. Markdown is supported (headings, bold, lists, code, links).\nUse {{variable_name}} for placeholders — they'll highlight as you type."}
                 fill
                 className="h-full"
@@ -490,27 +494,27 @@ export function PromptEditorPage({
           return (
             <div className="flex h-full flex-col">
               <MetaStatsBar category={category} tags={tags} />
-              <div className="min-h-0 overflow-auto px-6 py-5">
-              <div className="space-y-4">
+              <ScrollArea className="min-h-0 flex-1">
+              <div className="space-y-4 px-6 py-5">
                 <div className="space-y-1">
                   <FieldLabel htmlFor="title">Title</FieldLabel>
-                  <FormInput
+                  <Input
                     id="title"
                     value={title}
-                    onChange={setTitle}
+                    onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter prompt title..."
-                    className="text-lead h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                    className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
                   />
                 </div>
 
                 <div className="space-y-1">
                   <FieldLabel htmlFor="description">Description</FieldLabel>
-                  <FormInput
+                  <Input
                     id="description"
                     value={description}
-                    onChange={setDescription}
+                    onChange={(e) => setDescription(e.target.value)}
                     placeholder="Brief description of this prompt..."
-                    className="h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                    className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
                   />
                 </div>
 
@@ -522,13 +526,13 @@ export function PromptEditorPage({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1">
                     <FieldLabel htmlFor="category">Category</FieldLabel>
-                    <FormInput
+                    <Input
                       id="category"
                       value={category}
-                      onChange={setCategory}
+                      onChange={(e) => setCategory(e.target.value)}
                       placeholder="e.g. Writing, Coding…"
                       list="category-suggestions"
-                      className="h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                      className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
                     />
                     <datalist id="category-suggestions">
                       {categories.map((cat) => (
@@ -539,23 +543,31 @@ export function PromptEditorPage({
 
                   <div className="space-y-1">
                     <FieldLabel htmlFor="tags">Tags</FieldLabel>
-                    <FormInput
+                    <Input
                       id="tags"
                       value={tags}
-                      onChange={setTags}
+                      onChange={(e) => setTags(e.target.value)}
                       placeholder="comma, separated, tags"
-                      className="h-11 border-0 border-b border-[hsl(var(--border))] bg-transparent px-0 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))]"
+                      className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
                     />
                   </div>
                 </div>
 
                 {tags.trim() && (
-                  <div className="pt-1">
-                    <TagPreview tags={tags} />
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {tags.split(",").map((tag, i) => {
+                      const trimmed = tag.trim();
+                      if (!trimmed) return null;
+                      return (
+                        <Badge key={i} variant="secondary" className="rounded-full font-normal">
+                          {trimmed}
+                        </Badge>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-              </div>
+              </ScrollArea>
             </div>
           );
         case "preview":
@@ -634,7 +646,7 @@ export function PromptEditorPage({
         }
         actions={
           <>
-            <Button variant="ghost" size="sm" onClick={onBack} className="text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]">
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-foreground hover:bg-secondary">
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={isDisabled}>

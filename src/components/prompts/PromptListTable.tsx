@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+} from "@/components/ui/table";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import { PromptListItem } from "./PromptListItem";
 import type { PromptRow } from "@/types";
 
@@ -81,50 +89,67 @@ export function PromptListTable({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-md grid grid-cols-[1fr_8rem_10rem_6rem_auto] gap-x-4 auto-rows-auto">
-      <div className="grid col-span-5 grid-cols-subgrid border-b border-border bg-muted/40 px-4 py-2.5 text-eyebrow text-muted-foreground">
-        {SORTABLE_COLUMNS.map((col) => {
-          const isActive = sort?.key === col.key;
-          return (
-            <button
-              key={col.key}
-              type="button"
-              onClick={() => toggleSort(col.key)}
-              aria-sort={isActive ? (sort!.dir === "asc" ? "ascending" : "descending") : "none"}
-              className={cn(
-                "flex items-center gap-1 transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm",
-                col.align === "start" && "justify-start",
-                col.align === "center" && "justify-center",
-                col.align === "end" && "justify-end",
-                isActive && "text-foreground"
-              )}
-            >
-              {col.label}
-              {isActive && (
-                <Icon
-                  name="chevronDown"
-                  size="xs"
-                  className={cn("shrink-0 opacity-70", sort!.dir === "asc" && "rotate-180")}
-                />
-              )}
-            </button>
-          );
-        })}
-        <span className="text-right">Actions</span>
-      </div>
-      <div className="grid col-span-5 grid-cols-subgrid divide-y divide-border contents">
-        {visiblePrompts.map((prompt) => (
-          <PromptListItem
-            key={prompt.id}
-            prompt={prompt}
-            onSelect={onSelect}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onDuplicate={onDuplicate}
-            onToggleFavorite={onToggleFavorite}
-          />
-        ))}
-      </div>
+    <div className="rounded-xl border bg-card shadow-md">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/40 hover:bg-muted/40">
+            {SORTABLE_COLUMNS.map((col) => {
+              const isActive = sort?.key === col.key;
+              return (
+                <TableHead
+                  key={col.key}
+                  className={cn(
+                    "h-10 px-4",
+                    col.align === "center" && "text-center",
+                    col.align === "end" && "text-right",
+                  )}
+                  aria-sort={
+                    isActive ? (sort!.dir === "asc" ? "ascending" : "descending") : "none"
+                  }
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleSort(col.key)}
+                    className={cn(
+                      "h-7 gap-1 px-1.5 font-medium text-muted-foreground hover:text-foreground",
+                      col.align === "center" && "justify-center",
+                      col.align === "end" && "justify-end",
+                      isActive && "text-foreground",
+                    )}
+                  >
+                    {col.label}
+                    {isActive && (
+                      <Icon
+                        name="chevronDown"
+                        size="xs"
+                        className={cn("shrink-0 opacity-70", sort!.dir === "asc" && "rotate-180")}
+                      />
+                    )}
+                  </Button>
+                </TableHead>
+              );
+            })}
+            <TableHead className="h-10 px-4 text-right font-medium text-muted-foreground">
+              Actions
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {visiblePrompts.map((prompt) => (
+            <PromptListItem
+              key={prompt.id}
+              prompt={prompt}
+              onSelect={onSelect}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
+              onToggleFavorite={onToggleFavorite}
+            />
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -5,7 +5,14 @@ import { EmptyPromptsState } from "./EmptyPromptsState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
-import { Dropdown, type DropdownOption } from "@/components/ui/dropdown";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Icon } from "@/components/ui/icon";
 import type { PromptRow } from "@/types";
 
@@ -55,7 +62,7 @@ export function PromptList({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   // Category options derived from the prompts actually passed in.
-  const categoryOptions = useMemo<DropdownOption[]>(() => {
+  const categoryOptions = useMemo<{ value: string; label: string }[]>(() => {
     const seen = new Set<string>();
     const categories: string[] = [];
     for (const prompt of prompts) {
@@ -88,35 +95,33 @@ export function PromptList({
           actions={
             (onSearch || onCreatePrompt || onViewModeChange) ? (
               <div className="flex items-center gap-3">
-                <Dropdown
-                  value={categoryFilter}
-                  onChange={setCategoryFilter}
-                  options={categoryOptions}
-                  className="w-40"
-                />
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {onViewModeChange && (
-                  <div className="inline-flex h-8 rounded-lg bg-muted p-1 shadow-macos-inset">
-                    <button
-                      onClick={() => onViewModeChange("list")}
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
-                        viewMode === "list"
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      List
-                    </button>
-                    <button
-                      onClick={() => onViewModeChange("grid")}
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150 ${
-                        viewMode === "grid"
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Grid
-                    </button>
-                  </div>
+                  <Tabs
+                    value={viewMode}
+                    onValueChange={(v) => onViewModeChange(v === "grid" ? "grid" : "list")}
+                    className="inline-flex"
+                  >
+                    <TabsList className="h-8">
+                      <TabsTrigger value="list" className="h-7 px-3 text-xs">
+                        List
+                      </TabsTrigger>
+                      <TabsTrigger value="grid" className="h-7 px-3 text-xs">
+                        Grid
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 )}
                 {onSearch && (
                   <SearchBar
@@ -144,6 +149,7 @@ export function PromptList({
             icon="prompts"
             title="No prompts yet"
             description="Create your first prompt to get started."
+            onLoadDemo={onLoadDemo}
           />
         ) : viewMode === "grid" ? (
           <PromptGrid

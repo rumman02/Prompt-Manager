@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Icon } from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
 
 interface SearchBarProps {
   value: string;
@@ -10,9 +11,7 @@ interface SearchBarProps {
   onFocus?: () => void;
 }
 
-/* macOS search field: rounded-lg (10px), magnifier icon, subtle bg, ⌘K shortcut. */
 export function SearchBar({ value, onChange, placeholder = "Search...", autoFocus = false, onFocus }: SearchBarProps) {
-  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -21,52 +20,28 @@ export function SearchBar({ value, onChange, placeholder = "Search...", autoFocu
     }
   }, [autoFocus]);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
   return (
-    <div
-      className={`relative flex items-center transition-all ${
-        focused ? "w-80" : "w-64"
-      }`}
-    >
-      <Icon
-        name="search"
-        size="md"
-        className="absolute left-3 text-muted-foreground pointer-events-none"
-      />
+    <div className="relative flex items-center">
+      <Search className="pointer-events-none absolute left-3 size-4 text-muted-foreground" />
       <Input
         ref={inputRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => {
-          setFocused(true);
-          onFocus?.();
-        }}
-        onBlur={() => setFocused(false)}
+        onFocus={onFocus}
         placeholder={placeholder}
-        className="pl-9 pr-16 h-8 text-sm rounded-lg"
+        className="h-8 w-64 pl-9 pr-9 text-sm"
       />
-      {!focused && !value && (
-        <kbd className="absolute right-3 inline-flex items-center gap-0.5 rounded-sm border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          ⌘K
-        </kbd>
-      )}
       {value && (
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => onChange("")}
-          className="absolute right-3 flex h-5 w-5 items-center justify-center rounded-sm hover:bg-muted"
+          aria-label="Clear search"
+          className="absolute right-1 h-6 w-6"
         >
-          <Icon name="close" size="xs" />
-        </button>
+          <X className="size-3.5" />
+        </Button>
       )}
     </div>
   );

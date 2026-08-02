@@ -5,13 +5,42 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Input } from "@/components/ui/input";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Modal } from "@/components/ui/modal";
-import { ActionsMenu } from "@/components/ui/actions-menu";
-import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
-import { EntityEditDialog } from "@/components/ui/entity-edit-dialog";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import { IconPicker } from "@/components/ui/icon-picker";
 import { Icon, type IconName } from "@/components/ui/icon";
-import { resourceColor, type ResourceColorKey } from "@/constants/colors";
+import {
+  resourceColor,
+  RESOURCE_COLORS,
+  RESOURCE_COLOR_KEYS,
+  DEFAULT_RESOURCE_COLOR,
+  type ResourceColorKey,
+} from "@/constants/colors";
 import { useCategories } from "@/hooks/useCategories";
 import { useEntityIcons } from "@/hooks/useEntityIcons";
 import type { CategoryCount, PromptRow } from "@/types";
@@ -47,6 +76,7 @@ export function CategoriesPage({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -136,7 +166,6 @@ export function CategoriesPage({
   };
 
   const handleDeleteCategory = async (category: string) => {
-    if (!confirm(`Delete category "${category}"? This will remove the category from all prompts in it.`)) return;
     try {
       await deleteCategory(category);
       await loadCategories();
@@ -177,7 +206,7 @@ export function CategoriesPage({
               onCategorySelect(cat.category);
               onViewChange("prompts");
             }}
-            onDelete={() => handleDeleteCategory(cat.category)}
+            onDelete={() => setCategoryToDelete(cat.category)}
             onEdit={() => setEditingCategory(cat.category)}
             icon={categoryIcons[cat.category] ?? null}
             colorKey={colors[cat.category] ?? null}
@@ -185,7 +214,7 @@ export function CategoriesPage({
         ))}
         {filteredCategories.length === 0 && categories.length > 0 && (
           <div className="col-span-full">
-            <EmptyState
+            <PageEmptyState
               icon="categories"
               title={`No categories match "${searchQuery}"`}
               description=""
@@ -194,7 +223,7 @@ export function CategoriesPage({
         )}
         {categories.length === 0 && (
           <div className="col-span-full">
-            <EmptyState
+            <PageEmptyState
               icon="categories"
               title="No categories yet"
               description="Create prompts with categories or add a new category"
@@ -203,35 +232,60 @@ export function CategoriesPage({
         )}
       </div>
 
-      {editingCategory !== null && (
-        <EntityEditDialog
-          open
-          entityLabel="Category"
-          currentName={editingCategory}
-          currentIcon={categoryIcons[editingCategory] ?? null}
-          currentColor={colors[editingCategory] ?? null}
-          fallbackIcon="categories"
-          existingNames={categories
-            .map((c) => c.category)
-            .filter((c) => c !== editingCategory)}
-          onClose={() => setEditingCategory(null)}
-          onSubmit={handleEditCategory}
-        />
-      )}
+      <AddCategoryModal
+        open={isAddCategoryModalOpen}
+        newCategoryName={newCategoryName}
+        setNewCategoryName={setNewCategoryName}
+        onClose={() => {
+          setIsAddCategoryModalOpen(false);
+          setNewCategoryName("");
+        }}
+        onAdd={handleAddCategory}
+        isAdding={isAddingCategory}
+        categories={categories}
+      />
 
-      {isAddCategoryModalOpen && (
-        <AddCategoryModal
-          newCategoryName={newCategoryName}
-          setNewCategoryName={setNewCategoryName}
-          onClose={() => {
-            setIsAddCategoryModalOpen(false);
-            setNewCategoryName("");
-          }}
-          onAdd={handleAddCategory}
-          isAdding={isAddingCategory}
-          categories={categories}
-        />
-      )}
+      <EntityEditDialog
+        open={editingCategory !== null}
+        entityLabel="Category"
+        currentName={editingCategory ?? ""}
+        currentIcon={editingCategory ? (categoryIcons[editingCategory] ?? null) : null}
+        currentColor={editingCategory ? (colors[editingCategory] ?? null) : null}
+        fallbackIcon="categories"
+        existingNames={categories
+          .map((c) => c.category)
+          .filter((c) => c !== editingCategory)}
+        onClose={() => setEditingCategory(null)}
+        onSubmit={handleEditCategory}
+      />
+
+      <AlertDialog
+        open={categoryToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setCategoryToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete category?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove &quot;{categoryToDelete ?? ""}&quot; from all
+              prompts in it. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (categoryToDelete) handleDeleteCategory(categoryToDelete);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </div>
   );
@@ -255,10 +309,6 @@ function CategoryCard({
   colorKey: ResourceColorKey | null;
 }) {
   const color = resourceColor(colorKey);
-  const menuItems: ContextMenuItem[] = [
-    { label: "Edit", icon: "edit", onClick: onEdit },
-    { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
-  ];
   const previewTitles = useMemo(
     () =>
       prompts
@@ -270,69 +320,114 @@ function CategoryCard({
   );
 
   return (
-    <ContextMenu items={menuItems}>
-      <Card
-        role="button"
-        tabIndex={0}
-        onClick={onSelect}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSelect();
-          }
-        }}
-        aria-label={`View ${category.category} prompts`}
-        title={`View ${category.category} prompts`}
-        className="group relative cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <CardContent className="p-4 space-y-3">
-          {/* row 1: icon + name + actions */}
-          <div className="flex items-center gap-3">
-            <div
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
-            >
-              <Icon name={icon ?? "categories"} size="md" />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
-                {category.category}
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={onSelect}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect();
+            }
+          }}
+          aria-label={`View ${category.category} prompts`}
+          title={`View ${category.category} prompts`}
+          className="group relative cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <CardContent className="p-4 space-y-3">
+            {/* row 1: icon + name + actions */}
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}
+              >
+                <Icon name={icon ?? "categories"} size="md" />
               </div>
-            </div>
-
-            {/* ⋯ actions menu — fades in on hover */}
-            <div onClick={(e) => e.stopPropagation()}>
-              <ActionsMenu items={menuItems} />
-            </div>
-          </div>
-
-          {/* row 2: pill badge with count */}
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-              {category.count} prompt{category.count !== 1 ? "s" : ""}
-            </span>
-          </div>
-
-          {/* row 3: preview of prompt titles in this category */}
-          {previewTitles.length > 0 && (
-            <div className="space-y-1 pt-1 border-t border-border/60">
-              {previewTitles.map((title, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <span className="h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
-                  <span className="truncate">{title}</span>
+              <div className="min-w-0 flex-1 text-left">
+                <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                  {category.category}
                 </div>
-              ))}
+              </div>
+
+              {/* ⋯ actions menu — fades in on hover */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Options"
+                    aria-label={`Options for ${category.category}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-7 w-7 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100"
+                  >
+                    <Icon name="more" size="md" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onSelect={onEdit}>
+                    <Icon name="edit" size="sm" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={onDelete}
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                  >
+                    <Icon name="delete" size="sm" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {/* row 2: pill badge with count */}
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className="rounded-full px-2.5 py-0.5 font-medium text-muted-foreground"
+              >
+                {category.count} prompt{category.count !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+
+            {/* row 3: preview of prompt titles in this category */}
+            {previewTitles.length > 0 && (
+              <div className="space-y-1 pt-1 border-t border-border/60">
+                {previewTitles.map((title, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                  >
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
+                    <span className="truncate">{title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-44">
+        <ContextMenuItem onSelect={onEdit}>
+          <Icon name="edit" size="sm" />
+          Edit
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          onSelect={onDelete}
+          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+        >
+          <Icon name="delete" size="sm" />
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
     </ContextMenu>
   );
 }
 
 function AddCategoryModal({
+  open,
   newCategoryName,
   setNewCategoryName,
   onClose,
@@ -340,6 +435,7 @@ function AddCategoryModal({
   isAdding,
   categories,
 }: {
+  open: boolean;
   newCategoryName: string;
   setNewCategoryName: (name: string) => void;
   onClose: () => void;
@@ -347,42 +443,242 @@ function AddCategoryModal({
   isAdding: boolean;
   categories: CategoryCount[];
 }) {
+  const duplicate = categories.some(
+    (c) => c.category.toLowerCase() === newCategoryName.trim().toLowerCase()
+  );
   return (
-    <Modal open={true} onClose={onClose} title="Add Category" footer={
-      <>
-        <Button variant="ghost" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={onAdd}
-          disabled={
-            !newCategoryName.trim() ||
-            isAdding ||
-            categories.some((c) => c.category.toLowerCase() === newCategoryName.trim().toLowerCase())
-          }
-        >
-          {isAdding ? "Adding..." : "Add Category"}
-        </Button>
-      </>
-    }>
-      <div className="space-y-2">
-        <label htmlFor="category-name" className="text-sm font-medium">
-          Category Name
-        </label>
-        <Input
-          id="category-name"
-          value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
-          placeholder="e.g., Writing, Coding, Marketing..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && newCategoryName.trim()) onAdd();
-          }}
-          autoFocus
-        />
-        {categories.some((c) => c.category.toLowerCase() === newCategoryName.trim().toLowerCase()) && (
-          <p className="text-sm text-warning">A category with this name already exists.</p>
-        )}
-      </div>
-    </Modal>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Category</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="category-name">Category Name</Label>
+          <Input
+            id="category-name"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            placeholder="e.g., Writing, Coding, Marketing..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newCategoryName.trim()) onAdd();
+            }}
+            autoFocus
+          />
+          {duplicate && (
+            <p className="text-sm text-warning">
+              A category with this name already exists.
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={onAdd}
+            disabled={!newCategoryName.trim() || isAdding || duplicate}
+          >
+            {isAdding ? "Adding..." : "Add Category"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PageEmptyState({
+  icon,
+  title,
+  description,
+}: {
+  icon: IconName;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Card className="border-dashed shadow-none">
+      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+          <Icon name={icon} size="xl" className="text-primary" />
+        </div>
+        <h3 className="text-lg font-medium">{title}</h3>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface EntityEditDialogProps {
+  open: boolean;
+  entityLabel: string;
+  currentName: string;
+  currentIcon: IconName | null;
+  currentColor: ResourceColorKey | null;
+  fallbackIcon: IconName;
+  existingNames?: string[];
+  onClose: () => void;
+  onSubmit: (next: {
+    name: string;
+    icon: IconName | null;
+    color: ResourceColorKey | null;
+  }) => void | Promise<void>;
+}
+
+function EntityEditDialog({
+  open,
+  entityLabel,
+  currentName,
+  currentIcon,
+  currentColor,
+  fallbackIcon,
+  existingNames = [],
+  onClose,
+  onSubmit,
+}: EntityEditDialogProps) {
+  const [name, setName] = useState(currentName);
+  const [icon, setIcon] = useState<IconName | null>(currentIcon);
+  const [color, setColor] = useState<ResourceColorKey | null>(currentColor);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset local state whenever the dialog (re)opens for a different entity.
+  useEffect(() => {
+    if (open) {
+      setName(currentName);
+      setIcon(currentIcon);
+      setColor(currentColor);
+      setIconPickerOpen(false);
+      setIsSubmitting(false);
+    }
+  }, [open, currentName, currentIcon, currentColor]);
+
+  const trimmed = name.trim();
+  // Case-insensitive duplicate check; currentName is never its own duplicate.
+  const isDuplicate =
+    trimmed.toLowerCase() !== currentName.toLowerCase() &&
+    existingNames.some((n) => n.toLowerCase() === trimmed.toLowerCase());
+  // A name change is not required — icon-only / color-only edits are saveable.
+  const canSubmit = !!trimmed && !isDuplicate && !isSubmitting;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ name: trimmed, icon, color });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const selectedColor = color ?? DEFAULT_RESOURCE_COLOR;
+
+  return (
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {entityLabel}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Icon */}
+            <div className="space-y-2">
+              <Label>Icon</Label>
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIconPickerOpen(true)}
+                  aria-label={`Choose icon for this ${entityLabel.toLowerCase()}`}
+                  className={`h-10 w-10 rounded-lg border-transparent ${RESOURCE_COLORS[selectedColor].bg} ${RESOURCE_COLORS[selectedColor].text}`}
+                >
+                  <Icon name={icon ?? fallbackIcon} size="md" />
+                </Button>
+                {icon !== null && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIcon(null)}
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Color */}
+            <div className="space-y-2">
+              <Label>Color</Label>
+              <div className="flex items-center gap-2">
+                {RESOURCE_COLOR_KEYS.map((k) => (
+                  <Button
+                    key={k}
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title={RESOURCE_COLORS[k].label}
+                    aria-label={RESOURCE_COLORS[k].label}
+                    onClick={() => setColor((cur) => (cur === k ? null : k))}
+                    className={`h-7 w-7 rounded-full border-transparent p-0 transition-transform hover:scale-105 ${RESOURCE_COLORS[k].swatch} ${
+                      color === k
+                        ? "ring-2 ring-ring ring-offset-2 ring-offset-background"
+                        : ""
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="entity-name-input">{entityLabel} Name</Label>
+              <Input
+                id="entity-name-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSubmit();
+                }}
+                autoFocus
+              />
+              {isDuplicate && (
+                <p className="text-sm text-warning">
+                  A {entityLabel.toLowerCase()} with this name already exists.
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <IconPicker
+        open={iconPickerOpen}
+        onClose={() => setIconPickerOpen(false)}
+        value={icon}
+        onSelect={setIcon}
+        onClear={() => setIcon(null)}
+        title={`Choose an icon for this ${entityLabel.toLowerCase()}`}
+      />
+    </>
   );
 }

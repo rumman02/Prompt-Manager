@@ -1,269 +1,195 @@
+import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  type ReactNode,
-  type Ref,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
-import { createPortal } from "react-dom";
-import { Icon, type IconName } from "@/components/ui/icon";
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import type { PromptRow } from "@/types";
 import { copyToClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
 
-interface PromptActionsMenuProps {
+export interface PromptActionsMenuProps {
   prompt: PromptRow;
   onEdit: (prompt: PromptRow) => void;
   onDelete: (id: number) => void;
   onDuplicate: (id: number) => void;
   onToggleFavorite?: (id: number) => void;
-  /** className for the outer wrapper (controls hover visibility, sizing) */
+  /** className for the trigger button (controls hover visibility, sizing). */
   className?: string;
-  /** render prop so the row controls its own hover visibility */
-  children?: (ctx: {
-    open: boolean;
-    onContextMenu: (e: React.MouseEvent) => void;
-  }) => ReactNode;
+  /** Alignment of the dropdown relative to the trigger button. */
+  align?: "start" | "center" | "end";
+  /**
+   * When provided, the Delete item surfaces the parent-owned AlertDialog
+   * instead of this component's built-in one — lets a row/card share ONE
+   * confirmation dialog between its 3-dot dropdown and its context menu.
+   */
+  onDeleteRequest?: () => void;
 }
 
+// Kept for backwards compatibility with the old imperative handle API (index.ts
+// re-exports it). The row/card context menus now use shadcn's ContextMenu, so
+// nothing needs the imperative handle anymore.
 export interface PromptActionsMenuHandle {
   openContextMenu: (e: React.MouseEvent) => void;
 }
 
 /**
- * Reusable actions surface for a prompt row.
- *
- * Renders (on hover via the `children` render-prop) a single 3-dot button.
- * The 3-dot button opens a dropdown; a right-click anywhere on the row
- * opens the same menu at the cursor. Both are driven by this single component
- * so List and Grid views share identical behaviour.
+ * Shared action items for a prompt row/card. Rendered inside either a
+ * DropdownMenu (3-dot trigger) or a ContextMenu (right-click on the row) — both
+ * surfaces show identical actions: Copy / Edit / Duplicate / Favorite / Delete.
+ * The destructive Delete item surfaces a confirmation AlertDialog.
  */
-export const PromptActionsMenu = forwardRef<
-  PromptActionsMenuHandle,
-  PromptActionsMenuProps
->(function PromptActionsMenu(
-  { prompt, onEdit, onDelete, onDuplicate, onToggleFavorite, className = "", children },
-  ref,
-) {
-  const [open, setOpen] = useState(false);
-  const [ctxPos, setCtxPos] = useState<{ x: number; y: number } | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+export function PromptMenuItems({
+  menu,
+  prompt,
+  onEdit,
+  onDeleteRequest,
+  onDuplicate,
+  onToggleFavorite,
+}: {
+  menu: "dropdown" | "context";
+  prompt: PromptRow;
+  onEdit: (prompt: PromptRow) => void;
+  onDeleteRequest: () => void;
+  onDuplicate: (id: number) => void;
+  onToggleFavorite?: (id: number) => void;
+}) {
+  const Item = menu === "context" ? ContextMenuItem : DropdownMenuItem;
+  const Separator = menu === "context" ? ContextMenuSeparator : DropdownMenuSeparator;
 
-  /* open / close helpers */
-  const openMenu = useCallback((anchor: { x: number; y: number }) => {
-    setCtxPos(anchor);
-    setOpen(true);
-  }, []);
-  const closeMenu = useCallback(() => {
-    setOpen(false);
-    setCtxPos(null);
-  }, []);
-
-  /* 3-dot button → dropdown anchored to the trigger button */
-  const handleTriggerClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (open) {
-      closeMenu();
-      return;
-    }
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) {
-      openMenu({ x: rect.right, y: rect.bottom });
-    }
-  };
-
-  /* right-click → context menu at the cursor */
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    openMenu({ x: e.clientX, y: e.clientY });
-  };
-
-  /* expose right-click so the parent row can forward it */
-  useImperativeHandle(ref, () => ({
-    openContextMenu: (e: React.MouseEvent) => handleContextMenu(e),
-  }));
-
-  /* close on outside click or Escape */
-  useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        closeMenu();
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeMenu();
-    };
-    /* rAF so the opening click doesn't immediately close it */
-    const raf = requestAnimationFrame(() => {
-      document.addEventListener("mousedown", onDocClick);
-      document.addEventListener("keydown", onKey);
-    });
-    return () => {
-      cancelAnimationFrame(raf);
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, closeMenu]);
-
-  /* menu positioning: prefer right-aligned under trigger, flip if it overflows */
-  const menuStyle = ((): React.CSSProperties => {
-    if (!ctxPos) return {};
-    const W = 176; // 11rem
-    const H = 168; // approx max height
-    let left = ctxPos.x;
-    let top = ctxPos.y + 4;
-    if (triggerRef.current && !ctxPos) {
-      // dropdown mode: right-align to trigger
-      const rect = triggerRef.current.getBoundingClientRect();
-      left = rect.right - W;
-      top = rect.bottom + 4;
-    }
-    // flip left if overflowing right edge
-    if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8;
-    if (left < 8) left = 8;
-    // flip up if overflowing bottom
-    if (top + H > window.innerHeight - 8) top = ctxPos.y - H - 4;
-    return { position: "fixed", left, top, zIndex: 100, minWidth: W };
-  })();
-
-  const stop: React.MouseEventHandler = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleFavorite = (e: React.MouseEvent) => {
-    stop(e);
-    onToggleFavorite?.(prompt.id);
-  };
-
-  const handleEdit = (e: React.MouseEvent) => {
-    stop(e);
-    closeMenu();
-    onEdit(prompt);
-  };
-
-  const handleDuplicate = (e: React.MouseEvent) => {
-    stop(e);
-    closeMenu();
-    onDuplicate(prompt.id);
-  };
-
-  const handleCopy = async (e: React.MouseEvent) => {
-    stop(e);
-    closeMenu();
+  const handleCopy = useCallback(async () => {
     const wrote = await copyToClipboard(prompt.content);
     if (wrote) {
       toast.success("Copied to clipboard");
     } else {
       toast.error("Couldn't copy to clipboard");
     }
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    stop(e);
-    closeMenu();
-    onDelete(prompt.id);
-  };
+  }, [prompt.content]);
 
   return (
-    <div className={className} onContextMenu={handleContextMenu}>
-      {children?.({ open, onContextMenu: handleContextMenu }) ?? (
-        <DefaultActions
-          onTriggerClick={handleTriggerClick}
-          triggerRef={triggerRef}
-        />
+    <>
+      <Item onClick={handleCopy} className="gap-2.5">
+        <Icon name="clipboard" size="sm" />
+        Copy
+      </Item>
+      <Item onClick={() => onEdit(prompt)} className="gap-2.5">
+        <Icon name="edit" size="sm" />
+        Edit
+      </Item>
+      <Item onClick={() => onDuplicate(prompt.id)} className="gap-2.5">
+        <Icon name="copy" size="sm" />
+        Duplicate
+      </Item>
+      {onToggleFavorite && (
+        <Item
+          onClick={() => onToggleFavorite(prompt.id)}
+          className="gap-2.5"
+        >
+          <Icon
+            name="star"
+            size="sm"
+            fill={prompt.is_favorite ? "currentColor" : "none"}
+          />
+          {prompt.is_favorite ? "Remove from Favorites" : "Add to Favorites"}
+        </Item>
       )}
-
-      {open &&
-        ctxPos &&
-        createPortal(
-          <div
-            ref={menuRef}
-            style={menuStyle}
-            onMouseDown={stop}
-            className="rounded-lg border border-border bg-popover/90 backdrop-blur-xl p-1 text-popover-foreground shadow-lg"
-          >
-            <MenuItem icon="clipboard" onClick={handleCopy}>
-              Copy
-            </MenuItem>
-            <MenuItem icon="edit" onClick={handleEdit}>
-              Edit
-            </MenuItem>
-            <MenuItem icon="copy" onClick={handleDuplicate}>
-              Duplicate
-            </MenuItem>
-            <MenuItem
-              icon="star"
-              onClick={handleFavorite}
-              fill={prompt.is_favorite ? "currentColor" : "none"}
-            >
-              {prompt.is_favorite ? "Remove from Favorites" : "Add to Favorites"}
-            </MenuItem>
-            <div className="my-1 h-px bg-border" />
-            <MenuItem icon="delete" onClick={handleDelete} destructive>
-              Delete
-            </MenuItem>
-          </div>,
-          document.body,
-        )}
-    </div>
-  );
-});
-
-/* ─── default trigger (3-dot button flush-right) ─── */
-
-function DefaultActions({
-  onTriggerClick,
-  triggerRef,
-}: {
-  onTriggerClick: (e: React.MouseEvent) => void;
-  triggerRef: Ref<HTMLButtonElement>;
-}) {
-  return (
-    <button
-      ref={triggerRef as React.RefObject<HTMLButtonElement>}
-      onClick={onTriggerClick}
-      className="flex h-7 w-7 shrink-0 items-center justify-center overflow-visible rounded-md text-foreground/70 hover:bg-muted hover:text-foreground transition-colors duration-150"
-      title="More options"
-    >
-      <Icon name="more" size="md" />
-    </button>
+      <Separator />
+      <Item
+        onClick={onDeleteRequest}
+        className="gap-2.5 text-destructive focus:bg-destructive/10 focus:text-destructive"
+      >
+        <Icon name="delete" size="sm" />
+        Delete
+      </Item>
+    </>
   );
 }
 
-/* ─── menu row ─── */
+/**
+ * The 3-dot actions menu for a prompt row/card. Owns its own delete-confirmation
+ * AlertDialog so the trigger button stays tiny and self-contained.
+ */
+export function PromptActionsMenu({
+  prompt,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onToggleFavorite,
+  className,
+  align = "end",
+  onDeleteRequest,
+}: PromptActionsMenuProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const requestDelete = onDeleteRequest ?? (() => setDeleteOpen(true));
 
-function MenuItem({
-  icon,
-  onClick,
-  children,
-  destructive,
-  fill = "none",
-}: {
-  icon: IconName;
-  onClick: (e: React.MouseEvent) => void;
-  children: ReactNode;
-  destructive?: boolean;
-  fill?: "none" | "currentColor";
-}) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-left text-subheadline transition-colors duration-150 ${
-        destructive
-          ? "text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
-          : "hover:bg-muted focus:bg-muted"
-      }`}
-    >
-      <Icon name={icon} size="sm" className="shrink-0" fill={fill} />
-      <span className="truncate">{children}</span>
-    </button>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="More options"
+            title="More options"
+            className={cn("h-8 w-8 text-muted-foreground hover:text-foreground", className)}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Icon name="more" size="md" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align={align} className="min-w-[11rem]">
+          <PromptMenuItems
+            menu="dropdown"
+            prompt={prompt}
+            onEdit={onEdit}
+            onDeleteRequest={requestDelete}
+            onDuplicate={onDuplicate}
+            onToggleFavorite={onToggleFavorite}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {!onDeleteRequest && (
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Move to Trash</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to move &ldquo;{prompt.title}&rdquo; to trash? You can
+                restore it from the Trash page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => onDelete(prompt.id)}
+              >
+                Move to Trash
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
   );
 }

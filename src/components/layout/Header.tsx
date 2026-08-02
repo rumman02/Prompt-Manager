@@ -1,48 +1,43 @@
-import { SearchBar } from "@/components/search-bar";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 
 interface HeaderProps {
-  searchQuery: string;
-  onSearch: (query: string) => void;
+  title?: string;
+  onOpenCommandPalette: () => void;
   onCreatePrompt: () => void;
-  onSearchFocus?: () => void;
-  isSearchInteractive?: boolean;
 }
 
-export function Header({
-  searchQuery,
-  onSearch,
-  onCreatePrompt,
-  onSearchFocus,
-  isSearchInteractive = true,
-}: HeaderProps) {
+export function Header({ title = "Prompt Manager", onOpenCommandPalette, onCreatePrompt }: HeaderProps) {
   return (
-    <header className="flex flex-col border-b bg-card shrink-0">
+    <header className="flex shrink-0 flex-col border-b bg-card">
       {/* Top strip — spans full width, draggable, sits under the macOS traffic lights */}
       <div className="h-8 shrink-0" data-tauri-drag-region />
 
       {/* Main header row */}
-      <div className="flex h-16 items-center justify-between px-6" data-tauri-drag-region>
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-            <Icon name="prompts" size="lg" className="text-primary" />
-          </div>
-          <div>
-            <h1 className="text-headline tracking-tight">Prompt Manager</h1>
-            <p className="text-caption text-muted-foreground">Manage your AI prompts efficiently</p>
-          </div>
-        </div>
+      <div className="flex h-16 items-center gap-3 px-4" data-tauri-drag-region>
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage className="text-sm font-medium text-foreground">{title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-        <div className="flex items-center gap-3" data-tauri-drag-region="false">
-          <SearchBar
-            value={searchQuery}
-            onChange={isSearchInteractive ? onSearch : () => {}}
-            placeholder="Search prompts..."
-            onFocus={onSearchFocus}
-          />
+        <div className="ml-auto flex items-center gap-2" data-tauri-drag-region="false">
+          <Button variant="ghost" onClick={onOpenCommandPalette} className="gap-2 text-muted-foreground">
+            <Search className="size-4" />
+            <span className="hidden md:inline">Search</span>
+            <kbd className="pointer-events-none inline-flex items-center gap-0.5 rounded-sm border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              ⌘K
+            </kbd>
+          </Button>
           <Button onClick={onCreatePrompt} className="gap-2">
-            <Icon name="add" size="sm" />
+            <Plus className="size-4" />
             New Prompt
           </Button>
         </div>

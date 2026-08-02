@@ -1,6 +1,32 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Dropdown } from "@/components/ui/dropdown";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
@@ -70,6 +96,8 @@ export function VariablesSidebar({
   // Variable-set creation (inline name form shown by the dropdown's + button).
   const [showCreateSet, setShowCreateSet] = useState(false);
   const [newSetName, setNewSetName] = useState("");
+  // Delete-set confirmation.
+  const [deleteSetOpen, setDeleteSetOpen] = useState(false);
 
   // Local draft values for the open textarea(s). These mirror what the user is
   // typing and are the source of truth for the textarea; the debounce/blur in
@@ -243,9 +271,8 @@ export function VariablesSidebar({
 
   const handleDeleteSet = () => {
     if (activeSetId === null) return;
-    const label = activeSet ? `"${activeSet.name}"` : "this set";
-    if (!confirm(`Delete variable set ${label}? Its saved values for this prompt will be removed.`)) return;
     onDeleteSet(activeSetId);
+    setDeleteSetOpen(false);
   };
 
   return (
@@ -254,17 +281,17 @@ export function VariablesSidebar({
           side-by-side read as one system. */}
       <PanelStatusBar>
         <span className="font-medium">Variables</span>
-        <span aria-hidden className="h-3 w-px bg-border" />
+        <Separator orientation="vertical" className="h-3" />
         <span>
           {allVariables.length} variable{allVariables.length === 1 ? "" : "s"} detected
         </span>
       </PanelStatusBar>
 
       {/* Add custom variable */}
-      <div className="border-b border-border p-3 space-y-2">
+      <div className="space-y-2 border-b border-border p-3">
         {!showAddFields ? (
           <div className="flex gap-2">
-            <input
+            <Input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -275,14 +302,16 @@ export function VariablesSidebar({
                 }
               }}
               placeholder="Add variable..."
-              className="flex-1 rounded-sm border border-input bg-background px-3 py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="New variable name"
+              className="h-8 flex-1 text-sm"
             />
             <Button
               size="sm"
               variant="outline"
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 shrink-0 p-0"
               onClick={() => setShowAddFields(true)}
               disabled={!canAdd}
+              aria-label="Add variable"
               title="Add variable"
             >
               <Icon name="add" size="sm" />
@@ -292,15 +321,18 @@ export function VariablesSidebar({
           <div className="space-y-2 rounded-lg border border-input bg-background p-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-foreground">New variable</span>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={resetAddForm}
-                className="text-muted-foreground hover:text-foreground"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                aria-label="Cancel"
                 title="Cancel"
               >
                 <Icon name="close" size="sm" />
-              </button>
+              </Button>
             </div>
-            <input
+            <Input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -308,16 +340,18 @@ export function VariablesSidebar({
                 if (e.key === "Enter" && canAdd) handleAddVariable();
               }}
               placeholder="Variable name"
-              className="w-full rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="Variable name"
+              className="h-8 text-sm"
             />
-            <input
+            <Input
               type="text"
               value={newDefault}
               onChange={(e) => setNewDefault(e.target.value)}
               placeholder="Default value (optional)"
-              className="w-full rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="Default value (optional)"
+              className="h-8 text-sm"
             />
-            <input
+            <Input
               type="text"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
@@ -325,7 +359,8 @@ export function VariablesSidebar({
                 if (e.key === "Enter" && canAdd) handleAddVariable();
               }}
               placeholder="Description (optional)"
-              className="w-full rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="Description (optional)"
+              className="h-8 text-sm"
             />
             <Button
               size="sm"
@@ -337,37 +372,44 @@ export function VariablesSidebar({
             </Button>
           </div>
         )}
-        <p className="text-caption text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Use {"{{variable_name}}"} syntax in your prompt
         </p>
       </div>
 
       {/* Variable sets — one prompt can hold many named value sets; the dropdown
           switches the active set, and the + / × buttons create / delete one. */}
-      <div className="border-b border-border px-3 py-2 space-y-2">
+      <div className="space-y-2 border-b border-border px-3 py-2">
         <div className="flex items-center gap-2">
-          <div className="flex-1 min-w-0">
-            <Dropdown
+          <div className="min-w-0 flex-1">
+            <Select
               value={activeSetId !== null ? String(activeSetId) : ""}
-              onChange={(v) => {
+              onValueChange={(v) => {
                 const num = Number(v);
                 if (num) onSelectSet(num);
               }}
               disabled={promptId === null || variableSets.length === 0}
-              placeholder="No sets"
-              className="h-7 text-xs"
-              options={variableSets.map((s) => ({
-                value: String(s.id),
-                label: `${s.name}${s.isActive ? " · active" : ""}`,
-              }))}
-            />
+            >
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder="No sets" />
+              </SelectTrigger>
+              <SelectContent>
+                {variableSets.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.name}
+                    {s.isActive ? " · active" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button
             size="sm"
             variant="outline"
-            className="h-7 w-7 p-0 flex-shrink-0"
+            className="h-7 w-7 shrink-0 p-0"
             onClick={() => setShowCreateSet((v) => !v)}
             disabled={promptId === null}
+            aria-label="Create variable set"
             title="Create variable set"
           >
             <Icon name="add" size="sm" />
@@ -375,9 +417,10 @@ export function VariablesSidebar({
           <Button
             size="sm"
             variant="outline"
-            className="h-7 w-7 p-0 flex-shrink-0 text-muted-foreground hover:text-destructive"
-            onClick={handleDeleteSet}
+            className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+            onClick={() => setDeleteSetOpen(true)}
             disabled={promptId === null || activeSetId === null}
+            aria-label="Delete active variable set"
             title="Delete active variable set"
           >
             <Icon name="close" size="sm" />
@@ -386,7 +429,7 @@ export function VariablesSidebar({
 
         {showCreateSet && (
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="text"
               value={newSetName}
               onChange={(e) => setNewSetName(e.target.value)}
@@ -402,11 +445,12 @@ export function VariablesSidebar({
               }}
               autoFocus
               placeholder="Set name, e.g. Client A…"
-              className="flex-1 min-w-0 rounded-sm border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="Variable set name"
+              className="h-7 min-w-0 flex-1 text-xs"
             />
             <Button
               size="sm"
-              className="h-7 px-2 text-xs flex-shrink-0"
+              className="h-7 shrink-0 px-2 text-xs"
               onClick={confirmCreateSet}
               disabled={!newSetName.trim()}
             >
@@ -415,11 +459,12 @@ export function VariablesSidebar({
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 w-7 p-0 flex-shrink-0"
+              className="h-7 w-7 shrink-0 p-0"
               onClick={() => {
                 setShowCreateSet(false);
                 setNewSetName("");
               }}
+              aria-label="Cancel"
               title="Cancel"
             >
               <Icon name="close" size="sm" />
@@ -428,27 +473,27 @@ export function VariablesSidebar({
         )}
 
         {promptId === null && (
-          <p className="text-caption text-warning">
+          <p className="text-xs text-warning">
             Save the prompt first to create variable sets.
           </p>
         )}
       </div>
 
       {/* Variable list */}
-      <div className="flex-1 overflow-auto">
+      <ScrollArea className="min-h-0 flex-1">
         {allVariables.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+          <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
             <Icon name="variable" size="xl" className="text-muted-foreground/40" />
-            <p className="mt-2 text-caption text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               No variables found. Add custom ones or use {"{{variable}}"} syntax.
             </p>
           </div>
         ) : (
-          <div className="p-2 space-y-1">
+          <div className="space-y-1 p-2">
             {/* Extracted variables section */}
             {extractedVariables.length > 0 && (
               <>
-                <div className="px-2 py-1.5 text-eyebrow text-muted-foreground">
+                <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Detected
                 </div>
                 {extractedVariables.map((variable) => (
@@ -472,7 +517,7 @@ export function VariablesSidebar({
             {/* Custom variables section */}
             {customVariables.filter((v) => !isExtracted(v.name)).length > 0 && (
               <>
-                <div className="px-2 py-1.5 mt-2 text-eyebrow text-muted-foreground">
+                <div className="mt-2 px-2 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Custom
                 </div>
                 {customVariables
@@ -482,19 +527,20 @@ export function VariablesSidebar({
                       {editingId === v.id ? (
                         <div className="space-y-2 pt-0.5">
                           <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
-                            <code className="text-xs font-code text-foreground truncate">
+                            <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                            <code className="truncate font-mono text-xs text-foreground">
                               {v.name}
                             </code>
                           </div>
-                          <input
+                          <Input
                             type="text"
                             value={editDefault}
                             onChange={(e) => setEditDefault(e.target.value)}
                             placeholder="Default value (optional)"
-                            className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label="Default value (optional)"
+                            className="h-7 text-xs"
                           />
-                          <input
+                          <Input
                             type="text"
                             value={editDescription}
                             onChange={(e) => setEditDescription(e.target.value)}
@@ -502,7 +548,8 @@ export function VariablesSidebar({
                               if (e.key === "Enter") handleUpdateCustomVariable(v.id);
                             }}
                             placeholder="Description (optional)"
-                            className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label="Description (optional)"
+                            className="h-7 text-xs"
                           />
                           <div className="flex items-center gap-1.5">
                             <Button size="sm" className="h-6 px-2 text-xs" onClick={() => handleUpdateCustomVariable(v.id)}>
@@ -517,28 +564,29 @@ export function VariablesSidebar({
                         <div className="group flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
-                              <code className="text-xs font-code text-foreground truncate">
+                              <div className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                              <code className="truncate font-mono text-xs text-foreground">
                                 {v.name}
                               </code>
                             </div>
                             {v.default && (
-                              <p className="ml-4 mt-0.5 truncate text-caption text-muted-foreground">
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                 default: {v.default}
                               </p>
                             )}
                             {v.description && (
-                              <p className="ml-4 truncate text-caption text-muted-foreground">
+                              <p className="truncate text-xs text-muted-foreground">
                                 {v.description}
                               </p>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
+                          <div className="flex shrink-0 items-center gap-1">
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
                               onClick={() => handleInsert(v.name)}
+                              aria-label="Insert variable"
                               title="Insert variable"
                             >
                               <Icon name="add" size="xs" />
@@ -546,8 +594,9 @@ export function VariablesSidebar({
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                              className="h-6 w-6 p-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
                               onClick={() => startEditing(v)}
+                              aria-label="Edit variable"
                               title="Edit variable"
                             >
                               <Icon name="edit" size="xs" />
@@ -555,8 +604,9 @@ export function VariablesSidebar({
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                              className="h-6 w-6 p-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                               onClick={() => handleRemoveCustomVariable(v.id)}
+                              aria-label="Remove variable"
                               title="Remove variable"
                             >
                               <Icon name="close" size="xs" />
@@ -570,35 +620,60 @@ export function VariablesSidebar({
             )}
           </div>
         )}
-      </div>
+      </ScrollArea>
 
       {/* Quick insert section */}
       {allVariables.length > 0 && (
         <div className="border-t border-border p-3">
-          <p className="text-caption text-muted-foreground mb-2">Quick insert</p>
+          <p className="mb-2 text-xs text-muted-foreground">Quick insert</p>
           <div className="flex flex-wrap gap-1.5">
             {allVariables.slice(0, 8).map((name) => (
-              <button
+              <Button
                 key={name}
+                size="sm"
+                variant="ghost"
                 onClick={() => handleInsert(name)}
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs font-code transition-colors duration-150",
+                  "h-6 rounded-full px-2.5 py-0 font-mono text-xs",
                   isExtracted(name)
-                    ? "bg-success/10 text-success hover:bg-success/20"
-                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                    ? "bg-success/10 text-success hover:bg-success/20 hover:text-success"
+                    : "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
                 )}
               >
                 {`{{${name}}}`}
-              </button>
+              </Button>
             ))}
             {allVariables.length > 8 && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs font-normal">
                 +{allVariables.length - 8} more
-              </span>
+              </Badge>
             )}
           </div>
         </div>
       )}
+
+      {/* Delete-set confirmation */}
+      <AlertDialog open={deleteSetOpen} onOpenChange={setDeleteSetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete variable set</AlertDialogTitle>
+            <AlertDialogDescription>
+              {activeSet
+                ? `Delete variable set "${activeSet.name}"? Its saved values for this prompt will be removed.`
+                : "Delete this variable set? Its saved values for this prompt will be removed."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteSet}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -644,96 +719,90 @@ function DetectedVariableRow({
   }, [expanded]);
 
   return (
-    <div className="rounded-sm">
-      <div
-        role="button"
-        tabIndex={0}
-        aria-expanded={expanded}
-        aria-label={`${variable.name} variable, ${usageCount} occurrence${usageCount === 1 ? "" : "s"}`}
-        onClick={onToggle}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onToggle();
-          }
-        }}
-        className={cn(
-          "group flex items-center justify-between rounded-sm px-2 py-1.5 transition-colors duration-150 cursor-pointer",
-          expanded ? "bg-muted/60" : "hover:bg-muted/50"
-        )}
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          {/* Chevron affordance — rotates when expanded. */}
-          <Icon
-            name="chevronRight"
-            size="xs"
-            className={cn(
-              "shrink-0 text-muted-foreground transition-transform duration-200",
-              expanded && "rotate-90"
-            )}
-          />
-          <div
-            className={cn(
-              "h-2 w-2 rounded-full flex-shrink-0",
-              hasValue ? "bg-green-500" : "bg-green-500/30"
-            )}
-            title={hasValue ? "Has a saved value" : "No value set"}
-          />
-          <code className="text-xs font-code text-foreground truncate">
-            {variable.name}
-          </code>
-          {/* Filled-row preview: truncated value so the user sees which vars are
-              populated without expanding every row. */}
-          {hasValue && (
-            <span className="truncate text-caption text-muted-foreground max-w-[120px]">
-              · {savedValue.length > 24 ? `${savedValue.slice(0, 24)}…` : savedValue}
-            </span>
+    <Collapsible open={expanded} onOpenChange={onToggle}>
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          aria-label={`${variable.name} variable, ${usageCount} occurrence${usageCount === 1 ? "" : "s"}`}
+          className={cn(
+            "group flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left transition-colors duration-150",
+            "cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            expanded ? "bg-muted/60" : "hover:bg-muted/50"
           )}
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-xs font-medium text-success">
-            {usageCount}
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              onInsert(variable.name);
-            }}
-            title="Insert variable"
-          >
-            <Icon name="add" size="xs" />
-          </Button>
-        </div>
-      </div>
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            {/* Chevron affordance — rotates when expanded. */}
+            <Icon
+              name="chevronRight"
+              size="xs"
+              className={cn(
+                "shrink-0 text-muted-foreground transition-transform duration-200",
+                expanded && "rotate-90"
+              )}
+            />
+            <div
+              className={cn(
+                "h-2 w-2 shrink-0 rounded-full",
+                hasValue ? "bg-success" : "bg-success/30"
+              )}
+              title={hasValue ? "Has a saved value" : "No value set"}
+            />
+            <code className="truncate font-mono text-xs text-foreground">
+              {variable.name}
+            </code>
+            {/* Filled-row preview: truncated value so the user sees which vars are
+                populated without expanding every row. */}
+            {hasValue && (
+              <span className="max-w-[120px] truncate text-xs text-muted-foreground">
+                · {savedValue.length > 24 ? `${savedValue.slice(0, 24)}…` : savedValue}
+              </span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Badge className="rounded-full bg-success/10 px-1.5 py-0 text-xs font-medium text-success hover:bg-success/10">
+              {usageCount}
+            </Badge>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onInsert(variable.name);
+              }}
+              aria-label="Insert variable"
+              title="Insert variable"
+            >
+              <Icon name="add" size="xs" />
+            </Button>
+          </div>
+        </button>
+      </CollapsibleTrigger>
 
       {/* Inline expansion — resizable textarea for this variable's value. */}
-      {expanded && (
+      <CollapsibleContent>
         <div className="px-2 pb-2 pt-1">
-          <textarea
+          <Textarea
             ref={textareaRef}
             value={draftValue}
             onChange={(e) => onDraftChange(variable.name, e.target.value)}
             onBlur={() => onFlushSave(variable.name)}
             placeholder={`Enter a value for {{${variable.name}}}…`}
+            aria-label={`Value for {{${variable.name}}}`}
             rows={3}
             className={cn(
-              "w-full resize-y rounded-sm border border-input bg-background px-2 py-1.5 text-xs shadow-macos-inset",
-              "ring-offset-background placeholder:text-muted-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "min-h-[60px] resize-y text-xs",
               promptId === null && "opacity-60"
             )}
             disabled={promptId === null}
           />
-          <p className={cn("mt-1 text-caption", promptId === null ? "text-warning" : "text-muted-foreground")}>
+          <p className={cn("mt-1 text-xs", promptId === null ? "text-warning" : "text-muted-foreground")}>
             {promptId === null
               ? "Save the prompt first to store variable values."
               : "Autosaves as you type · drag the corner to resize"}
           </p>
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

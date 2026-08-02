@@ -3,102 +3,32 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── Apple HIG semantic color system (macOS native) ──
-     Light = macOS 14 / Sonoma light; Dark = macOS 14 dark.
-     Each token is a bare HSL triplet so usage is hsl(var(--token)).
-     The accent (--primary) is overridden at runtime by SettingsContext. */
   :root {
-    /* Surfaces */
-    --background: 0 0% 100%;            /* #ffffff systemBackground */
-    --foreground: 0 0% 0%;              /* #000000 label */
-    --card: 0 0% 100%;                  /* #ffffff (elevated surface) */
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;               /* window/sheet background */
-    --popover-foreground: 0 0% 0%;
-
-    /* Accent — runtime-overridden by SettingsContext (default Apple Blue) */
-    --primary: 211 100% 50%;            /* #007aff controlAccent */
-    --primary-foreground: 0 0% 100%;    /* white on accent */
-
-    /* Secondary / grouped surfaces */
-    --secondary: 240 6% 96%;            /* #f5f5f7 secondarySystemBackground */
-    --secondary-foreground: 240 6% 50%;  /* readable on secondary */
-    --muted: 240 6% 96%;                /* same surface as secondary */
-    --muted-foreground: 240 4% 46%;     /* #6e6e73 secondaryLabel */
-    --accent: 240 6% 96%;
-    --accent-foreground: 0 0% 0%;
-
-    /* Semantic status */
-    --destructive: 2 100% 59%;          /* #ff3b30 systemRed */
-    --destructive-foreground: 0 0% 100%;
-
-    /* Borders & controls */
-    --border: 240 6% 90%;               /* #d2d2d7 separator */
-    --input: 240 6% 90%;
-    --ring: 211 100% 50%;               /* accent focus ring */
-
-    /* ── Corner radius scale ──
-       xs=4  sm=6  md=8  lg=10  xl=14  2xl=20  full=9999
-       Applied by component type:
-         xs: token pills, inline badges
-         sm: inputs, textareas, small buttons
-         md: standard buttons, menu items
-         lg: cards, nav items, search fields
-         xl: panels, elevated surfaces
-         2xl: modals, sheets
-         full: avatars, circular controls */
-    --radius-xs: 0.25rem;
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.625rem;
-    --radius-xl: 0.875rem;
-    --radius-2xl: 1.25rem;
-    --radius-full: 9999px;
-    --radius: var(--radius-lg);         /* default = lg (10pt) */
-
-    /* ── Icon size scale ──
-       xs=12  sm=14  md=16  lg=20  xl=24 */
-    --icon-xs: 0.75rem;
-    --icon-sm: 0.875rem;
-    --icon-md: 1rem;
-    --icon-lg: 1.25rem;
-    --icon-xl: 1.5rem;
-
-    /* ── Shadow scale ──
-       Subtle, physically plausible elevation.
-       hairline:  0.5px border-shadow for crisp edges
-       sm:        buttons, inline controls
-       md:        cards, popovers, elevated surfaces
-       lg:        modals, floating panels */
-    --shadow-hairline: 0 0 0 0.5px hsl(var(--border));
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), var(--shadow-hairline);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1), var(--shadow-hairline);
-
-    /* Named roles */
-    --text-secondary: 240 4% 46%;       /* secondaryLabel for metadata */
-    --accent-2-h: 32;                    /* warm amber (version labels) — fixed */
-    --accent-2-s: 85%;
-    --accent-2-l: 45%;
-
-    /* Code-zone + variable tokens */
-    --code-bg: 240 6% 96%;              /* #f5f5f7 */
-    --code-border: 240 6% 90%;
-    --code-accent: var(--primary);
-    --token-sat: 70%;
-    --token-bg-l: 95%;
-    --token-fg-l: 30%;
-    --token-border-l: 80%;
-
-    /* Extended semantic tokens (not in default Tailwind mapping) */
-    --success: 137 55% 44%;             /* #34c759 systemGreen */
-    --warning: 35 100% 50%;             /* #ff9500 systemOrange */
-    --tertiary-label: 240 6% 65%;       /* #aeaeb2 tertiaryLabel */
-
-    /* Font overrides — set at runtime by SettingsContext */
-    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-    --font-editor: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
-    --font-size-base: 0.875rem;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -107,89 +37,33 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* shadcn/ui chart tokens */
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
   }
 
   .dark {
-    /* Surfaces */
-    --background: 0 0% 11%;             /* #1c1c1e systemBackground */
-    --foreground: 0 0% 100%;            /* #ffffff label */
-    --card: 0 0% 17%;                 /* #2c2c2e elevated surface */
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 17%;
-    --popover-foreground: 0 0% 100%;
-
-    /* Accent — runtime-overridden, lightened for dark by SettingsContext */
-    --primary: 213 100% 52%;            /* #0a84ff controlAccent (dark) */
-    --primary-foreground: 0 0% 100%;
-
-    /* Secondary / grouped surfaces */
-    --secondary: 0 0% 17%;              /* #2c2c2e secondarySystemBackground */
-    --secondary-foreground: 0 0% 68%;    /* #98989d secondaryLabel */
-    --muted: 0 0% 17%;
-    --muted-foreground: 0 0% 62%;       /* #98989d */
-    --accent: 0 0% 17%;
-    --accent-foreground: 0 0% 100%;
-
-    /* Semantic status */
-    --destructive: 4 100% 60%;          /* #ff453a systemRed (dark) */
-    --destructive-foreground: 0 0% 100%;
-
-    /* Borders & controls */
-    --border: 0 0% 24%;                 /* #38383a separator */
-    --input: 0 0% 24%;
-    --ring: 213 100% 52%;
-
-    /* Radius — same scale in both modes */
-    --radius-xs: 0.25rem;
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.625rem;
-    --radius-xl: 0.875rem;
-    --radius-2xl: 1.25rem;
-    --radius-full: 9999px;
-    --radius: var(--radius-lg);
-
-    /* Icon sizes — same scale */
-    --icon-xs: 0.75rem;
-    --icon-sm: 0.875rem;
-    --icon-md: 1rem;
-    --icon-lg: 1.25rem;
-    --icon-xl: 1.5rem;
-
-    /* Shadow scale — darker in dark mode */
-    --shadow-hairline: 0 0 0 0.5px hsl(var(--border));
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25), var(--shadow-hairline);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35), var(--shadow-hairline);
-
-    /* Named roles */
-    --text-secondary: 0 0% 62%;
-    --accent-2-h: 32;
-    --accent-2-s: 75%;
-    --accent-2-l: 62%;
-
-    /* Code-zone + variable tokens */
-    --code-bg: 0 0% 11%;
-    --code-border: 0 0% 24%;
-    --code-accent: var(--primary);
-    --token-sat: 55%;
-    --token-bg-l: 20%;
-    --token-fg-l: 84%;
-    --token-border-l: 32%;
-
-    /* Extended semantic tokens */
-    --success: 137 55% 49%;             /* #30d158 systemGreen (dark) */
-    --warning: 38 100% 52%;             /* #ff9f0a systemOrange (dark) */
-    --tertiary-label: 0 0% 40%;         /* #636366 tertiaryLabel */
-
-    /* shadcn/ui sidebar tokens */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -198,171 +72,6 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* shadcn/ui chart tokens */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-}
-
-/* ── Theme preset classes (applied by SettingsContext) ──
-   These are empty because the actual values are set inline by JS.
-   They exist as documentation of the available theme hooks. */
-[data-theme="apple"] { }
-[data-theme="catppuccin"] { }
-[data-theme="tokyonight"] { }
-[data-theme="gruvbox"] { }
-[data-theme="material"] { }
-[data-theme="github"] { }
-[data-theme="oled"] { }
-
-/* ── Typography: SF Pro (Apple system) ── */
-@layer base {
-  html {
-    font-size: var(--font-size-base);
-  }
-  body {
-    font-family: var(--font-ui);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-
-.font-code,
-.code-zone {
-  font-family: var(--font-editor);
-  font-feature-settings: "liga" 0;
-  border: 1px solid transparent;
-  border-radius: 6px;
-}
-
-/* ── Apple text styles (HIG type scale) ── */
-.text-title {
-  font-size: 1.625rem;                  /* 26pt */
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.011em;
-  color: hsl(var(--foreground));
-}
-.text-headline {
-  font-size: 1rem;                      /* 16pt */
-  font-weight: 600;
-  line-height: 1.35;
-  color: hsl(var(--foreground));
-}
-.text-body {
-  font-size: 0.9375rem;                 /* 15pt */
-  font-weight: 400;
-  line-height: 1.5;
-  color: hsl(var(--foreground));
-}
-.text-subheadline {
-  font-size: 0.8125rem;                 /* 13pt */
-  font-weight: 400;
-  line-height: 1.4;
-  color: hsl(var(--foreground));
-}
-.text-footnote {
-  font-size: 0.75rem;                   /* 12pt */
-  font-weight: 400;
-  line-height: 1.4;
-  color: hsl(var(--muted-foreground));
-}
-.text-caption {
-  font-size: 0.6875rem;                 /* 11pt */
-  font-weight: 400;
-  line-height: 1.35;
-  color: hsl(var(--muted-foreground));
-}
-/* Eyebrow / section header — uppercase label */
-.text-eyebrow {
-  font-size: 0.6875rem;                 /* 11pt */
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: hsl(var(--muted-foreground));
-}
-/* Lead — prominent body text */
-.text-lead {
-  font-size: 1.0625rem;                 /* 17pt */
-  font-weight: 600;
-  line-height: 1.25;
-  color: hsl(var(--foreground));
-}
-/* Meta — secondary metadata */
-.text-meta {
-  color: hsl(var(--text-secondary));
-}
-
-/* code-zone focus — applied to the wrapper when the textarea is focused.
-   Minimal: a 1px accent border, no glow/box-shadow. */
-.code-zone:focus-within {
-  border-color: hsl(var(--code-accent) / 0.8);
-}
-
-/* variable tokens — per-name hue via --token-hue; border via inset box-shadow
-   (NOT inline padding) so the overlay stays pixel-synced with the textarea */
-.var-token {
-  --hue: var(--token-hue, 220deg);
-  white-space: nowrap;
-  border-radius: 4px;
-  color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
-  background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.55);
-  box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l));
-}
-
-/* Unfilled variable in the preview: same per-name hue for traceability, but a
-   dashed border + lower opacity so it reads as "still needs a value" and can't
-   be mistaken for a filled one. */
-.var-token--empty {
-  --hue: var(--token-hue, 220deg);
-  white-space: nowrap;
-  border-radius: 4px;
-  font-style: italic;
-  color: hsl(var(--hue) var(--token-sat) var(--token-fg-l) / 0.7);
-  background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.3);
-  box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.6);
-}
-
-/* A substituted variable VALUE in the compiled preview. Same per-name hue as
-   the editor token so a value can be traced back to the variable it came
-   from, but solid (not dashed) because it is filled. */
-.var-value {
-  --hue: var(--token-hue, 220deg);
-  border-radius: 4px;
-  padding: 0 2px;
-  color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
-  background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
-  box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
-}
-
-/* Switching variable sets pulses every value pill once, so which text
-   actually changed is obvious without hunting. */
-@keyframes var-value-flash {
-  0% {
-    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
-    box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
-  }
-  35% {
-    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.95);
-    box-shadow: inset 0 0 0 2px hsl(var(--hue) var(--token-sat) var(--token-border-l));
-  }
-  100% {
-    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
-    box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
-  }
-}
-
-.vars-flash .var-value {
-  animation: var-value-flash 1s ease-out;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .vars-flash .var-value {
-    animation: none;
   }
 }
 
@@ -372,188 +81,274 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   App-specific styles (no shadcn / Tailwind equivalent).
+   Runtime theming lives here too: SettingsContext sets the --font-*,
+   --code-*, --token-* and status custom properties inline on <html>,
+   and these defaults keep the app looking right before first mount
+   and after a settings reset.
+   ──────────────────────────────────────────────────────────────── */
+@layer components {
+  :root {
+    /* Settings-driven typography */
+    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    --font-editor: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+    --font-size-base: 0.875rem;
+
+    /* Code zone + variable tokens */
+    --code-bg: 240 6% 96%;
+    --code-border: 240 6% 90%;
+    --token-sat: 70%;
+    --token-bg-l: 95%;
+    --token-fg-l: 30%;
+    --token-border-l: 80%;
+
+    /* Status colors (themed via SettingsContext) */
+    --success: 137 55% 44%;
+    --warning: 35 100% 50%;
+  }
+
+  .dark {
+    --code-bg: 0 0% 11%;
+    --code-border: 0 0% 24%;
+    --token-sat: 55%;
+    --token-bg-l: 20%;
+    --token-fg-l: 84%;
+    --token-border-l: 32%;
+
+    --success: 137 55% 49%;
+    --warning: 38 100% 52%;
+  }
+
+  html {
+    font-size: var(--font-size-base);
+  }
+  body {
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-}
 
-/* Custom scrollbar — thin, macOS-style */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--border) / 0.8);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.6);
-}
-
-/* Selection — accent tint */
-::selection {
-  background: hsl(var(--primary) / 0.2);
-}
-
-/* ── Reduced motion (Apple HIG: respect Reduce Motion) ── */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
   }
-}
 
-/* ── Markdown preview (Preview tab) ──
-   Scoped to .markdown-preview so it never leaks into the rest of the app. Body
-   text uses the app's normal UI sans-serif (NOT the .code-zone monospace) so the
-   rendered prompt reads as the final artifact; only code spans/blocks go mono.
-   Theming is driven by the same HSL design tokens as the rest of the UI. */
-.markdown-preview {
-  color: hsl(var(--foreground));
-  font-family: var(--font-ui);
-  font-size: 14px;
-  line-height: 1.7;
-  overflow-wrap: anywhere;
-}
+  /* ── Variable tokens (editor overlay + compiled preview) ── */
+  /* Per-name hue via --token-hue; border via inset box-shadow (NOT inline
+     padding) so the overlay stays pixel-synced with the textarea. */
+  .var-token {
+    --hue: var(--token-hue, 220deg);
+    white-space: nowrap;
+    border-radius: 4px;
+    color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
+    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.55);
+    box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l));
+  }
 
-.markdown-preview h1,
-.markdown-preview h2,
-.markdown-preview h3,
-.markdown-preview h4,
-.markdown-preview h5,
-.markdown-preview h6 {
-  font-weight: 600;
-  line-height: 1.3;
-  color: hsl(var(--foreground));
-  margin-top: 1.1em;
-  margin-bottom: 0.4em;
-}
+  /* Unfilled variable in the preview: dashed border + lower opacity so it
+     reads as "still needs a value". */
+  .var-token--empty {
+    --hue: var(--token-hue, 220deg);
+    white-space: nowrap;
+    border-radius: 4px;
+    font-style: italic;
+    color: hsl(var(--hue) var(--token-sat) var(--token-fg-l) / 0.7);
+    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.3);
+    box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.6);
+  }
 
-.markdown-preview h1 { font-size: 1.6rem; }
-.markdown-preview h2 { font-size: 1.35rem; }
-.markdown-preview h3 { font-size: 1.18rem; }
-.markdown-preview h4 { font-size: 1.05rem; }
-.markdown-preview h5 { font-size: 0.95rem; }
-.markdown-preview h6 { font-size: 0.85rem; color: hsl(var(--muted-foreground)); }
+  /* A substituted variable VALUE in the compiled preview. Solid (not dashed)
+     because it is filled; same per-name hue as the editor token. */
+  .var-value {
+    --hue: var(--token-hue, 220deg);
+    border-radius: 4px;
+    padding: 0 2px;
+    color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
+    background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
+    box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
+  }
 
-.markdown-preview p {
-  margin: 0 0 0.7em;
-}
+  /* Switching variable sets pulses every value pill once. */
+  @keyframes var-value-flash {
+    0% {
+      background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
+      box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
+    }
+    35% {
+      background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.95);
+      box-shadow: inset 0 0 0 2px hsl(var(--hue) var(--token-sat) var(--token-border-l));
+    }
+    100% {
+      background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.45);
+      box-shadow: inset 0 0 0 1px hsl(var(--hue) var(--token-sat) var(--token-border-l) / 0.7);
+    }
+  }
 
-.markdown-preview strong,
-.markdown-preview b {
-  font-weight: 600;
-}
+  .vars-flash .var-value {
+    animation: var-value-flash 1s ease-out;
+  }
 
-.markdown-preview em,
-.markdown-preview i {
-  font-style: italic;
-}
+  @media (prefers-reduced-motion: reduce) {
+    .vars-flash .var-value {
+      animation: none;
+    }
+  }
 
-.markdown-preview ul,
-.markdown-preview ol {
-  margin: 0 0 0.7em;
-  padding-left: 1.5rem;
-  list-style-position: outside;
-}
+  /* ── Markdown preview (Preview tab) ──
+     Scoped to .markdown-preview so it never leaks into the rest of the app.
+     Theming is driven by the same HSL design tokens as the rest of the UI. */
+  .markdown-preview {
+    color: hsl(var(--foreground));
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
 
-.markdown-preview ul {
-  list-style-type: disc;
-}
+  .markdown-preview h1,
+  .markdown-preview h2,
+  .markdown-preview h3,
+  .markdown-preview h4,
+  .markdown-preview h5,
+  .markdown-preview h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    color: hsl(var(--foreground));
+    margin-top: 1.1em;
+    margin-bottom: 0.4em;
+  }
 
-.markdown-preview ol {
-  list-style-type: decimal;
-}
+  .markdown-preview h1 { font-size: 1.6rem; }
+  .markdown-preview h2 { font-size: 1.35rem; }
+  .markdown-preview h3 { font-size: 1.18rem; }
+  .markdown-preview h4 { font-size: 1.05rem; }
+  .markdown-preview h5 { font-size: 0.95rem; }
+  .markdown-preview h6 { font-size: 0.85rem; color: hsl(var(--muted-foreground)); }
 
-.markdown-preview li {
-  margin-bottom: 0.2em;
-}
+  .markdown-preview p {
+    margin: 0 0 0.7em;
+  }
 
-.markdown-preview li > ul,
-.markdown-preview li > ol {
-  margin: 0.2em 0 0;
-}
+  .markdown-preview strong,
+  .markdown-preview b {
+    font-weight: 600;
+  }
 
-.markdown-preview blockquote {
-  margin: 0 0 0.7em;
-  padding: 0.4rem 0 0.4rem 1rem;
-  border-left: 3px solid hsl(var(--primary));
-  background: hsl(var(--muted) / 0.3);
-  border-radius: 0 6px 6px 0;
-  color: hsl(var(--muted-foreground));
-  font-style: italic;
-}
+  .markdown-preview em,
+  .markdown-preview i {
+    font-style: italic;
+  }
 
-.markdown-preview blockquote p {
-  margin: 0;
-}
+  .markdown-preview ul,
+  .markdown-preview ol {
+    margin: 0 0 0.7em;
+    padding-left: 1.5rem;
+    list-style-position: outside;
+  }
 
-.markdown-preview a {
-  color: hsl(var(--primary));
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
+  .markdown-preview ul {
+    list-style-type: disc;
+  }
 
-.markdown-preview a:hover {
-  color: hsl(var(--primary) / 0.8);
-}
+  .markdown-preview ol {
+    list-style-type: decimal;
+  }
 
-.markdown-preview code {
-  font-family: var(--font-editor);
-  font-size: 0.85em;
-  background: hsl(var(--code-bg));
-  border: 1px solid hsl(var(--code-border));
-  border-radius: 4px;
-  padding: 0.05em 0.35em;
-}
+  .markdown-preview li {
+    margin-bottom: 0.2em;
+  }
 
-.markdown-preview pre {
-  font-family: var(--font-editor);
-  background: hsl(var(--code-bg));
-  border: 1px solid hsl(var(--code-border));
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin: 0 0 0.7em;
-  overflow-x: auto;
-  line-height: 1.5;
-}
+  .markdown-preview li > ul,
+  .markdown-preview li > ol {
+    margin: 0.2em 0 0;
+  }
 
-.markdown-preview pre code {
-  font-size: 0.85em;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  white-space: pre;
-}
+  .markdown-preview blockquote {
+    margin: 0 0 0.7em;
+    padding: 0.4rem 0 0.4rem 1rem;
+    border-left: 3px solid hsl(var(--primary));
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 0 6px 6px 0;
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+  }
 
-.markdown-preview hr {
-  border: 0;
-  border-top: 1px solid hsl(var(--border));
-  margin: 1.2em 0;
-}
+  .markdown-preview blockquote p {
+    margin: 0;
+  }
 
-.markdown-preview img {
-  max-width: 100%;
-  border-radius: 8px;
-}
+  .markdown-preview a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 
-/* Keep the unfilled-variable pill readable inside the rendered Markdown. The
-   global .var-token--empty styles already handle color/border; this just ensures
-   inline flow and vertical alignment inside prose. */
-.markdown-preview .var-token--empty {
-  vertical-align: baseline;
-}
+  .markdown-preview a:hover {
+    color: hsl(var(--primary) / 0.8);
+  }
 
-.markdown-preview .var-value {
-  vertical-align: baseline;
+  .markdown-preview code {
+    font-family: var(--font-editor);
+    font-size: 0.85em;
+    background: hsl(var(--code-bg));
+    border: 1px solid hsl(var(--code-border));
+    border-radius: 4px;
+    padding: 0.05em 0.35em;
+  }
+
+  .markdown-preview pre {
+    font-family: var(--font-editor);
+    background: hsl(var(--code-bg));
+    border: 1px solid hsl(var(--code-border));
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin: 0 0 0.7em;
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+
+  .markdown-preview pre code {
+    font-size: 0.85em;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    white-space: pre;
+  }
+
+  .markdown-preview hr {
+    border: 0;
+    border-top: 1px solid hsl(var(--border));
+    margin: 1.2em 0;
+  }
+
+  .markdown-preview img {
+    max-width: 100%;
+    border-radius: 8px;
+  }
+
+  /* Keep the unfilled-variable pill readable inside the rendered Markdown. */
+  .markdown-preview .var-token--empty {
+    vertical-align: baseline;
+  }
+
+  .markdown-preview .var-value {
+    vertical-align: baseline;
+  }
+
+  /* ── Reduced motion (Apple HIG: respect Reduce Motion) ── */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

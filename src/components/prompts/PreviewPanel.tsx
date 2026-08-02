@@ -1,5 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { renderCompiledMarkdown } from "@/lib/markdown";
 import type { RenderedMarkdown } from "@/lib/markdown";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -16,9 +19,9 @@ interface PreviewPanelProps {
 
 export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
   const [copied, setCopied] = useState(false);
-  // false = rendered Markdown preview, true = raw compiled Markdown source.
+  // "preview" = rendered Markdown preview, "raw" = raw compiled Markdown source.
   // Persists across re-renders so the user's choice sticks while editing.
-  const [showRaw, setShowRaw] = useState(false);
+  const [view, setView] = useState<"preview" | "raw">("preview");
 
   // One compile pass yields the raw text (for clipboard), the sanitized +
   // variable-highlighted HTML (for rendering), and the unfilled list (for the
@@ -58,37 +61,35 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
           bars align when sitting side-by-side. */}
       {unfilled.length > 0 && (
         <PanelStatusBar>
-          <p>
+          <Badge variant="secondary" className="rounded-full px-1.5 py-0">
+            {unfilled.length}
+          </Badge>
+          <p className="truncate">
             {unfilled.length === 1
-              ? "1 variable is unfilled — its {{placeholder}} will be copied as-is."
-              : `${unfilled.length} variables are unfilled — their {{placeholders}} will be copied as-is.`}
+              ? "variable is unfilled — its {{placeholder}} will be copied as-is."
+              : `variables are unfilled — their {{placeholders}} will be copied as-is.`}
           </p>
         </PanelStatusBar>
       )}
 
-      {/* Compiled output — Markdown rendered to sanitized HTML, with unfilled
-          {{placeholders}} highlighted as dashed .var-token--empty pills. Body
-          text uses the app's UI font (not monospace); only code spans/blocks do.
-          The raw compiled Markdown (not this HTML) is what Copy puts on the clipboard.
-          The copy button floats top-right over the content so it stays anchored to
-          what it copies, not stranded in a header bar. The Raw/Formatted toggle
-          sits flush left of the copy button — same row, same chrome. */}
-      <div className="relative flex-1 overflow-auto">
-        <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
+      <Tabs
+        value={view}
+        onValueChange={(v) => setView(v === "raw" ? "raw" : "preview")}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5">
+          <TabsList className="h-8">
+            <TabsTrigger value="preview" className="h-7 px-3 text-xs">
+              Preview
+            </TabsTrigger>
+            <TabsTrigger value="raw" className="h-7 px-3 text-xs">
+              Raw
+            </TabsTrigger>
+          </TabsList>
           <Button
             size="sm"
             variant="secondary"
-            className="bg-card/80 backdrop-blur"
-            onClick={() => setShowRaw((v) => !v)}
-            aria-pressed={showRaw}
-            aria-label={showRaw ? "Show formatted preview" : "Show raw Markdown"}
-          >
-            {showRaw ? "Formatted" : "Raw"}
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="gap-1.5 bg-card/80 backdrop-blur"
+            className="gap-1.5"
             onClick={handleCopy}
             aria-label={copied ? "Copied to clipboard" : "Copy compiled prompt"}
           >
@@ -105,21 +106,34 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
             )}
           </Button>
         </div>
-        {showRaw ? (
-          <pre
-            aria-label="Raw compiled Markdown"
-            className="m-3 whitespace-pre-wrap rounded-xl bg-code-bg px-4 py-3 font-code text-sm leading-relaxed text-foreground"
-          >
-            {text}
-          </pre>
-        ) : (
-          <div
-            aria-label="Compiled prompt preview"
-            className="markdown-preview m-3 rounded-xl bg-code-bg px-4 py-3"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        )}
-      </div>
+
+        <TabsContent
+          value="preview"
+          className="min-h-0 flex-1 overflow-hidden p-0 data-[state=active]:flex"
+        >
+          <ScrollArea className="h-full">
+            <div
+              aria-label="Compiled prompt preview"
+              className="markdown-preview m-3 rounded-xl bg-muted/50 px-4 py-3"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent
+          value="raw"
+          className="min-h-0 flex-1 overflow-hidden p-0 data-[state=active]:flex"
+        >
+          <ScrollArea className="h-full">
+            <pre
+              aria-label="Raw compiled Markdown"
+              className="m-3 whitespace-pre-wrap rounded-xl bg-muted/50 px-4 py-3 font-mono text-sm leading-relaxed text-foreground"
+            >
+              {text}
+            </pre>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

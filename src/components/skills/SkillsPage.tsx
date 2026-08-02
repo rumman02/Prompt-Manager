@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
@@ -35,10 +35,10 @@ export function SkillsPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 mb-4">
               <Icon name="skills" size="xl" className="text-primary" />
             </div>
-            <h3 className="text-headline font-medium">No skills yet</h3>
-            <p className="mt-1 max-w-sm text-caption text-muted-foreground">
+            <CardTitle className="text-lg">No skills yet</CardTitle>
+            <CardDescription className="mt-1 max-w-sm">
               Skills are reusable capabilities you can attach to agents. Create your first skill to get started.
-            </p>
+            </CardDescription>
           </CardContent>
         </Card>
       </div>

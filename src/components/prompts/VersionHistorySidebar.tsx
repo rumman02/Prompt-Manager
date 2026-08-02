@@ -3,6 +3,30 @@ import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { PromptVersion } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Icon } from "@/components/ui/icon";
 import { PanelStatusBar } from "@/components/prompts/PanelStatusBar";
 
@@ -125,270 +149,272 @@ export function VersionHistorySidebar({
           side-by-side read as one system. */}
       <PanelStatusBar>
         <span className="font-medium">History</span>
-        <span aria-hidden className="h-3 w-px bg-border" />
+        <Separator orientation="vertical" className="h-3" />
         <span>
           {versions.length} version{versions.length === 1 ? "" : "s"}
         </span>
       </PanelStatusBar>
 
       {/* Save new version */}
-        {isEditing && (
-          <div className="border-b border-border p-3 space-y-2">
-            <textarea
-              value={saveMessage}
-              onChange={(e) => setSaveMessage(e.target.value)}
-              placeholder="Version message (optional)..."
-              className="w-full resize-none rounded-sm border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground shadow-macos-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              rows={2}
-            />
-            <button
-              type="button"
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-colors duration-150 hover:bg-secondary/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={handleSaveVersion}
-              disabled={!title.trim() || !content.trim()}
-            >
-              <Icon name="add" size="sm" />
-              Save Version
-            </button>
+      {isEditing && (
+        <div className="space-y-2 border-b border-border p-3">
+          <Textarea
+            value={saveMessage}
+            onChange={(e) => setSaveMessage(e.target.value)}
+            placeholder="Version message (optional)..."
+            className="min-h-[60px] resize-none text-sm"
+            rows={2}
+          />
+          <Button
+            type="button"
+            className="w-full gap-1.5"
+            onClick={handleSaveVersion}
+            disabled={!title.trim() || !content.trim()}
+          >
+            <Icon name="add" size="sm" />
+            Save Version
+          </Button>
+        </div>
+      )}
+
+      {/* Version list */}
+      <ScrollArea className="min-h-0 flex-1">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
-        )}
-
-        {/* Version list */}
-        <div className="flex-1 overflow-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        ) : versions.length === 0 ? (
+          <div className="flex flex-col items-start gap-2 px-4 py-6 text-left">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
+              <Icon name="history" size="md" />
             </div>
-          ) : versions.length === 0 ? (
-            <div className="flex flex-col items-start gap-2 py-6 px-4 text-left">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                <Icon name="history" size="md" />
-              </div>
-              <p className="text-caption leading-relaxed text-muted-foreground">
-                {isEditing
-                  ? "No versions yet. Save your first snapshot above, and every future change will be listed here for a one-click restore."
-                  : "Versions appear here once you save this prompt and edit it again — each saved change becomes a snapshot you can restore with one click."}
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {versions.map((version) => (
-                <div
-                  key={version.id}
-                  className="group relative px-3 py-3 transition-colors duration-150 hover:bg-muted/50"
-                >
-                  {/* hover accent bar — makes entries easy to scan as the list grows */}
-                  <span className="pointer-events-none absolute inset-y-2 left-0 w-[2px] rounded-r bg-[hsl(var(--accent-2-h)_var(--accent-2-s)_var(--accent-2-l))] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
-                  {/* Header row — always visible */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-[hsl(var(--accent-2-h)_var(--accent-2-s)_var(--accent-2-l))]">
-                          v{version.version_number}
-                        </span>
-                        <span className="text-caption text-muted-foreground">
-                          {formatDate(version.created_at)}
-                        </span>
-                      </div>
-                      {renamingId === version.id ? (
-                        <div className="mt-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            ref={renameInputRef}
-                            value={renameDraft}
-                            onChange={(e) => setRenameDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleRename(version.id);
-                              if (e.key === "Escape") setRenamingId(null);
-                            }}
-                            placeholder="Add a label..."
-                            className="w-full rounded-sm border border-input bg-background px-1.5 py-0.5 text-xs shadow-macos-inset focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                          />
-                          <button
-                            onClick={() => handleRename(version.id)}
-                            title="Save label"
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
-                          >
-                            <Icon name="check" size="xs" />
-                          </button>
-                          <button
-                            onClick={() => setRenamingId(null)}
-                            title="Cancel"
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
-                          >
-                            <Icon name="close" size="xs" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          {version.message && (
-                            <p className="mt-0.5 text-caption text-muted-foreground truncate">
-                              {version.message}
-                            </p>
-                          )}
-                          <p className="text-caption text-muted-foreground/70 truncate">
-                            {version.title}
-                          </p>
-                        </>
-                      )}
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {isEditing
+                ? "No versions yet. Save your first snapshot above, and every future change will be listed here for a one-click restore."
+                : "Versions appear here once you save this prompt and edit it again — each saved change becomes a snapshot you can restore with one click."}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {versions.map((version) => (
+              <div
+                key={version.id}
+                className="group relative border-l-2 border-transparent px-3 py-3 transition-colors duration-150 hover:border-primary hover:bg-muted/50"
+              >
+                {/* Header row — always visible */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-primary">
+                        v{version.version_number}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(version.created_at)}
+                      </span>
                     </div>
-
-                    {/* Action toolbar — revealed on hover (group-hover) over the row */}
-                    {renamingId !== version.id && (
-                      <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-border/60 bg-card/80 backdrop-blur-sm p-0.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-                        <button
-                          onClick={() => setViewing(version)}
-                          title="View"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    {renamingId === version.id ? (
+                      <div className="mt-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          ref={renameInputRef}
+                          value={renameDraft}
+                          onChange={(e) => setRenameDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename(version.id);
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
+                          placeholder="Add a label..."
+                          className="h-7 text-xs"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => handleRename(version.id)}
+                          title="Save label"
                         >
-                          <Icon name="eye" size="sm" />
-                        </button>
-                        <button
-                          onClick={() => handleRestore(version)}
-                          title="Restore"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          <Icon name="check" size="xs" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => setRenamingId(null)}
+                          title="Cancel"
                         >
-                          <Icon name="reset" size="sm" />
-                        </button>
-                        <button
-                          onClick={() => startRename(version)}
-                          title="Rename"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <Icon name="edit" size="sm" />
-                        </button>
-                        <button
-                          onClick={() => setPendingDeleteId(version.id)}
-                          title="Delete"
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <Icon name="delete" size="sm" />
-                        </button>
+                          <Icon name="close" size="xs" />
+                        </Button>
                       </div>
+                    ) : (
+                      <>
+                        {version.message && (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {version.message}
+                          </p>
+                        )}
+                        <p className="truncate text-xs text-muted-foreground/70">
+                          {version.title}
+                        </p>
+                      </>
                     )}
                   </div>
+
+                  {/* Action toolbar — revealed on hover (group-hover) over the row */}
+                  {renamingId !== version.id && (
+                    <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-border/60 bg-card/80 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 rounded p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => setViewing(version)}
+                        title="View"
+                      >
+                        <Icon name="eye" size="sm" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 rounded p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => handleRestore(version)}
+                        title="Restore"
+                      >
+                        <Icon name="reset" size="sm" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 rounded p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => startRename(version)}
+                        title="Rename"
+                      >
+                        <Icon name="edit" size="sm" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 rounded p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => setPendingDeleteId(version.id)}
+                        title="Delete"
+                      >
+                        <Icon name="delete" size="sm" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
 
       {/* ─── View modal (full version content, read-only) ─── */}
-      {viewing && (
-        <div className="fixed inset-0 z-50 flex items-stretch justify-end">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-md" onClick={() => setViewing(null)} />
-          <div className="relative z-10 w-full max-w-xl bg-card/90 backdrop-blur-xl border-l border-border flex flex-col shadow-lg animate-in slide-in-from-right duration-300">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-headline truncate">
-                  v{viewing.version_number}{viewing.message ? ` — ${viewing.message}` : ""}
-                </h2>
-                <p className="text-caption text-muted-foreground mt-0.5">
+      <Sheet
+        open={viewing !== null}
+        onOpenChange={(open) => {
+          if (!open) setViewing(null);
+        }}
+      >
+        <SheetContent side="right" className="flex w-full max-w-xl flex-col p-0">
+          {viewing && (
+            <>
+              <SheetHeader className="border-b border-border px-6 py-4 text-left">
+                <SheetTitle className="truncate text-lg">
+                  v{viewing.version_number}
+                  {viewing.message ? ` — ${viewing.message}` : ""}
+                </SheetTitle>
+                <SheetDescription>
                   Saved {formatDate(viewing.created_at)}
-                </p>
-              </div>
-              <button
-                onClick={() => setViewing(null)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-150"
-                title="Close"
-              >
-                <Icon name="close" size="md" />
-              </button>
-            </div>
+                </SheetDescription>
+              </SheetHeader>
 
-            <div className="flex-1 overflow-auto p-6 space-y-5">
-              <div className="flex flex-wrap gap-2">
-                {viewing.category && (
-                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    {viewing.category}
-                  </span>
-                )}
-                {viewing.tags?.split(",").map((tag, i) => {
-                  const trimmed = tag.trim();
-                  if (!trimmed) return null;
-                  return (
-                    <span key={i} className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-                      {trimmed}
-                    </span>
-                  );
-                })}
-              </div>
+              <ScrollArea className="min-h-0 flex-1">
+                <div className="space-y-5 p-6">
+                  <div className="flex flex-wrap gap-2">
+                    {viewing.category && (
+                      <Badge className="rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary hover:bg-primary/10">
+                        {viewing.category}
+                      </Badge>
+                    )}
+                    {viewing.tags?.split(",").map((tag, i) => {
+                      const trimmed = tag.trim();
+                      if (!trimmed) return null;
+                      return (
+                        <Badge key={i} variant="secondary" className="rounded-full px-2.5 py-0.5 font-normal">
+                          {trimmed}
+                        </Badge>
+                      );
+                    })}
+                  </div>
 
-              {viewing.description && (
-                <div className="rounded-xl bg-muted/50 p-4">
-                  <p className="text-body text-muted-foreground leading-relaxed">{viewing.description}</p>
+                  {viewing.description && (
+                    <div className="rounded-xl bg-muted/50 p-4">
+                      <p className="text-sm leading-relaxed text-muted-foreground">{viewing.description}</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">Title</span>
+                    <div className="rounded-xl border border-border bg-muted/30 p-3">
+                      <p className="text-sm text-foreground">{viewing.title}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">Prompt Content</span>
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                      <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+                        {viewing.content}
+                      </pre>
+                    </div>
+                  </div>
                 </div>
-              )}
+              </ScrollArea>
 
-              <div className="space-y-2">
-                <span className="text-subheadline font-medium">Title</span>
-                <div className="rounded-xl border border-border bg-muted/30 p-3">
-                  <p className="text-body text-foreground">{viewing.title}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-subheadline font-medium">Prompt Content</span>
-                <div className="rounded-xl border border-border bg-muted/30 p-4">
-                  <pre className="whitespace-pre-wrap font-code text-sm leading-relaxed text-foreground">
-                    {viewing.content}
-                  </pre>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewing(null)}
-                className="rounded-sm border border-input px-4 py-1.5 text-sm font-medium transition-colors duration-150 hover:bg-muted"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const v = viewing;
-                  setViewing(null);
-                  handleRestore(v);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-sm bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary/90"
-              >
-                <Icon name="reset" size="sm" />
-                Restore
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <SheetFooter className="border-t border-border px-6 py-3">
+                <Button variant="outline" onClick={() => setViewing(null)}>
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    const v = viewing;
+                    setViewing(null);
+                    handleRestore(v);
+                  }}
+                  className="gap-1.5"
+                >
+                  <Icon name="reset" size="sm" />
+                  Restore
+                </Button>
+              </SheetFooter>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* ─── Delete confirmation ─── */}
-      {pendingDeleteId != null && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setPendingDeleteId(null)} />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-card/95 backdrop-blur-xl p-6 shadow-lg border border-border">
-            <h3 className="text-headline">Delete Version</h3>
-            <p className="mt-2 text-body text-muted-foreground">
+      <AlertDialog
+        open={pendingDeleteId != null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Version</AlertDialogTitle>
+            <AlertDialogDescription>
               Permanently delete this version? This cannot be undone.
-            </p>
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingDeleteId(null)}
-                className="rounded-sm border border-input px-4 py-1.5 text-sm font-medium transition-colors duration-150 hover:bg-muted"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDeleteVersion(pendingDeleteId)}
-                className="rounded-sm bg-destructive px-4 py-1.5 text-sm font-medium text-destructive-foreground transition-colors duration-150 hover:bg-destructive/90"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => pendingDeleteId != null && handleDeleteVersion(pendingDeleteId)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

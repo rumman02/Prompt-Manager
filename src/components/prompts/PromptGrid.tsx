@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { PromptCard } from "./PromptCard";
 import type { PromptRow } from "@/types";
 

@@ -3,11 +3,17 @@ import { PromptList } from "@/components/prompts/PromptList";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
-import { Dropdown } from "@/components/ui/dropdown";
-import { EmptyState } from "@/components/ui/empty-state";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Icon } from "@/components/ui/icon";
 import { Label } from "@/components/ui/label";
-import { Modal } from "@/components/ui/modal";
 import type { PromptRow } from "@/types";
 
 interface FavoritesPageProps {
@@ -52,6 +58,11 @@ export function FavoritesPage({
     );
   }, [allFavorites, searchQuery]);
 
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    setSelectedId(null);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
@@ -74,11 +85,17 @@ export function FavoritesPage({
       />
       {favoritePrompts.length === 0 ? (
         <div className="flex-1 overflow-auto p-6">
-          <EmptyState
-            icon="favorites"
-            title="No favorites yet"
-            description="Prompts you mark as favorites will appear here. Tap the heart on any prompt to save it."
-          />
+          <Card className="border-dashed shadow-none">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Icon name="favorites" size="xl" className="text-primary" />
+              </div>
+              <h3 className="text-lg font-medium">No favorites yet</h3>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                Prompts you mark as favorites will appear here. Tap the heart on any prompt to save it.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       ) : (
         <PromptList
@@ -96,57 +113,56 @@ export function FavoritesPage({
         />
       )}
 
-      <Modal
+      <Dialog
         open={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setSelectedId(null);
+        onOpenChange={(open) => {
+          if (!open) closeAddModal();
         }}
-        title="Add Favorite"
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsAddModalOpen(false);
-                setSelectedId(null);
-              }}
-            >
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Favorite</DialogTitle>
+          </DialogHeader>
+          {nonFavorites.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              All prompts are already favorited.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="add-favorite-prompt">Select Prompt</Label>
+              <Select
+                value={selectedId !== null ? String(selectedId) : ""}
+                onValueChange={(value) => setSelectedId(Number(value))}
+              >
+                <SelectTrigger id="add-favorite-prompt">
+                  <SelectValue placeholder="Choose a prompt..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {nonFavorites.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={closeAddModal}>
               Cancel
             </Button>
             <Button
               disabled={!selectedId}
               onClick={() => {
                 if (selectedId) onToggleFavorite(selectedId);
-                setIsAddModalOpen(false);
-                setSelectedId(null);
+                closeAddModal();
               }}
             >
               Add Favorite
             </Button>
-          </>
-        }
-      >
-        {nonFavorites.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            All prompts are already favorited.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            <Label htmlFor="add-favorite-prompt">Select Prompt</Label>
-            <Dropdown
-              id="add-favorite-prompt"
-              value={selectedId !== null ? String(selectedId) : ""}
-              onChange={(value) => setSelectedId(Number(value))}
-              options={nonFavorites.map((p) => ({
-                value: String(p.id),
-                label: p.title,
-              }))}
-              placeholder="Choose a prompt..."
-            />
-          </div>
-        )}
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

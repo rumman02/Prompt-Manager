@@ -1,7 +1,12 @@
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
-import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 /// Split-pane layout system for the prompt editor.
 ///
@@ -15,6 +20,14 @@ import { ResizeHandle } from "@/components/ui/resize-handle/resize-handle";
 /// The layout is owned by the parent (PromptEditorPage) and persisted there;
 /// this component is controlled — it reports intent via callbacks and renders
 /// whatever tree it's handed.
+///
+/// Resizing is backed by shadcn's Resizable (react-resizable-panels v4): each
+/// split node is a `ResizablePanelGroup` (orientation "horizontal" for an "h"
+/// split, "vertical" for a "v" split) whose children are `ResizablePanel`s
+/// separated by `ResizableHandle`s. Persisted fractional `sizes` are fed in as
+/// percentage `defaultSize`s on mount; finished drags are reported back through
+/// `onLayoutChanged` as a fresh fractional array, keeping the parent's
+/// persistence contract (LayoutNode.sizes, 0..1 fractions) unchanged.
 
 export type ViewId = "edit" | "preview" | "variables" | "history" | "meta";
 export type Orientation = "h" | "v";
@@ -103,11 +116,11 @@ function PaneTabStrip({
               // lifts up and overlaps the content border so it visually connects
               // to the panel, inactive tabs sit slightly recessed/muted.
               "relative flex h-[30px] items-center gap-1.5 rounded-t-md px-3 text-xs font-medium transition-all duration-150",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1",
               "border border-b-0",
               active
-                ? "border-border bg-card text-foreground z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.04)] after:absolute after:left-0 after:-bottom-px after:h-0.5 after:w-full after:bg-card after:content-['']"
-                : "border-transparent bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted",
+                ? "z-10 border-border bg-card text-foreground shadow-sm after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-card after:content-['']"
+                : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             <Icon name={v.icon} size="sm" />
@@ -118,14 +131,16 @@ function PaneTabStrip({
       <div className="ml-auto flex items-center gap-0.5 pb-[3px]">
         <OrientationToggle onSplit={onSplitPane} />
         {canClose && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             title="Close pane"
             aria-label="Close pane"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="h-7 w-7"
           >
             <Icon name="close" size="sm" />
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -139,17 +154,9 @@ interface OrientationToggleProps {
 }
 
 export function OrientationToggle({ onSplit }: OrientationToggleProps) {
-  const options: { id: Orientation; label: string; icon: ReactNode }[] = [
-    {
-      id: "h",
-      label: "Split vertically",
-      icon: <Icon name="columns" size="sm" />,
-    },
-    {
-      id: "v",
-      label: "Split horizontally",
-      icon: <Icon name="rows" size="sm" />,
-    },
+  const options: { id: Orientation; label: string; icon: IconName }[] = [
+    { id: "h", label: "Split vertically", icon: "columns" },
+    { id: "v", label: "Split horizontally", icon: "rows" },
   ];
   return (
     <div
@@ -157,23 +164,19 @@ export function OrientationToggle({ onSplit }: OrientationToggleProps) {
       aria-label="Split orientation"
       className="inline-flex items-center gap-0.5"
     >
-      {options.map((o) => {
-        return (
-          <button
-            key={o.id}
-            onClick={() => onSplit(o.id)}
-            title={o.label}
-            aria-label={o.label}
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md transition-all duration-150",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-              "text-muted-foreground hover:text-foreground hover:bg-muted",
-            )}
-          >
-            {o.icon}
-          </button>
-        );
-      })}
+      {options.map((o) => (
+        <Button
+          key={o.id}
+          variant="ghost"
+          size="icon"
+          onClick={() => onSplit(o.id)}
+          title={o.label}
+          aria-label={o.label}
+          className="h-7 w-7"
+        >
+          <Icon name={o.icon} size="sm" />
+        </Button>
+      ))}
     </div>
   );
 }
@@ -249,140 +252,55 @@ function Node({
           onSplitPane={(orientation) => onSplitPane(path, orientation)}
           onClose={() => onClosePane(path)}
         />
-        <div className="flex-1 overflow-auto border-t border-border">{renderPane(node.view)}</div>
+        <div className="min-h-0 flex-1 overflow-hidden border-t border-border">
+          {renderPane(node.view)}
+        </div>
       </div>
     );
   }
 
-  // Internal split node. Normalize sizes to sum to 1, lay children out in a
-  // row (orientation h) or column (v), with a resize handle between each pair.
+  // Internal split node. Normalize sizes to sum to 1, lay children out as a
+  // row (orientation h) or column (v) via a ResizablePanelGroup, with a
+  // ResizableHandle between each pair. Persisted fractional sizes become
+  // percentage defaultSizes; drags report the whole group back via
+  // onLayoutChanged so the parent keeps normalized fractions.
   const total = node.sizes.reduce((a, b) => a + b, 0) || 1;
   const norm = node.sizes.map((s) => s / total);
-  const axis = node.orientation === "h" ? "row" : "column";
+  const axis = node.orientation === "h" ? "horizontal" : "vertical";
 
   return (
-    <div
-      className="flex h-full min-h-0 min-w-0 flex-1"
-      style={{ flexDirection: axis }}
+    <ResizablePanelGroup
+      orientation={axis}
+      className="h-full min-h-0 min-w-0 flex-1"
+      onLayoutChanged={(layout) => {
+        const next = node.children.map(
+          (_, i) => (layout[String(i)] ?? norm[i] * 100) / 100,
+        );
+        onResize(path, next);
+      }}
     >
       {node.children.map((child, i) => (
-        <SplitChild
-          key={i}
-          child={child}
-          childPath={[...path, i]}
-          size={norm[i]}
-          isLast={i === node.children.length - 1}
-          orientation={node.orientation}
-          paneCount={paneCount}
-          renderPane={renderPane}
-          onSwitchView={onSwitchView}
-          onSplitPane={onSplitPane}
-          onClosePane={onClosePane}
-          onResize={onResize}
-          // The handle between child i and i+1 adjusts sizes[i] and sizes[i+1].
-          onHandleDrag={(delta) => {
-            const next = [...node.sizes];
-            next[i] = Math.max(0.05, next[i] + delta);
-            next[i + 1] = Math.max(0.05, next[i + 1] - delta);
-            onResize(path, next);
-          }}
-        />
+        <Fragment key={i}>
+          <ResizablePanel
+            id={String(i)}
+            defaultSize={String(Math.round(norm[i] * 1000) / 10)}
+            minSize="5"
+            className="h-full min-h-0 min-w-0"
+          >
+            <Node
+              node={child}
+              path={[...path, i]}
+              paneCount={paneCount}
+              renderPane={renderPane}
+              onSwitchView={onSwitchView}
+              onSplitPane={onSplitPane}
+              onClosePane={onClosePane}
+              onResize={onResize}
+            />
+          </ResizablePanel>
+          {i < node.children.length - 1 && <ResizableHandle withHandle />}
+        </Fragment>
       ))}
-    </div>
-  );
-}
-
-interface SplitChildProps {
-  child: LayoutNode;
-  childPath: number[];
-  size: number;
-  isLast: boolean;
-  orientation: Orientation;
-  paneCount: number;
-  renderPane: (view: ViewId) => ReactNode;
-  onSwitchView: (path: number[], view: ViewId) => void;
-  onSplitPane: (path: number[], orientation: Orientation) => void;
-  onClosePane: (path: number[]) => void;
-  onResize: (path: number[], sizes: number[]) => void;
-  onHandleDrag: (delta: number) => void;
-}
-
-/** One child of a split, plus (if not last) the resize handle to its neighbor. */
-function SplitChild({
-  child,
-  childPath,
-  size,
-  isLast,
-  orientation,
-  paneCount,
-  renderPane,
-  onSwitchView,
-  onSplitPane,
-  onClosePane,
-  onResize,
-  onHandleDrag,
-}: SplitChildProps) {
-  // Track the container's total size (px) so a drag delta can be converted to
-  // a fraction of the split. We measure on drag start.
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isResizing, setIsResizing] = useState(false);
-
-  const onResizeStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      const container = containerRef.current;
-      if (!container) return;
-      const totalPx =
-        orientation === "h" ? container.clientWidth : container.clientHeight;
-      if (totalPx <= 0) return;
-      const startPx = e.clientX;
-      const startPy = e.clientY;
-      setIsResizing(true);
-
-      const onMove = (me: MouseEvent) => {
-        const movedPx = orientation === "h" ? me.clientX - startPx : me.clientY - startPy;
-        onHandleDrag(movedPx / totalPx);
-      };
-      const onUp = () => {
-        setIsResizing(false);
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
-      };
-      document.body.style.cursor = orientation === "h" ? "col-resize" : "row-resize";
-      document.body.style.userSelect = "none";
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
-    },
-    [orientation, onHandleDrag],
-  );
-
-  return (
-    <>
-      <div
-        ref={containerRef}
-        className={cn("min-h-0 min-w-0", isResizing && "select-none")}
-        style={{ flex: `${size} 1 0%` }}
-      >
-        <Node
-          node={child}
-          path={childPath}
-          paneCount={paneCount}
-          renderPane={renderPane}
-          onSwitchView={onSwitchView}
-          onSplitPane={onSplitPane}
-          onClosePane={onClosePane}
-          onResize={onResize}
-        />
-      </div>
-      {!isLast && (
-        <ResizeHandle
-          side={orientation === "h" ? "right" : "bottom"}
-          onMouseDown={onResizeStart}
-          isActive={isResizing}
-        />
-      )}
-    </>
+    </ResizablePanelGroup>
   );
 }

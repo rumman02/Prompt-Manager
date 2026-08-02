@@ -1,9 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal } from "@/components/ui/modal";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon, ICON_PICKER_GROUPS, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface IconPickerProps {
   open: boolean;
@@ -58,75 +72,74 @@ export function IconPicker({
     onClose();
   };
 
-  const renderIconButton = (n: IconName) => (
-    <button
-      key={n}
-      type="button"
-      title={n}
-      aria-label={n}
-      onClick={() => pick(n)}
-      className={cn(
-        "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
-        n === value
-          ? "bg-primary/10 text-primary ring-1 ring-primary/40"
-          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-      )}
-    >
-      <Icon name={n} size="md" />
-    </button>
+  const renderIconItem = (n: IconName) => (
+    <CommandItem key={n} value={n} onSelect={() => pick(n)} className="flex items-center gap-2">
+      <span
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors",
+          n === value
+            ? "bg-primary/10 text-primary ring-1 ring-primary/40"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+        )}
+      >
+        <Icon name={n} size="md" />
+      </span>
+      <span className="text-sm">{n}</span>
+    </CommandItem>
   );
 
   return (
-    <Modal
+    <Dialog
       open={open}
-      onClose={onClose}
-      title={title}
-      footer={
-        onClear ? (
-          <Button variant="ghost" size="sm" onClick={() => { onClear(); onClose(); }}>
-            Reset to default
-          </Button>
-        ) : undefined
-      }
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
     >
-      <Input
-        autoFocus
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search icons…"
-        className="mb-1"
-      />
-
-      <div className="max-h-[340px] overflow-y-auto pr-1 space-y-4">
-        {query ? (
-          results.length > 0 ? (
-            <div>
-              <p className="text-caption text-muted-foreground uppercase tracking-wide mb-1.5">
-                Results
-              </p>
-              <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8">
-                {results.map(renderIconButton)}
-              </div>
-            </div>
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No icons match “{search}”
-            </p>
-          )
-        ) : (
-          ICON_PICKER_GROUPS.map((group) => (
-            <div key={group.label}>
-              <p className="text-caption text-muted-foreground uppercase tracking-wide mb-1.5">
-                {group.label}
-              </p>
-              <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8">
-                {group.icons.map(renderIconButton)}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </Modal>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <Command className="rounded-lg border">
+          <CommandInput
+            autoFocus
+            value={search}
+            onValueChange={setSearch}
+            placeholder="Search icons…"
+          />
+          <ScrollArea className="max-h-[340px]">
+            <CommandList>
+              {query ? (
+                results.length > 0 ? (
+                  <CommandGroup heading="Results">{results.map(renderIconItem)}</CommandGroup>
+                ) : (
+                  <CommandEmpty>No icons match “{search}”</CommandEmpty>
+                )
+              ) : (
+                ICON_PICKER_GROUPS.map((group) => (
+                  <CommandGroup key={group.label} heading={group.label}>
+                    {group.icons.map(renderIconItem)}
+                  </CommandGroup>
+                ))
+              )}
+            </CommandList>
+          </ScrollArea>
+        </Command>
+        <DialogFooter>
+          {onClear && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onClear();
+                onClose();
+              }}
+            >
+              Reset to default
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

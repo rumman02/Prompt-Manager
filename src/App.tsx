@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sidebar, type ViewType } from "@/components/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { Header } from "@/components/layout/Header";
+import { CommandPalette } from "@/components/layout/CommandPalette";
+import { VIEW_TITLES } from "@/constants/nav";
 import { StatsCards } from "@/components/stats-cards";
+import { CategoryChart } from "@/components/category-chart";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +24,7 @@ import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { VaultProvider, useVault } from "@/contexts/VaultContext";
 import { VaultSetupScreen } from "@/components/vault";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import type { PromptRow, CategoryCount } from "@/types";
 
 function AppContent() {
@@ -48,7 +53,7 @@ function AppContent() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [activeView, setActiveView] = useState<ViewType>(initialView);
   const [promptsOrigin, setPromptsOrigin] = useState<"categories" | "tags" | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -151,21 +156,6 @@ function AppContent() {
     }
   };
 
-  const handleCategorySelect = async (category: string | null) => {
-    setSelectedTag(null);
-    setSelectedCategory(category);
-    if (category) {
-      try {
-        const result = await invoke<PromptRow[]>("get_prompts_by_category", { category });
-        setPrompts(result);
-      } catch (e) {
-        console.error("Failed to load category:", e);
-      }
-    } else {
-      refresh();
-    }
-  };
-
   const handleTagSelect = (tag: string | null) => {
     setSelectedTag(tag);
     setSelectedCategory(null);
@@ -253,6 +243,19 @@ function AppContent() {
     setActiveView(previousView);
   };
 
+  // Shared view-switch handler for the sidebar and command palette: clears any
+  // category/tag drill-down state so a plain nav click shows the unfiltered view.
+  const handleViewChange = useCallback((view: ViewType) => {
+    setPromptsOrigin(null);
+    setSelectedCategory(null);
+    setSelectedTag(null);
+    setActiveView(view);
+  }, []);
+
+  // While drilling into a category/tag from Prompts, the sidebar and header
+  // keep highlighting the origin view instead of "Prompts".
+  const effectiveView = activeView === "prompts" && promptsOrigin ? promptsOrigin : activeView;
+
   const filteredPrompts = (() => {
     let result = prompts;
     if (selectedCategory) {
@@ -270,22 +273,10 @@ function AppContent() {
   })();
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-secondary/30">
+    <SidebarProvider className="bg-secondary/30 h-screen w-screen overflow-hidden">
       <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        activeView={activeView === "prompts" && promptsOrigin ? promptsOrigin : activeView}
-        onViewChange={(v) => {
-          // Leaving a category/tag drill-down via the sidebar: clear the
-          // drill-down state so a plain Prompts click shows all prompts.
-          setPromptsOrigin(null);
-          setSelectedCategory(null);
-          setSelectedTag(null);
-          setActiveView(v);
-        }}
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onCategorySelect={handleCategorySelect}
+        activeView={effectiveView}
+        onViewChange={handleViewChange}
         counts={{
           prompts: stats.totalPrompts,
           agents: stats.totalAgents,
@@ -297,8 +288,13 @@ function AppContent() {
         }}
       />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <main className="flex-1 overflow-hidden">
+      <SidebarInset className="bg-transparent">
+        <Header
+          title={VIEW_TITLES[effectiveView]}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          onCreatePrompt={handleCreatePrompt}
+        />
+        <div className="flex-1 overflow-hidden">
           {isEditorPageOpen && (
             <PromptEditorPage
               prompt={editingPrompt}
@@ -315,12 +311,13 @@ function AppContent() {
                 title="Dashboard"
                 subtitle="Overview of your prompts"
               />
-              <div className="flex-1 overflow-auto p-6">
+              <div className="flex-1 space-y-6 overflow-auto p-6">
                 <Card className="border shadow-sm">
                   <CardContent className="p-5">
                     <StatsCards stats={stats} />
                   </CardContent>
                 </Card>
+                <CategoryChart categories={categories} />
               </div>
             </div>
           )}
@@ -407,8 +404,8 @@ function AppContent() {
           {!isEditorPageOpen && activeView === "settings" && (
             <SettingsPage />
           )}
-        </main>
-      </div>
+        </div>
+      </SidebarInset>
 
       <PromptViewer
         prompt={selectedPrompt}
@@ -417,36 +414,25 @@ function AppContent() {
         onDelete={handleDeletePrompt}
         onToggleFavorite={handleToggleFavorite}
       />
-    </div>
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        onNavigate={handleViewChange}
+      />
+    </SidebarProvider>
   );
 }
 
 /**
  * Gate: waits for the vault status, shows the first-run setup screen when no
- * vault is active, otherwise renders the app. Toaster lives here so toasts
- * also work on the setup screen.
+ * vault is active, otherwise renders the app.
  */
 function AppGate() {
   const { loading, needsSetup, activeVault } = useVault();
-  const { settings } = useSettings();
 
   return (
     <>
-      <Toaster
-        theme={settings.theme === "dark" ? "dark" : "light"}
-        position="bottom-right"
-        richColors
-        toastOptions={{
-          style: {
-            borderRadius: "14px",
-            backdropFilter: "blur(20px)",
-            background: settings.theme === "dark" ? "rgba(44, 44, 46, 0.9)" : "rgba(255, 255, 255, 0.9)",
-            border: `1px solid ${settings.theme === "dark" ? "rgba(72, 72, 74, 0.5)" : "rgba(210, 210, 215, 0.5)"}`,
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.16)",
-            fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
-          },
-        }}
-      />
       {loading ? (
         <div className="flex h-screen w-screen items-center justify-center bg-secondary/30">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />

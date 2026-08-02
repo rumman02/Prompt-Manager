@@ -6,14 +6,56 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Input } from "@/components/ui/input";
-import { resourceColor, type ResourceColorKey } from "@/constants/colors";
-import { ActionsMenu } from "@/components/ui/actions-menu";
-import { ContextMenu } from "@/components/ui/context-menu";
-import { EntityEditDialog } from "@/components/ui/entity-edit-dialog";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Modal } from "@/components/ui/modal";
-import { Dropdown } from "@/components/ui/dropdown";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { IconPicker } from "@/components/ui/icon-picker";
 import { Icon, type IconName } from "@/components/ui/icon";
+import {
+  resourceColor,
+  RESOURCE_COLORS,
+  RESOURCE_COLOR_KEYS,
+  DEFAULT_RESOURCE_COLOR,
+  type ResourceColorKey,
+} from "@/constants/colors";
 import { useEntityIcons } from "@/hooks/useEntityIcons";
 import type { PromptRow } from "@/types";
 
@@ -48,6 +90,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadPrompts();
@@ -240,126 +283,159 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
         viewMode === "grid" ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredTags.map((tag) => (
-              <ContextMenu
+              <TagCard
                 key={tag.name}
-                className="contents"
-                items={[
-                  { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
-                  { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
-                ]}
-              >
-                <TagCard
-                  tag={tag}
-                  onSelect={() => onTagSelect(tag.name)}
-                  onDelete={() => handleDeleteTag(tag.name)}
-                  onEdit={() => setEditingTag(tag.name)}
-                  icon={tagIcons[tag.name] ?? null}
-                  colorKey={colors[tag.name] ?? null}
-                />
-              </ContextMenu>
+                tag={tag}
+                onSelect={() => onTagSelect(tag.name)}
+                onDelete={() => setTagToDelete(tag.name)}
+                onEdit={() => setEditingTag(tag.name)}
+                icon={tagIcons[tag.name] ?? null}
+                colorKey={colors[tag.name] ?? null}
+              />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 auto-rows-auto rounded-xl border bg-card shadow-md overflow-hidden">
-            <div className="grid col-span-3 grid-cols-subgrid border-b bg-muted/30 px-4 py-2.5 text-eyebrow">
-              <span>Tag</span>
-              <span className="w-28 text-center">Prompts</span>
-              <span className="w-28 text-right">Actions</span>
-            </div>
-            <div className="grid col-span-3 grid-cols-subgrid divide-y contents">
-              {filteredTags.map((tag) => {
-                const color = resourceColor(colors[tag.name] ?? null);
-                return (
-                  <ContextMenu
-                    key={tag.name}
-                    className="contents"
-                    items={[
-                      { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
-                      { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
-                    ]}
-                  >
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onTagSelect(tag.name)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          onTagSelect(tag.name);
-                        }
-                      }}
-                      title={`View prompts tagged "${tag.name}"`}
-                      className="group grid col-span-3 grid-cols-subgrid gap-x-4 items-center px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}>
-                          <Icon name={tagIcons[tag.name] ?? "tags"} size="md" />
-                        </span>
-                        <span className="text-sm font-medium truncate">{tag.name}</span>
-                      </div>
-                      <div className="w-28 flex items-center justify-center">
-                        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                          {tag.count} prompt{tag.count !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div
-                        className="w-28 flex items-center justify-end"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ActionsMenu
-                          items={[
-                            { label: "Edit", icon: "edit", onClick: () => setEditingTag(tag.name) },
-                            { label: "Delete", icon: "delete", onClick: () => handleDeleteTag(tag.name), destructive: true },
-                          ]}
-                        />
-                      </div>
-                    </div>
-                  </ContextMenu>
-                );
-              })}
-            </div>
-          </div>
+          <Card className="overflow-hidden shadow-md">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableHead>Tag</TableHead>
+                  <TableHead className="w-28 text-center">Prompts</TableHead>
+                  <TableHead className="w-28 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTags.map((tag) => {
+                  const color = resourceColor(colors[tag.name] ?? null);
+                  return (
+                    <ContextMenu key={tag.name}>
+                      <ContextMenuTrigger asChild>
+                        <TableRow
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => onTagSelect(tag.name)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onTagSelect(tag.name);
+                            }
+                          }}
+                          title={`View prompts tagged "${tag.name}"`}
+                          className="group cursor-pointer"
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}>
+                                <Icon name={tagIcons[tag.name] ?? "tags"} size="md" />
+                              </span>
+                              <span className="text-sm font-medium truncate">{tag.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-28 text-center">
+                            <Badge
+                              variant="secondary"
+                              className="rounded-full px-2.5 py-0.5 font-medium text-muted-foreground"
+                            >
+                              {tag.count} prompt{tag.count !== 1 ? "s" : ""}
+                            </Badge>
+                          </TableCell>
+                          <TableCell
+                            className="w-28 text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <TagActionsMenu
+                              onEdit={() => setEditingTag(tag.name)}
+                              onDelete={() => setTagToDelete(tag.name)}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      </ContextMenuTrigger>
+                      <ContextMenuContent className="w-44">
+                        <ContextMenuItem onSelect={() => setEditingTag(tag.name)}>
+                          <Icon name="edit" size="sm" />
+                          Edit
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem
+                          onSelect={() => setTagToDelete(tag.name)}
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        >
+                          <Icon name="delete" size="sm" />
+                          Delete
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
         )
       ) : (
-        <EmptyState
+        <PageEmptyState
           icon="tags"
           title={searchQuery ? "No tags found" : "No tags yet"}
           description={searchQuery ? `No tags match "${searchQuery}"` : "Add tags to your prompts to see them here"}
         />
       )}
 
-      {editingTag !== null && (
-        <EntityEditDialog
-          open
-          entityLabel="Tag"
-          currentName={editingTag}
-          currentIcon={tagIcons[editingTag] ?? null}
-          currentColor={colors[editingTag] ?? null}
-          fallbackIcon="tags"
-          existingNames={tags
-            .map((t) => t.name)
-            .filter((n) => n !== editingTag)}
-          onClose={() => setEditingTag(null)}
-          onSubmit={handleEditTag}
-        />
-      )}
+      <AddTagsModal
+        open={isAddModalOpen}
+        prompts={prompts}
+        selectedPromptId={selectedPromptId}
+        setSelectedPromptId={setSelectedPromptId}
+        newTags={newTags}
+        setNewTags={setNewTags}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setNewTags("");
+          setSelectedPromptId(null);
+        }}
+        onAdd={handleAddTags}
+        isLoading={isLoading}
+      />
 
-      {isAddModalOpen && (
-        <AddTagsModal
-          prompts={prompts}
-          selectedPromptId={selectedPromptId}
-          setSelectedPromptId={setSelectedPromptId}
-          newTags={newTags}
-          setNewTags={setNewTags}
-          onClose={() => {
-            setIsAddModalOpen(false);
-            setNewTags("");
-            setSelectedPromptId(null);
-          }}
-          onAdd={handleAddTags}
-          isLoading={isLoading}
-        />
-      )}
+      <EntityEditDialog
+        open={editingTag !== null}
+        entityLabel="Tag"
+        currentName={editingTag ?? ""}
+        currentIcon={editingTag ? (tagIcons[editingTag] ?? null) : null}
+        currentColor={editingTag ? (colors[editingTag] ?? null) : null}
+        fallbackIcon="tags"
+        existingNames={tags
+          .map((t) => t.name)
+          .filter((n) => n !== editingTag)}
+        onClose={() => setEditingTag(null)}
+        onSubmit={handleEditTag}
+      />
+
+      <AlertDialog
+        open={tagToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setTagToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete tag?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the tag &quot;{tagToDelete ?? ""}&quot; from all
+              prompts that use it. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (tagToDelete) handleDeleteTag(tagToDelete);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </div>
   );
@@ -382,47 +458,101 @@ function TagCard({
 }) {
   const color = resourceColor(colorKey);
   return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      aria-label={`View prompts tagged "${tag.name}"`}
-      title={`View prompts tagged "${tag.name}"`}
-      className="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-    >
-      <CardContent className="p-3 flex items-center gap-3">
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}>
-          <Icon name={icon ?? "tags"} size="md" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
-            {tag.name}
-          </div>
-          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground whitespace-nowrap">
-            {tag.count} prompt{tag.count !== 1 ? "s" : ""}
-          </span>
-        </div>
-        <div onClick={(e) => e.stopPropagation()}>
-          <ActionsMenu
-            items={[
-              { label: "Edit", icon: "edit", onClick: onEdit },
-              { label: "Delete", icon: "delete", onClick: onDelete, destructive: true },
-            ]}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={onSelect}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect();
+            }
+          }}
+          aria-label={`View prompts tagged "${tag.name}"`}
+          title={`View prompts tagged "${tag.name}"`}
+          className="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-sm hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <CardContent className="p-3 flex items-center gap-3">
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color.bg} ${color.text}`}>
+              <Icon name={icon ?? "tags"} size="md" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                {tag.name}
+              </div>
+              <Badge
+                variant="secondary"
+                className="rounded-full px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+              >
+                {tag.count} prompt{tag.count !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <TagActionsMenu onEdit={onEdit} onDelete={onDelete} />
+            </div>
+          </CardContent>
+        </Card>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-44">
+        <ContextMenuItem onSelect={onEdit}>
+          <Icon name="edit" size="sm" />
+          Edit
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          onSelect={onDelete}
+          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+        >
+          <Icon name="delete" size="sm" />
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
+function TagActionsMenu({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Options"
+          aria-label="Options"
+          className="h-7 w-7 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100"
+        >
+          <Icon name="more" size="md" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onSelect={onEdit}>
+          <Icon name="edit" size="sm" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={onDelete}
+          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+        >
+          <Icon name="delete" size="sm" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function AddTagsModal({
+  open,
   prompts,
   selectedPromptId,
   setSelectedPromptId,
@@ -432,6 +562,7 @@ function AddTagsModal({
   onAdd,
   isLoading,
 }: {
+  open: boolean;
   prompts: PromptRow[];
   selectedPromptId: number | null;
   setSelectedPromptId: (id: number | null) => void;
@@ -441,83 +572,290 @@ function AddTagsModal({
   onAdd: () => void;
   isLoading: boolean;
 }) {
+  const selectedPrompt = selectedPromptId
+    ? prompts.find((p) => p.id === selectedPromptId)
+    : undefined;
   return (
-    <Modal
-      open={true}
-      onClose={onClose}
-      title="Add Tags"
-      footer={
-        <>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Tags</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="prompt-select">Select Prompt</Label>
+            <Select
+              value={selectedPromptId ? String(selectedPromptId) : ""}
+              onValueChange={(v) => setSelectedPromptId(v ? Number(v) : null)}
+            >
+              <SelectTrigger id="prompt-select">
+                <SelectValue placeholder="Choose a prompt..." />
+              </SelectTrigger>
+              <SelectContent>
+                {prompts.map((prompt) => (
+                  <SelectItem key={prompt.id} value={String(prompt.id)}>
+                    {prompt.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedPromptId && (
+            <div className="space-y-2">
+              <Label>Current Tags</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedPrompt?.tags?.split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean)
+                  .map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="rounded-full px-2.5 py-0.5 font-medium text-muted-foreground"
+                    >
+                      {tag}
+                    </Badge>
+                  )) || (
+                  <span className="text-sm text-muted-foreground">No tags</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="new-tags">New Tags</Label>
+            <Input
+              id="new-tags"
+              value={newTags}
+              onChange={(e) => setNewTags(e.target.value)}
+              placeholder="Comma-separated tags (e.g., creative, short, formal)"
+            />
+            {newTags && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {newTags
+                  .split(",")
+                  .map((tag, i) => {
+                    const trimmed = tag.trim();
+                    if (!trimmed) return null;
+                    return (
+                      <Badge
+                        key={i}
+                        variant="secondary"
+                        className="rounded-full px-2.5 py-0.5 font-medium text-muted-foreground"
+                      >
+                        {trimmed}
+                      </Badge>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={onAdd} disabled={!selectedPromptId || !newTags.trim() || isLoading}>
             {isLoading ? "Adding..." : "Add Tags"}
           </Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="prompt-select">Select Prompt</Label>
-          <Dropdown
-            id="prompt-select"
-            value={selectedPromptId ? String(selectedPromptId) : ""}
-            onChange={(v) => setSelectedPromptId(v ? Number(v) : null)}
-            options={prompts.map((prompt) => ({ value: String(prompt.id), label: prompt.title }))}
-            placeholder="Choose a prompt..."
-          />
-        </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-        {selectedPromptId && (
-          <div className="space-y-2">
-            <Label>Current Tags</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {prompts
-                .find((p) => p.id === selectedPromptId)
-                ?.tags?.split(",")
-                .map((t) => t.trim())
-                .filter(Boolean)
-                .map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+function PageEmptyState({
+  icon,
+  title,
+  description,
+}: {
+  icon: IconName;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Card className="border-dashed shadow-none">
+      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+          <Icon name={icon} size="xl" className="text-primary" />
+        </div>
+        <h3 className="text-lg font-medium">{title}</h3>
+        <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface EntityEditDialogProps {
+  open: boolean;
+  entityLabel: string;
+  currentName: string;
+  currentIcon: IconName | null;
+  currentColor: ResourceColorKey | null;
+  fallbackIcon: IconName;
+  existingNames?: string[];
+  onClose: () => void;
+  onSubmit: (next: {
+    name: string;
+    icon: IconName | null;
+    color: ResourceColorKey | null;
+  }) => void | Promise<void>;
+}
+
+function EntityEditDialog({
+  open,
+  entityLabel,
+  currentName,
+  currentIcon,
+  currentColor,
+  fallbackIcon,
+  existingNames = [],
+  onClose,
+  onSubmit,
+}: EntityEditDialogProps) {
+  const [name, setName] = useState(currentName);
+  const [icon, setIcon] = useState<IconName | null>(currentIcon);
+  const [color, setColor] = useState<ResourceColorKey | null>(currentColor);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset local state whenever the dialog (re)opens for a different entity.
+  useEffect(() => {
+    if (open) {
+      setName(currentName);
+      setIcon(currentIcon);
+      setColor(currentColor);
+      setIconPickerOpen(false);
+      setIsSubmitting(false);
+    }
+  }, [open, currentName, currentIcon, currentColor]);
+
+  const trimmed = name.trim();
+  // Case-insensitive duplicate check; currentName is never its own duplicate.
+  const isDuplicate =
+    trimmed.toLowerCase() !== currentName.toLowerCase() &&
+    existingNames.some((n) => n.toLowerCase() === trimmed.toLowerCase());
+  // A name change is not required — icon-only / color-only edits are saveable.
+  const canSubmit = !!trimmed && !isDuplicate && !isSubmitting;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ name: trimmed, icon, color });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const selectedColor = color ?? DEFAULT_RESOURCE_COLOR;
+
+  return (
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {entityLabel}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Icon */}
+            <div className="space-y-2">
+              <Label>Icon</Label>
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIconPickerOpen(true)}
+                  aria-label={`Choose icon for this ${entityLabel.toLowerCase()}`}
+                  className={`h-10 w-10 rounded-lg border-transparent ${RESOURCE_COLORS[selectedColor].bg} ${RESOURCE_COLORS[selectedColor].text}`}
+                >
+                  <Icon name={icon ?? fallbackIcon} size="md" />
+                </Button>
+                {icon !== null && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIcon(null)}
+                    className="h-7 px-2 text-xs text-muted-foreground"
                   >
-                    {tag}
-                  </span>
-                )) || (
-                <span className="text-sm text-muted-foreground">No tags</span>
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Color */}
+            <div className="space-y-2">
+              <Label>Color</Label>
+              <div className="flex items-center gap-2">
+                {RESOURCE_COLOR_KEYS.map((k) => (
+                  <Button
+                    key={k}
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title={RESOURCE_COLORS[k].label}
+                    aria-label={RESOURCE_COLORS[k].label}
+                    onClick={() => setColor((cur) => (cur === k ? null : k))}
+                    className={`h-7 w-7 rounded-full border-transparent p-0 transition-transform hover:scale-105 ${RESOURCE_COLORS[k].swatch} ${
+                      color === k
+                        ? "ring-2 ring-ring ring-offset-2 ring-offset-background"
+                        : ""
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="entity-name-input">{entityLabel} Name</Label>
+              <Input
+                id="entity-name-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSubmit();
+                }}
+                autoFocus
+              />
+              {isDuplicate && (
+                <p className="text-sm text-warning">
+                  A {entityLabel.toLowerCase()} with this name already exists.
+                </p>
               )}
             </div>
           </div>
-        )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <div className="space-y-2">
-          <Label htmlFor="new-tags">New Tags</Label>
-          <Input
-            id="new-tags"
-            value={newTags}
-            onChange={(e) => setNewTags(e.target.value)}
-            placeholder="Comma-separated tags (e.g., creative, short, formal)"
-          />
-          {newTags && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {newTags
-                .split(",")
-                .map((tag, i) => {
-                  const trimmed = tag.trim();
-                  if (!trimmed) return null;
-                  return (
-                    <span
-                      key={i}
-                      className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
-                    >
-                      {trimmed}
-                    </span>
-                  );
-                })}
-            </div>
-          )}
-        </div>
-      </div>
-    </Modal>
+      <IconPicker
+        open={iconPickerOpen}
+        onClose={() => setIconPickerOpen(false)}
+        value={icon}
+        onSelect={setIcon}
+        onClear={() => setIcon(null)}
+        title={`Choose an icon for this ${entityLabel.toLowerCase()}`}
+      />
+    </>
   );
 }

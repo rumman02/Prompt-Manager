@@ -1,9 +1,8 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
+    './index.html',
     './src/**/*.{ts,tsx}',
   ],
   theme: {
@@ -15,10 +14,6 @@ module.exports = {
       },
     },
     extend: {
-      fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Display"', '"Segoe UI"', 'system-ui', 'sans-serif'],
-        mono: ['"SF Mono"', 'SFMono-Regular', 'ui-monospace', 'Menlo', 'Consolas', '"Liberation Mono"', 'monospace'],
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -53,15 +48,6 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        /* Extended semantic tokens */
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground, 0 0% 100%))",
-        },
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground, 0 0% 100%))",
-        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -79,28 +65,26 @@ module.exports = {
           4: "hsl(var(--chart-4))",
           5: "hsl(var(--chart-5))",
         },
+        /* App-specific semantic status tokens (themed at runtime by
+           SettingsContext). No shadcn equivalent — the pages that use
+           bg-success / text-warning / border-warning depend on these. */
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground, 0 0% 100%))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground, 0 0% 100%))",
+        },
+      },
+      fontFamily: {
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Display"', '"Segoe UI"', 'system-ui', 'sans-serif'],
+        mono: ['"SF Mono"', 'SFMono-Regular', 'ui-monospace', 'Menlo', 'Consolas', '"Liberation Mono"', 'monospace'],
       },
       borderRadius: {
-        /* Radius scale — applied by component type */
-        xs: "var(--radius-xs)",           /* 4px — token pills, inline badges */
-        sm: "var(--radius-sm)",           /* 6px — inputs, textareas */
-        md: "var(--radius-md)",           /* 8px — standard buttons, menu items */
-        lg: "var(--radius-lg)",           /* 10px — cards, nav items, search */
-        xl: "var(--radius-xl)",           /* 14px — panels, elevated surfaces */
-        "2xl": "var(--radius-2xl)",       /* 20px — modals, sheets */
-        full: "var(--radius-full)",       /* 9999px — avatars, circular controls */
-      },
-      boxShadow: {
-        /* Shadow scale — subtle, physically plausible */
-        'hairline': 'var(--shadow-hairline)',
-        'sm': 'var(--shadow-sm)',
-        'md': 'var(--shadow-md)',
-        'lg': 'var(--shadow-lg)',
-        /* Legacy aliases — TODO: migrate to scale */
-        'macos-window': 'var(--shadow-md)',
-        'macos-popover': 'var(--shadow-lg)',
-        'macos-button': 'var(--shadow-sm)',
-        'macos-inset': 'inset 0 1px 2px rgba(0, 0, 0, 0.06)',
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
         "accordion-down": {
@@ -111,10 +95,15 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "caret-blink": {
+          "0%,70%,100%": { opacity: "1" },
+          "20%,50%": { opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "caret-blink": "caret-blink 1.25s ease-out infinite",
       },
     },
   },

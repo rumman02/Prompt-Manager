@@ -18,6 +18,10 @@ interface HighlightedTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextA
  * matched {{tokens}} as accent-tinted pills. Scroll and selection are kept in
  * lockstep so typing feels native; only the visual layer is enhanced.
  *
+ * The chrome follows the shadcn Textarea contract (border-input, bg-background,
+ * focus-visible ring) so it matches the rest of the form primitives; only the
+ * token highlight styling lives in the shared app CSS (.var-token).
+ *
  * Note on padding: tokens use inset box-shadow for their border, NOT horizontal
  * padding. Any inline padding changes a span's width and would break the pixel
  * alignment between the backdrop overlay and the textarea on top of it.
@@ -70,7 +74,7 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
   return (
     <div
       className={cn(
-        "code-zone relative w-full rounded-[6px] border border-[hsl(var(--code-border))] bg-[hsl(var(--code-bg))]",
+        "focus-within:ring-offset-background relative w-full rounded-md border border-input bg-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
         fill ? "h-full overflow-hidden" : "overflow-auto",
         className,
       )}
@@ -81,7 +85,7 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
           ref={backdropRef}
           aria-hidden
           className={cn(
-            "pointer-events-none m-0 whitespace-pre-wrap break-words px-3 py-2.5 text-[13.5px] leading-[1.65] text-transparent [grid-area:1/1]",
+            "pointer-events-none m-0 whitespace-pre-wrap break-words px-3 py-2 text-[13.5px] leading-[1.65] text-transparent [grid-area:1/1]",
             fill && "h-full overflow-hidden",
           )}
         >
@@ -97,7 +101,7 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
           onChange={(e) => onChange(e.target.value)}
           spellCheck={false}
           className={cn(
-            "code-zone m-0 w-full whitespace-pre-wrap break-words bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground [grid-area:1/1]",
+            "m-0 w-full whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground [grid-area:1/1]",
             fill ? "resize-none h-full overflow-auto" : "resize-y",
           )}
         />
