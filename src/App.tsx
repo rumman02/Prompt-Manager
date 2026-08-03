@@ -250,12 +250,28 @@ function AppContent() {
     setActiveView(view);
   }, []);
 
-  // Navigation from a global-search hit: category/tag hits drill into the
-  // Prompts list filtered by that entity; prompt hits just open the Prompts
-  // list (a search hit is not a full PromptRow, so there is no reliable
-  // id→row mapping to open the viewer directly).
-  const handleSelectEntity = useCallback((hit: GlobalSearchHit) => {
-    setSearchQuery("");
+  // Navigation from a global-search hit: prompt hits open the PromptViewer
+  // in place (no navigation) by resolving the hit id against the loaded
+  // prompt list, falling back to the get_prompt command when the row is not
+  // in local state. Category/tag hits still drill into the filtered Prompts
+  // list.
+  const handleSelectEntity = useCallback(async (hit: GlobalSearchHit) => {
+    if (hit.kind === "prompt") {
+      const promptId = Number(hit.id);
+      if (!Number.isFinite(promptId)) return;
+      const local = prompts.find((p) => p.id === promptId);
+      if (local) {
+        setSelectedPrompt(local);
+        return;
+      }
+      try {
+        const row = await invoke<PromptRow>("get_prompt", { id: promptId });
+        setSelectedPrompt(row);
+      } catch (error) {
+        console.error("Failed to load prompt from search hit:", error);
+      }
+      return;
+    }
     if (hit.kind === "category") {
       setSelectedCategory(hit.title);
       setSelectedTag(null);
@@ -264,13 +280,10 @@ function AppContent() {
       setSelectedTag(hit.title);
       setSelectedCategory(null);
       setPromptsOrigin("tags");
-    } else {
-      setSelectedCategory(null);
-      setSelectedTag(null);
-      setPromptsOrigin(null);
     }
+    setSearchQuery("");
     setActiveView("prompts");
-  }, []);
+  }, [prompts]);
 
   // While drilling into a category/tag from Prompts, the sidebar and header
   // keep highlighting the origin view instead of "Prompts".

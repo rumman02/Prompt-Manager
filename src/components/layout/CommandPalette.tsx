@@ -290,13 +290,19 @@ export function CommandPalette({
             restoreFocusTo.current?.focus()
           }}
           className={cn(
-            "fixed left-1/2 top-[12%] z-50 w-[calc(100%-2rem)] max-w-[640px] -translate-x-1/2",
+            // Centered via inset-x-0 + mx-auto rather than -translate-x-1/2:
+            // the enter/exit keyframes own `transform`, so a centering
+            // translate gets clobbered mid-animation - that is what made the
+            // panel look like it flew in from the right.
+            "fixed inset-x-0 top-[12%] z-50 mx-auto w-[calc(100%-2rem)] max-w-[640px]",
             "overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground",
-            "shadow-2xl shadow-black/25 ring-1 ring-black/5 duration-150",
+            "shadow-2xl shadow-black/25 ring-1 ring-black/5 duration-200",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-            "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-            "data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2",
+            // Grows out of / collapses back toward the sidebar search field on
+            // the left, so the overlay reads as coming from that field.
+            "origin-left data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+            "data-[state=closed]:slide-out-to-left-8 data-[state=open]:slide-in-from-left-8",
             "motion-reduce:animate-none motion-reduce:transition-none"
           )}
         >
