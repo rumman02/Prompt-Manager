@@ -18,6 +18,15 @@ pub struct Prompt {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SearchHit {
+    pub id: String,
+    pub kind: String,
+    pub title: String,
+    pub subtitle: Option<String>,
+    pub snippet: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CategoryCount {
     pub category: String,
     pub count: i64,
@@ -42,6 +51,46 @@ pub struct PromptVersion {
     pub description: Option<String>,
     pub message: Option<String>,
     pub created_at: String,
+}
+
+/// Build a short excerpt (~`width` chars) centred on the first case-insensitive
+/// occurrence of `query` within `content`, or the head of `content` if there is
+/// no match. Operates on Unicode character indices (not bytes), so slicing never
+/// panics and `to_lowercase()` length shifts can't produce an invalid boundary.
+fn excerpt(content: &str, query: &str, width: usize) -> String {
+    let chars: Vec<char> = content.chars().collect();
+    let needles: Vec<char> = query.to_lowercase().chars().collect();
+    if needles.is_empty() {
+        return chars.iter().take(width).collect();
+    }
+    let lowered: Vec<char> = content.to_lowercase().chars().collect();
+    let mut start = 0usize;
+    if needles.len() <= lowered.len() {
+        'outer: for i in 0..=(lowered.len() - needles.len()) {
+            for (a, b) in lowered[i..].iter().zip(needles.iter()) {
+                if a != b {
+                    continue 'outer;
+                }
+            }
+            start = i;
+            break;
+        }
+    }
+    let half = width / 2;
+    let s = start.saturating_sub(half);
+    let e = (s + width).min(chars.len());
+    let mut out: String = if s == 0 {
+        chars[..e].iter().collect()
+    } else {
+        chars[s..e].iter().collect()
+    };
+    if s > 0 {
+        out.insert(0, '…');
+    }
+    if e < chars.len() {
+        out.push('…');
+    }
+    out
 }
 
 pub struct Database {
@@ -691,6 +740,135 @@ impl Database {
             .collect();
 
         Ok(prompts)
+    }
+
+    /// Append prompt hits matching `cond` (a SQL fragment with one bound param)
+    /// to `hits`, skipping prompts already collected via `seen`. Used by
+    /// `global_search` to rank matches: exact title, title prefix, title
+    /// contains, then body/description contains.
+    fn collect_prompt_matches(
+        &self,
+        cond: &str,
+        param: &str,
+        query: &str,
+        seen: &mut std::collections::HashSet<i64>,
+        hits: &mut Vec<SearchHit>,
+    ) -> Result<()> {
+        let sql = format!(
+            "SELECT id, title, content, category FROM prompts \
+             WHERE deleted_at IS NULL AND ({cond}) ORDER BY updated_at DESC"
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let rows = stmt.query_map([param], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, Option<String>>(3)?,
+            ))
+        })?;
+        for row in rows {
+            let (id, title, content, category) = row?;
+            if seen.insert(id) {
+                hits.push(SearchHit {
+                    id: id.to_string(),
+                    kind: "prompt".to_string(),
+                    title,
+                    subtitle: category,
+                    snippet: Some(excerpt(&content, query, 120)),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Global text search across prompts, categories and tags (all denormalised
+    /// into the `prompts` table). Returns up to `limit` hits, ranked:
+    /// prompts (exact title → title prefix → title contains → body/description
+    /// contains) → categories → tags. Trashed prompts are excluded. An empty or
+    /// whitespace-only query returns an empty Vec.
+    pub fn global_search(&self, query: &str, limit: usize) -> Result<Vec<SearchHit>> {
+        if query.trim().is_empty() || limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let mut hits: Vec<SearchHit> = Vec::new();
+        let mut seen_prompts: std::collections::HashSet<i64> = std::collections::HashSet::new();
+        let prefix = format!("{}%", query);
+        let contains = format!("%{}%", query);
+
+        // Prompts, strongest match bucket first. LIKE is case-insensitive for
+        // ASCII in SQLite by default (same pattern `search_prompts` uses).
+        let conds: &[(&str, &str)] = &[
+            ("title = ?1 COLLATE NOCASE", query),
+            ("title LIKE ?1", &prefix),
+            ("title LIKE ?1", &contains),
+            ("(content LIKE ?1 OR description LIKE ?1)", &contains),
+        ];
+        for (cond, param) in conds {
+            self.collect_prompt_matches(cond, param, query, &mut seen_prompts, &mut hits)?;
+            if hits.len() >= limit {
+                break;
+            }
+        }
+
+        // Categories (distinct names stored on the prompts table).
+        if hits.len() < limit {
+            let mut stmt = self.conn.prepare(
+                "SELECT DISTINCT category FROM prompts \
+                 WHERE category IS NOT NULL AND category != '' AND deleted_at IS NULL \
+                 AND category LIKE ?1 ORDER BY category",
+            )?;
+            let rows = stmt.query_map([&contains], |row| row.get::<_, String>(0))?;
+            for row in rows {
+                let name = row?;
+                hits.push(SearchHit {
+                    id: name.clone(),
+                    kind: "category".to_string(),
+                    title: name,
+                    subtitle: None,
+                    snippet: None,
+                });
+                if hits.len() >= limit {
+                    break;
+                }
+            }
+        }
+
+        // Tags (comma-separated inside prompts.tags).
+        if hits.len() < limit {
+            let mut seen_tags: std::collections::HashSet<String> = std::collections::HashSet::new();
+            let mut stmt = self.conn.prepare(
+                "SELECT tags FROM prompts \
+                 WHERE tags IS NOT NULL AND tags != '' AND deleted_at IS NULL \
+                 AND tags LIKE ?1",
+            )?;
+            let rows = stmt.query_map([&contains], |row| row.get::<_, String>(0))?;
+            let ql = query.to_lowercase();
+            for row in rows {
+                for candidate in row?.split(',').map(|t| t.trim()).filter(|t| !t.is_empty()) {
+                    if candidate.to_lowercase().contains(&ql) && seen_tags.insert(candidate.to_string())
+                    {
+                        hits.push(SearchHit {
+                            id: candidate.to_string(),
+                            kind: "tag".to_string(),
+                            title: candidate.to_string(),
+                            subtitle: None,
+                            snippet: None,
+                        });
+                        if hits.len() >= limit {
+                            break;
+                        }
+                    }
+                }
+                if hits.len() >= limit {
+                    break;
+                }
+            }
+        }
+
+        hits.truncate(limit);
+        Ok(hits)
     }
 
     pub fn get_prompts_by_category(&self, category: &str) -> Result<Vec<Prompt>> {

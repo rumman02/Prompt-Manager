@@ -23,7 +23,7 @@ import { VaultProvider, useVault } from "@/contexts/VaultContext";
 import { VaultSetupScreen } from "@/components/vault";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import type { PromptRow, CategoryCount } from "@/types";
+import type { PromptRow, CategoryCount, GlobalSearchHit } from "@/types";
 
 function AppContent() {
   const { settings } = useSettings();
@@ -250,6 +250,28 @@ function AppContent() {
     setActiveView(view);
   }, []);
 
+  // Navigation from a global-search hit: category/tag hits drill into the
+  // Prompts list filtered by that entity; prompt hits just open the Prompts
+  // list (a search hit is not a full PromptRow, so there is no reliable
+  // id→row mapping to open the viewer directly).
+  const handleSelectEntity = useCallback((hit: GlobalSearchHit) => {
+    setSearchQuery("");
+    if (hit.kind === "category") {
+      setSelectedCategory(hit.title);
+      setSelectedTag(null);
+      setPromptsOrigin("categories");
+    } else if (hit.kind === "tag") {
+      setSelectedTag(hit.title);
+      setSelectedCategory(null);
+      setPromptsOrigin("tags");
+    } else {
+      setSelectedCategory(null);
+      setSelectedTag(null);
+      setPromptsOrigin(null);
+    }
+    setActiveView("prompts");
+  }, []);
+
   // While drilling into a category/tag from Prompts, the sidebar and header
   // keep highlighting the origin view instead of "Prompts".
   const effectiveView = activeView === "prompts" && promptsOrigin ? promptsOrigin : activeView;
@@ -275,6 +297,7 @@ function AppContent() {
       <Sidebar
         activeView={effectiveView}
         onViewChange={handleViewChange}
+        onOpenSearch={() => setCommandPaletteOpen(true)}
         counts={{
           prompts: stats.totalPrompts,
           agents: stats.totalAgents,
@@ -412,6 +435,8 @@ function AppContent() {
         open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
         onNavigate={handleViewChange}
+        onSelectEntity={handleSelectEntity}
+        recentPrompts={prompts}
       />
     </SidebarProvider>
   );

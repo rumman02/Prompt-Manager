@@ -38,4 +38,13 @@ export interface VariableSet {
 
 export type ViewMode = "list" | "grid";
 
+/** One entry returned by the `global_search` Tauri command. */
+export interface GlobalSearchHit {
+  id: string;
+  kind: "prompt" | "category" | "tag";
+  title: string;
+  subtitle: string | null;
+  snippet: string | null;
+}
+
 export * from "./vault";

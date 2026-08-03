@@ -99,6 +99,17 @@ fn search_prompts(app_handle: tauri::AppHandle, query: String) -> Result<Vec<db:
 }
 
 #[tauri::command]
+async fn global_search(
+    app_handle: tauri::AppHandle,
+    query: String,
+    limit: Option<usize>,
+) -> Result<Vec<db::SearchHit>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    let limit = limit.unwrap_or(25);
+    db.global_search(&query, limit).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn restore_prompt(app_handle: tauri::AppHandle, id: i64) -> Result<(), String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
     db.restore_prompt(id).map_err(|e| e.to_string())
@@ -682,6 +693,7 @@ pub fn run() {
             update_prompt,
             delete_prompt,
             search_prompts,
+            global_search,
             restore_prompt,
             permanently_delete_prompt,
             get_trashed_prompts,
