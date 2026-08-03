@@ -22,9 +22,21 @@ interface HighlightedTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextA
  * focus-visible ring) so it matches the rest of the form primitives; only the
  * token highlight styling lives in the shared app CSS (.var-token).
  *
- * Note on padding: tokens use inset box-shadow for their border, NOT horizontal
- * padding. Any inline padding changes a span's width and would break the pixel
- * alignment between the backdrop overlay and the textarea on top of it.
+ * Mirror-overlay invariants (breaking any one desyncs glyphs between the two
+ * layers and the drift compounds down the document):
+ *  - The <pre> backdrop and <textarea> share IDENTICAL typography: font-family,
+ *    font-size, line-height, letter-spacing, white-space and overflow-wrap
+ *    (Tailwind Preflight forces <pre> to monospace by default — that is the
+ *    classic cause of whole-document drift — so font-family is pinned to the
+ *    settings-driven editor font on BOTH layers explicitly).
+ *  - Token chips add ZERO advance width: background/color/inset box-shadow
+ *    only. No padding, margin, border, or inline-block (see .var-token).
+ *  - Token spans must NOT be white-space:nowrap: the textarea wraps via
+ *    overflow-wrap:break-word, so a nowrap chip would refuse a break the
+ *    textarea takes and jump to a wrong line.
+ *  - A trailing "\n" is dropped at the end of a <pre> block, collapsing the
+ *    last line's height; a sentinel newline is appended so the final line
+ *    stays in sync with the textarea.
  */
 export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...rest }: HighlightedTextareaProps) => {
   const backdropRef = useRef<HTMLPreElement>(null);
@@ -40,16 +52,24 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
 
   const tokenRe = /\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g;
 
+  // Sentinel newline: <pre> collapses a trailing "\n" (block-ending newlines
+  // render no line box), so append one to keep the last line's height in sync
+  // with the textarea.
+  const renderContent = value.endsWith("\n") ? value + "\n" : value;
+
   // Split into literal runs + tokens, rendering each token as a per-name-tinted
-  // inline pill. white-space:nowrap keeps a token from breaking mid-word.
+  // inline pill. React escapes all text children, so prompt text containing
+  // & < > cannot break the markup. Only the matched {{token}} substring is
+  // highlighted; the raw characters are unchanged, so advance width is
+  // identical to the plain text in the textarea.
   const renderHighlighted = useMemo(() => {
     const parts: React.ReactNode[] = [];
     let last = 0;
     let m: RegExpExecArray | null;
     let key = 0;
     tokenRe.lastIndex = 0;
-    while ((m = tokenRe.exec(value)) !== null) {
-      if (m.index > last) parts.push(<span key={key++}>{value.slice(last, m.index)}</span>);
+    while ((m = tokenRe.exec(renderContent)) !== null) {
+      if (m.index > last) parts.push(<span key={key++}>{renderContent.slice(last, m.index)}</span>);
       const name = m[1];
       parts.push(
         <span
@@ -62,9 +82,9 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
       );
       last = tokenRe.lastIndex;
     }
-    if (last <= value.length) parts.push(<span key={key++}>{value.slice(last)}</span>);
+    if (last <= renderContent.length) parts.push(<span key={key++}>{renderContent.slice(last)}</span>);
     return parts;
-  }, [value]);
+  }, [renderContent, tokenRe]);
 
   // The backdrop (highlight overlay) and the textarea are stacked in a single
   // CSS grid cell. Because neither is absolutely positioned, the textarea's
@@ -80,12 +100,15 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
       )}
     >
       <div className={cn("grid", fill && "h-full")}>
-        {/* highlight backdrop — same cell as the textarea, scrolls with it */}
+        {/* highlight backdrop — same cell as the textarea, scrolls with it.
+            [font-family:var(--font-editor)] is mandatory: Tailwind Preflight
+            would otherwise force <pre> to monospace while the textarea inherits
+            var(--font-ui), and every glyph would advance at a different width. */}
         <pre
           ref={backdropRef}
           aria-hidden
           className={cn(
-            "pointer-events-none m-0 whitespace-pre-wrap break-words px-3 py-2 text-[13.5px] leading-[1.65] text-transparent [grid-area:1/1]",
+            "pointer-events-none m-0 w-full whitespace-pre-wrap break-words px-3 py-2 text-[13.5px] leading-[1.65] text-transparent [font-family:var(--font-editor)] [grid-area:1/1]",
             fill && "h-full overflow-hidden",
           )}
         >
@@ -101,7 +124,7 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
           onChange={(e) => onChange(e.target.value)}
           spellCheck={false}
           className={cn(
-            "m-0 w-full whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground [grid-area:1/1]",
+            "m-0 w-full whitespace-pre-wrap break-words bg-transparent px-3 py-2 text-[13.5px] leading-[1.65] text-foreground outline-none placeholder:text-muted-foreground [font-family:var(--font-editor)] [grid-area:1/1]",
             fill ? "resize-none h-full overflow-auto" : "resize-y",
           )}
         />

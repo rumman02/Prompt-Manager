@@ -139,10 +139,12 @@
 
   /* ── Variable tokens (editor overlay + compiled preview) ── */
   /* Per-name hue via --token-hue; border via inset box-shadow (NOT inline
-     padding) so the overlay stays pixel-synced with the textarea. */
+     padding) so the overlay stays pixel-synced with the textarea. Tokens
+     must NOT be nowrap: the overlay textarea wraps with overflow-wrap, so
+     a nowrap chip would refuse a break the textarea takes and leak onto a
+     wrong line. */
   .var-token {
     --hue: var(--token-hue, 220deg);
-    white-space: nowrap;
     border-radius: 4px;
     color: hsl(var(--hue) var(--token-sat) var(--token-fg-l));
     background: hsl(var(--hue) var(--token-sat) var(--token-bg-l) / 0.55);
@@ -153,7 +155,6 @@
      reads as "still needs a value". */
   .var-token--empty {
     --hue: var(--token-hue, 220deg);
-    white-space: nowrap;
     border-radius: 4px;
     font-style: italic;
     color: hsl(var(--hue) var(--token-sat) var(--token-fg-l) / 0.7);
