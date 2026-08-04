@@ -77,7 +77,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
         onValueChange={(v) => setView(v === "raw" ? "raw" : "preview")}
         className="flex min-h-0 flex-1 flex-col"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5">
+        <div className="flex shrink-0 items-center justify-between px-3 py-1.5">
           <TabsList className="h-8">
             <TabsTrigger value="preview" className="h-7 px-3 text-xs">
               Preview
@@ -114,7 +114,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
           <ScrollArea className="h-full">
             <div
               aria-label="Compiled prompt preview"
-              className="markdown-preview m-3 rounded-xl bg-muted/50 px-4 py-3"
+              className="markdown-preview m-3 rounded-xl bg-muted/40 px-4 py-3 shadow-sm"
               dangerouslySetInnerHTML={{ __html: html }}
             />
           </ScrollArea>
@@ -127,7 +127,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
           <ScrollArea className="h-full">
             <pre
               aria-label="Raw compiled Markdown"
-              className="m-3 whitespace-pre-wrap rounded-xl bg-muted/50 px-4 py-3 font-mono text-sm leading-relaxed text-foreground"
+              className="m-3 whitespace-pre-wrap rounded-xl bg-muted/40 px-4 py-3 font-mono text-sm leading-relaxed text-foreground shadow-sm"
             >
               {text}
             </pre>

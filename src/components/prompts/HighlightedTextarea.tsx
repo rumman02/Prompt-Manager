@@ -18,9 +18,10 @@ interface HighlightedTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextA
  * matched {{tokens}} as accent-tinted pills. Scroll and selection are kept in
  * lockstep so typing feels native; only the visual layer is enhanced.
  *
- * The chrome follows the shadcn Textarea contract (border-input, bg-background,
- * focus-visible ring) so it matches the rest of the form primitives; only the
- * token highlight styling lives in the shared app CSS (.var-token).
+ * The chrome follows the app's surface-elevation pattern: a transparent resting
+ * border (width preserved for layout) over a bg-muted/40 filled box, with focus
+ * shown by a 2px focus-within ring — the only focus affordance for the editor.
+ * The token highlight styling lives in the shared app CSS (.var-token).
  *
  * Mirror-overlay invariants (breaking any one desyncs glyphs between the two
  * layers and the drift compounds down the document):
@@ -94,7 +95,7 @@ export const HighlightedTextarea = ({ value, onChange, className, fill, ref, ...
   return (
     <div
       className={cn(
-        "focus-within:ring-offset-background relative w-full rounded-md border border-input bg-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+        "focus-within:ring-offset-background relative w-full rounded-md border border-transparent bg-muted/40 focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
         fill ? "h-full overflow-hidden" : "overflow-auto",
         className,
       )}

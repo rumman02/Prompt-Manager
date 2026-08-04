@@ -503,7 +503,7 @@ export function PromptEditorPage({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter prompt title..."
-                    className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
+                    className="h-11 text-base"
                   />
                 </div>
 
@@ -514,7 +514,7 @@ export function PromptEditorPage({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Brief description of this prompt..."
-                    className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
+                    className="h-11 text-base"
                   />
                 </div>
 
@@ -532,7 +532,7 @@ export function PromptEditorPage({
                       onChange={(e) => setCategory(e.target.value)}
                       placeholder="e.g. Writing, Coding…"
                       list="category-suggestions"
-                      className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
+                      className="h-11 text-base"
                     />
                     <datalist id="category-suggestions">
                       {categories.map((cat) => (
@@ -548,7 +548,7 @@ export function PromptEditorPage({
                       value={tags}
                       onChange={(e) => setTags(e.target.value)}
                       placeholder="comma, separated, tags"
-                      className="h-11 rounded-none border-0 border-b border-input bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground"
+                      className="h-11 text-base"
                     />
                   </div>
                 </div>

@@ -11,7 +11,7 @@ export function PanelStatusBar({ children, className }: { children: React.ReactN
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center gap-x-2.5 border-b border-border px-3 py-1.5 text-xs text-muted-foreground",
+        "flex shrink-0 items-center gap-x-2.5 px-3 py-1.5 pb-2 text-xs text-muted-foreground",
         className,
       )}
     >

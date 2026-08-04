@@ -157,7 +157,7 @@ export function VersionHistorySidebar({
 
       {/* Save new version */}
       {isEditing && (
-        <div className="space-y-2 border-b border-border p-3">
+        <div className="space-y-2 p-3 pb-4">
           <Textarea
             value={saveMessage}
             onChange={(e) => setSaveMessage(e.target.value)}
@@ -195,7 +195,7 @@ export function VersionHistorySidebar({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div>
             {versions.map((version) => (
               <div
                 key={version.id}
@@ -316,7 +316,7 @@ export function VersionHistorySidebar({
         <SheetContent side="right" className="flex w-full max-w-xl flex-col p-0">
           {viewing && (
             <>
-              <SheetHeader className="border-b border-border px-6 py-4 text-left">
+              <SheetHeader className="border-b border-border/50 px-6 py-4 text-left">
                 <SheetTitle className="truncate text-lg">
                   v{viewing.version_number}
                   {viewing.message ? ` — ${viewing.message}` : ""}
@@ -353,14 +353,14 @@ export function VersionHistorySidebar({
 
                   <div className="space-y-2">
                     <span className="text-sm font-medium">Title</span>
-                    <div className="rounded-xl border border-border bg-muted/30 p-3">
+                    <div className="rounded-xl bg-muted/40 p-3">
                       <p className="text-sm text-foreground">{viewing.title}</p>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <span className="text-sm font-medium">Prompt Content</span>
-                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                    <div className="rounded-xl bg-muted/40 p-4">
                       <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
                         {viewing.content}
                       </pre>
@@ -369,7 +369,7 @@ export function VersionHistorySidebar({
                 </div>
               </ScrollArea>
 
-              <SheetFooter className="border-t border-border px-6 py-3">
+              <SheetFooter className="border-t border-border/50 px-6 py-3">
                 <Button variant="outline" onClick={() => setViewing(null)}>
                   Close
                 </Button>

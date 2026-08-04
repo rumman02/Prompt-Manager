@@ -288,7 +288,7 @@ export function VariablesSidebar({
       </PanelStatusBar>
 
       {/* Add custom variable */}
-      <div className="space-y-2 border-b border-border p-3">
+      <div className="space-y-2 border-b border-border/50 p-3">
         {!showAddFields ? (
           <div className="flex gap-2">
             <Input
@@ -318,7 +318,7 @@ export function VariablesSidebar({
             </Button>
           </div>
         ) : (
-          <div className="space-y-2 rounded-lg border border-input bg-background p-2">
+          <div className="space-y-2 rounded-lg bg-muted/40 p-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-foreground">New variable</span>
               <Button
@@ -379,7 +379,7 @@ export function VariablesSidebar({
 
       {/* Variable sets — one prompt can hold many named value sets; the dropdown
           switches the active set, and the + / × buttons create / delete one. */}
-      <div className="space-y-2 border-b border-border px-3 py-2">
+      <div className="space-y-2 px-3 py-2 pb-3">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <Select
@@ -624,7 +624,7 @@ export function VariablesSidebar({
 
       {/* Quick insert section */}
       {allVariables.length > 0 && (
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border/50 p-3">
           <p className="mb-2 text-xs text-muted-foreground">Quick insert</p>
           <div className="flex flex-wrap gap-1.5">
             {allVariables.slice(0, 8).map((name) => (

@@ -252,7 +252,7 @@ function Node({
           onSplitPane={(orientation) => onSplitPane(path, orientation)}
           onClose={() => onClosePane(path)}
         />
-        <div className="min-h-0 flex-1 overflow-hidden border-t border-border">
+        <div className="min-h-0 flex-1 overflow-hidden border-t border-border/60">
           {renderPane(node.view)}
         </div>
       </div>

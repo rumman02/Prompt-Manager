@@ -179,7 +179,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
           className="relative z-10"
         >
           <div className="flex h-full animate-in flex-col border-l border-border bg-card/90 shadow-lg slide-in-from-right duration-300 backdrop-blur-xl">
-            <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
+            <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-6 py-4">
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-lg font-semibold">{prompt.title}</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -328,7 +328,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
                       </Button>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-border bg-muted/30 p-4">
+                  <div className="rounded-xl bg-muted/40 p-4">
                     {view === "raw" ? (
                       <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
                         {text}
@@ -351,7 +351,7 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
                   )}
                 </div>
 
-                <div className="flex items-center gap-4 border-t border-border pt-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-4 pt-4 text-xs text-muted-foreground">
                   <span>Created: {formatDate(prompt.created_at)}</span>
                   <span>Updated: {formatDate(prompt.updated_at)}</span>
                 </div>
