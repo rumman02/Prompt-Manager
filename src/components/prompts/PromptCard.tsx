@@ -48,7 +48,7 @@ export function PromptCard({
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <Card
-            className="group cursor-pointer transition-all hover:border-primary/30 hover:shadow-lg"
+            className="group cursor-pointer shadow-sm transition-shadow hover:shadow-md"
             onClick={() => onSelect(prompt)}
           >
             <CardHeader className="pb-3">

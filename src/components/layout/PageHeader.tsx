@@ -17,7 +17,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ icon, title, subtitle, actions, backButton }: PageHeaderProps) {
   return (
-    <div className="flex shrink-0 flex-col border-b bg-card">
+    <div className="flex shrink-0 flex-col pb-4 bg-card">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-3">
           {backButton && (

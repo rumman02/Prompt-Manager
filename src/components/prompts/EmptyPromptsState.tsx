@@ -11,7 +11,7 @@ interface EmptyPromptsStateProps {
 
 export function EmptyPromptsState({ onLoadDemo, icon = "file", title = "No prompts yet", description = "Create your first prompt or load demo prompts to get started." }: EmptyPromptsStateProps) {
   return (
-    <Card className="border-dashed bg-transparent shadow-none">
+    <Card className="border-dashed border-border/60 bg-transparent shadow-none">
       <CardContent className="flex flex-col items-center justify-center py-20 text-center">
         <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-muted">
           <Icon name={icon} size="xl" className="text-muted-foreground" />

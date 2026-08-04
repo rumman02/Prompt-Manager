@@ -23,7 +23,7 @@ export function TitleBar() {
       data-tauri-drag-region
       onDoubleClick={handleDoubleClick}
       className={cn(
-        "relative z-50 flex h-10 shrink-0 select-none items-center border-b border-border bg-background text-foreground",
+        "relative z-50 flex h-10 shrink-0 select-none items-center border-b border-border/60 bg-background text-foreground",
         // On macOS reserve space on the left for the traffic-light window
         // controls so the collapsed sidebar rail no longer collides with them.
         IS_MAC ? "pl-[78px]" : "pl-4",

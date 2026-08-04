@@ -89,7 +89,7 @@ export function PromptListTable({
   };
 
   return (
-    <div className="rounded-xl border bg-card shadow-md">
+    <div className="rounded-xl bg-card shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/40 hover:bg-muted/40">
