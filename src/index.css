@@ -353,3 +353,16 @@
     }
   }
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Custom title bar (src/components/layout/TitleBar.tsx)
+   The app shell sets --titlebar-height on the host element. The shadcn
+   sidebar's fixed rail is viewport-anchored (inset-y-0), so it must be
+   pushed down by the titlebar height or its logo/toggle button would hide
+   under the macOS traffic-light overlay. This scopes the offset to the app
+   shell only (VaultSetupScreen keeps a full-bleed layout).
+   ──────────────────────────────────────────────────────────────── */
+[data-shell-with-titlebar] div:has(> [data-sidebar="sidebar"]) {
+  top: var(--titlebar-height, 0px);
+  height: calc(100svh - var(--titlebar-height, 0px));
+}

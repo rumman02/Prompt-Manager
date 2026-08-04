@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { type CSSProperties, useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sidebar, type ViewType } from "@/components/sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { CommandPalette } from "@/components/layout/CommandPalette";
+import { TitleBar, TITLEBAR_HEIGHT } from "@/components/layout/TitleBar";
 import { StatsCards } from "@/components/stats-cards";
 import { CategoryChart } from "@/components/category-chart";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -306,7 +307,13 @@ function AppContent() {
   })();
 
   return (
-    <SidebarProvider className="bg-secondary/30 h-screen w-screen overflow-hidden">
+    <div
+      data-shell-with-titlebar
+      className="flex h-screen w-screen flex-col overflow-hidden"
+      style={{ "--titlebar-height": `${TITLEBAR_HEIGHT}px` } as CSSProperties}
+    >
+      <TitleBar />
+      <SidebarProvider className="min-h-0 flex-1 bg-secondary/30">
       <Sidebar
         activeView={effectiveView}
         onViewChange={handleViewChange}
@@ -451,7 +458,8 @@ function AppContent() {
         onSelectEntity={handleSelectEntity}
         recentPrompts={prompts}
       />
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 }
 

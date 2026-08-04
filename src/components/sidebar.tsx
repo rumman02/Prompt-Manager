@@ -55,9 +55,6 @@ export function Sidebar({ activeView, onViewChange, onOpenSearch, counts }: Side
   return (
     <SidebarShell collapsible="icon">
       <SidebarHeader>
-        {/* Traffic light spacer — draggable, keeps logo clear of macOS window controls */}
-        <div className="h-8 shrink-0" data-tauri-drag-region />
-
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg">
