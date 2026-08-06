@@ -110,7 +110,7 @@ export function PromptCard({
               <p className="mt-3 text-xs text-muted-foreground">
                 {formatDate(prompt.updated_at)}
               </p>
-              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/80">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground/80">
                 <span>~{stats.tokens} tokens</span>
                 <span>{stats.words} words</span>
                 <span>{stats.sentences} sentences</span>
