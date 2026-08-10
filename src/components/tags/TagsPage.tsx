@@ -64,6 +64,20 @@ interface TagInfo {
   count: number;
 }
 
+/**
+ * Radix menus and dialogs both lock `pointer-events` on <body> while open
+ * (react-dismissable-layer shares a module-level saved value). Opening a
+ * Dialog/AlertDialog synchronously from a menu item's onSelect makes the
+ * menu's close cleanup restore the dialog's "none" instead of "", leaving
+ * the whole UI dead to clicks. Deferring one tick lets the menu fully
+ * unmount (restoring body pointer-events) before the dialog mounts.
+ */
+function deferMenuDialog(fn: () => void) {
+  return () => {
+    window.setTimeout(fn, 0);
+  };
+}
+
 interface TagsPageProps {
   onRefresh: () => void;
   /** Navigate to the Prompts view filtered to this tag. */
@@ -351,13 +365,13 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                         </TableRow>
                       </ContextMenuTrigger>
                       <ContextMenuContent className="w-44">
-                        <ContextMenuItem onSelect={() => setEditingTag(tag.name)}>
+                        <ContextMenuItem onSelect={deferMenuDialog(() => setEditingTag(tag.name))}>
                           <Icon name="edit" size="sm" />
                           Edit
                         </ContextMenuItem>
                         <ContextMenuSeparator />
                         <ContextMenuItem
-                          onSelect={() => setTagToDelete(tag.name)}
+                          onSelect={deferMenuDialog(() => setTagToDelete(tag.name))}
                           className="text-destructive focus:text-destructive focus:bg-destructive/10"
                         >
                           <Icon name="delete" size="sm" />
@@ -496,13 +510,13 @@ function TagCard({
         </Card>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-44">
-        <ContextMenuItem onSelect={onEdit}>
+        <ContextMenuItem onSelect={deferMenuDialog(onEdit)}>
           <Icon name="edit" size="sm" />
           Edit
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
-          onSelect={onDelete}
+          onSelect={deferMenuDialog(onDelete)}
           className="text-destructive focus:text-destructive focus:bg-destructive/10"
         >
           <Icon name="delete" size="sm" />
@@ -534,13 +548,13 @@ function TagActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem onSelect={onEdit}>
+        <DropdownMenuItem onSelect={deferMenuDialog(onEdit)}>
           <Icon name="edit" size="sm" />
           Edit
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onSelect={onDelete}
+          onSelect={deferMenuDialog(onDelete)}
           className="text-destructive focus:text-destructive focus:bg-destructive/10"
         >
           <Icon name="delete" size="sm" />

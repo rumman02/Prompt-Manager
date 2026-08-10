@@ -52,6 +52,19 @@ interface CategoriesPageProps {
   onLoadDemo: () => void;
 }
 
+/**
+ * Radix menus and dialogs both lock `pointer-events` on <body> while open.
+ * Opening a Dialog/AlertDialog synchronously from a menu item's onSelect
+ * leaves the menu's close cleanup restoring the dialog's "none" instead of
+ * "", deadening the UI after the dialog closes. Deferring one tick lets the
+ * menu unmount (restoring body pointer-events) before the dialog mounts.
+ */
+function deferMenuDialog(fn: () => void) {
+  return () => {
+    window.setTimeout(fn, 0);
+  };
+}
+
 export function CategoriesPage({
   selectedCategory,
   onCategorySelect,
@@ -364,14 +377,21 @@ function CategoryCard({
                     <Icon name="more" size="md" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onSelect={onEdit}>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-44"
+                  // Stop the click on the DOM element, not the custom
+                  // menu.itemSelect event, so the card's navigate onClick
+                  // doesn't fire through the portal.
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuItem onSelect={deferMenuDialog(onEdit)}>
                     <Icon name="edit" size="sm" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onSelect={onDelete}
+                    onSelect={deferMenuDialog(onDelete)}
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
                   >
                     <Icon name="delete" size="sm" />
@@ -408,14 +428,17 @@ function CategoryCard({
           </CardContent>
         </Card>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-44">
-        <ContextMenuItem onSelect={onEdit}>
+      <ContextMenuContent
+        className="w-44"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ContextMenuItem onSelect={deferMenuDialog(onEdit)}>
           <Icon name="edit" size="sm" />
           Edit
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
-          onSelect={onDelete}
+          onSelect={deferMenuDialog(onDelete)}
           className="text-destructive focus:text-destructive focus:bg-destructive/10"
         >
           <Icon name="delete" size="sm" />

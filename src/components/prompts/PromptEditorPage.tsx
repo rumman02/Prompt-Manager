@@ -636,7 +636,7 @@ export function PromptEditorPage({
   return (
     <div className="flex h-full flex-col">
       <PageHeader
-        icon="edit"
+        icon={icon ?? "edit"}
         backButton={{ label: "Back", onClick: onBack }}
         title={isEditing ? (title.trim() || "Untitled Prompt") : "Create New Prompt"}
         subtitle={
