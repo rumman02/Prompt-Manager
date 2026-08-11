@@ -5,6 +5,7 @@ use tauri::Manager;
 
 const REGISTRY_FILE: &str = "vaults.json";
 const MARKER_REL: &str = ".promptmanager/vault.json";
+const DB_EXT: &str = "db";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VaultEntry {
@@ -55,7 +56,7 @@ pub fn read_registry(app: &tauri::AppHandle) -> Result<VaultRegistry, String> {
         Err(_) => return Ok(VaultRegistry::default()), // corrupt json: do not hard-fail
     };
     for entry in reg.vaults.iter_mut() {
-        entry.exists = is_vault_folder(Path::new(&entry.path));
+        entry.exists = is_vault(Path::new(&entry.path));
     }
     Ok(reg)
 }
@@ -75,15 +76,45 @@ pub fn is_vault_folder(path: &Path) -> bool {
     path.join(MARKER_REL).is_file()
 }
 
+/// True when `path` is an existing file whose extension is `db` (case-insensitive).
+pub fn is_vault_file(path: &Path) -> bool {
+    path.extension()
+        .map(|ext| ext.eq_ignore_ascii_case(DB_EXT))
+        .unwrap_or(false)
+        && path.is_file()
+}
+
+/// True when `path` ends in `.db` (case-insensitive), regardless of whether the file exists yet.
+pub fn has_db_extension(path: &Path) -> bool {
+    path.extension()
+        .map(|ext| ext.eq_ignore_ascii_case(DB_EXT))
+        .unwrap_or(false)
+}
+
+/// True when `path` is a vault: an existing `.db` file or a folder with the legacy marker.
+pub fn is_vault(path: &Path) -> bool {
+    is_vault_file(path) || is_vault_folder(path)
+}
+
+/// Resolve the SQLite DB path for a vault: the path itself when it ends in `.db`,
+/// otherwise `<path>/prompts.db` for legacy folder vaults.
+pub fn vault_db_path(path: &Path) -> PathBuf {
+    if has_db_extension(path) {
+        path.to_path_buf()
+    } else {
+        path.join("prompts.db")
+    }
+}
+
 pub fn active_vault_path(app: &tauri::AppHandle) -> Option<PathBuf> {
     let reg = read_registry(app).ok()?;
     let id = reg.active_vault_id?;
     reg.vaults
         .into_iter()
-        .find(|e| e.id == id && is_vault_folder(Path::new(&e.path)))
+        .find(|e| e.id == id && is_vault(Path::new(&e.path)))
         .map(|e| PathBuf::from(e.path))
 }
 
 pub fn active_db_path(app: &tauri::AppHandle) -> Option<PathBuf> {
-    active_vault_path(app).map(|p| p.join("prompts.db"))
+    active_vault_path(app).map(|p| vault_db_path(&p))
 }

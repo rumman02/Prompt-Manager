@@ -1,7 +1,7 @@
 export interface VaultEntry {
   id: string;
   name: string;
-  /** Absolute path to the vault folder */
+  /** Absolute path to the vault folder, or to the .db file for single-file vaults */
   path: string;
   /** RFC3339 */
   created_at: string;

@@ -6,6 +6,7 @@
   "permissions": [
     "core:window:default",
     "core:window:allow-start-dragging",
+    "core:path:default",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
     "dialog:default",

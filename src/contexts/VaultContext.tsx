@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { join } from "@tauri-apps/api/path";
 import { open } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import type { VaultEntry, VaultStatus } from "@/types";
@@ -15,6 +16,8 @@ interface VaultContextValue {
   refresh: () => Promise<void>;
   /** Opens the folder dialog, derives the name from the folder basename, then invokes create_vault */
   createVault: () => Promise<void>;
+  /** Joins dir + filename, derives the name from the filename, then invokes create_file_vault. Rethrows so callers can show the failure inline. */
+  createFileVault: (dir: string, filename: string) => Promise<void>;
   /** Opens the folder dialog, then invokes open_vault */
   openVault: () => Promise<void>;
   switchVault: (id: string) => Promise<void>;
@@ -68,6 +71,19 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       setError(String(e));
       toast.error(String(e));
+    }
+  }, []);
+
+  const createFileVault = useCallback(async (dir: string, filename: string) => {
+    try {
+      const path = await join(dir, filename);
+      const name = filename.replace(/\.db$/i, "");
+      await invoke<VaultEntry>("create_file_vault", { path, name });
+      window.location.reload();
+    } catch (e) {
+      setError(String(e));
+      toast.error(String(e));
+      throw e;
     }
   }, []);
 
@@ -132,6 +148,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         error,
         refresh,
         createVault,
+        createFileVault,
         openVault,
         switchVault,
         renameVault,

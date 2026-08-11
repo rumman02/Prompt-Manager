@@ -447,7 +447,7 @@ fn vault_status(app_handle: tauri::AppHandle) -> Result<vault::VaultInfo, String
         .and_then(|id| reg.vaults.iter().find(|e| e.id == *id).cloned());
     let needs_setup = match &active {
         None => true,
-        Some(entry) => !vault::is_vault_folder(std::path::Path::new(&entry.path)),
+        Some(entry) => !vault::is_vault(std::path::Path::new(&entry.path)),
     };
     Ok(vault::VaultInfo { active, needs_setup })
 }
@@ -486,12 +486,68 @@ fn create_vault(
 }
 
 #[tauri::command]
-fn open_vault(app_handle: tauri::AppHandle, path: String) -> Result<vault::VaultEntry, String> {
-    let folder = std::path::PathBuf::from(&path);
-    if !vault::is_vault_folder(&folder) {
-        return Err("not a vault folder".to_string());
+fn create_file_vault(
+    app_handle: tauri::AppHandle,
+    path: String,
+    name: String,
+) -> Result<vault::VaultEntry, String> {
+    let file = std::path::PathBuf::from(&path);
+    if !vault::has_db_extension(&file) {
+        return Err("vault file must end in .db".to_string());
     }
-    let canon = std::fs::canonicalize(&folder)
+    let parent = file
+        .parent()
+        .ok_or_else(|| "invalid vault file path".to_string())?;
+    std::fs::create_dir_all(parent)
+        .map_err(|e| format!("failed to create vault folder: {e}"))?;
+    // The file may not exist yet, so canonicalize the parent and re-join the
+    // file name onto the canonical parent to get the final absolute path.
+    let canon_parent = std::fs::canonicalize(parent)
+        .map_err(|e| format!("failed to resolve vault path: {e}"))?;
+    let canon_file = match file.file_name() {
+        Some(fname) => canon_parent.join(fname),
+        None => return Err("invalid vault file path".to_string()),
+    };
+
+    // The file MUST exist before register_and_activate: is_vault_file requires
+    // path.is_file(), so the registry entry cannot resolve (and Database::new
+    // via active_vault_path fails with "no active vault selected") until the
+    // file is on disk. create(true)+write(true) without truncate means an
+    // existing .db is left untouched; a zero-length file is a valid empty
+    // SQLite db that init will schema-ify. Drop the handle to close it first.
+    if !canon_file.exists() {
+        std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(&canon_file)
+            .map_err(|e| format!("failed to create vault file: {e}"))?;
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+
+    // File vaults have no .promptmanager marker; an already-existing .db is
+    // registered fine (mirrors create_vault opening an existing vault).
+    let entry = register_and_activate(&app_handle, &canon_file, &name, &now)?;
+    init_db_schema(&app_handle)?;
+    Ok(entry)
+}
+
+#[tauri::command]
+fn open_vault(app_handle: tauri::AppHandle, path: String) -> Result<vault::VaultEntry, String> {
+    let p = std::path::PathBuf::from(&path);
+    if vault::is_vault_file(&p) {
+        // File vault: the file exists, so canonicalize it directly.
+        let canon = std::fs::canonicalize(&p)
+            .map_err(|e| format!("failed to resolve vault path: {e}"))?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let entry = open_vault_inner(&app_handle, canon, now)?;
+        init_db_schema(&app_handle)?;
+        return Ok(entry);
+    }
+    if !vault::is_vault_folder(&p) {
+        return Err("not a vault folder or .db file".to_string());
+    }
+    let canon = std::fs::canonicalize(&p)
         .map_err(|e| format!("failed to resolve vault path: {e}"))?;
     let now = chrono::Utc::now().to_rfc3339();
     let entry = open_vault_inner(&app_handle, canon, now)?;
@@ -507,8 +563,8 @@ fn switch_vault(app_handle: tauri::AppHandle, id: String) -> Result<vault::Vault
         .iter()
         .position(|e| e.id == id)
         .ok_or_else(|| "vault not found".to_string())?;
-    if !vault::is_vault_folder(std::path::Path::new(&reg.vaults[pos].path)) {
-        return Err("vault folder is missing".to_string());
+    if !vault::is_vault(std::path::Path::new(&reg.vaults[pos].path)) {
+        return Err("vault is missing".to_string());
     }
     reg.vaults[pos].last_opened_at = Some(chrono::Utc::now().to_rfc3339());
     reg.active_vault_id = Some(id);
@@ -559,6 +615,24 @@ fn reveal_vault(app_handle: tauri::AppHandle, id: String) -> Result<(), String> 
         .find(|e| e.id == id)
         .ok_or_else(|| "vault not found".to_string())?;
     let path = std::path::PathBuf::from(&entry.path);
+    if vault::is_vault_file(&path) {
+        // File vault: reveal in the file manager instead of opening the db.
+        #[cfg(target_os = "macos")]
+        let status = std::process::Command::new("open").arg("-R").arg(&path).status();
+        #[cfg(target_os = "windows")]
+        let status = std::process::Command::new("explorer")
+            .arg(format!("/select,{}", path.to_string_lossy()))
+            .status();
+        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+        let status = std::process::Command::new("xdg-open")
+            .arg(path.parent().unwrap_or(path.as_path()))
+            .status();
+        return status
+            .map_err(|e| format!("failed to open vault folder: {e}"))?
+            .success()
+            .then_some(())
+            .ok_or_else(|| "failed to open vault folder".to_string());
+    }
     #[cfg(target_os = "macos")]
     let status = std::process::Command::new("open").arg(&path).status();
     #[cfg(target_os = "windows")]
@@ -737,6 +811,7 @@ pub fn run() {
             list_vaults,
             vault_status,
             create_vault,
+            create_file_vault,
             open_vault,
             switch_vault,
             rename_vault,
@@ -746,3 +821,4 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+

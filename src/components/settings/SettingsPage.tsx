@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -136,11 +137,153 @@ function VaultRenameDialog({
   );
 }
 
+interface CreateVaultDialogProps {
+  open: boolean;
+  existingNames: string[];
+  onClose: () => void;
+  onCreate: (dir: string, filename: string) => Promise<void>;
+}
+
+export function CreateVaultDialog({
+  open,
+  existingNames,
+  onClose,
+  onCreate,
+}: CreateVaultDialogProps) {
+  const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setName("");
+      setLocation("");
+      setIsSubmitting(false);
+      setSubmitError(null);
+    }
+  }, [open]);
+
+  const trimmed = name.trim();
+  const filename = /\.db$/i.test(trimmed) ? trimmed : `${trimmed}.db`;
+  const hasInvalidChars = /[\\/:]/.test(trimmed);
+  const startsWithDot = trimmed.startsWith(".");
+  const isDuplicate = existingNames.some(
+    (n) => n.toLowerCase() === filename.toLowerCase(),
+  );
+  const isValid =
+    !!trimmed && !hasInvalidChars && !startsWithDot && !isDuplicate;
+  const canSubmit = isValid && !!location && !isSubmitting;
+
+  const handleBrowse = async () => {
+    const result = await openDialog({
+      directory: true,
+      multiple: false,
+      title: "Choose location",
+    });
+    if (typeof result !== "string") return;
+    setLocation(result);
+  };
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await onCreate(location, filename);
+    } catch (e) {
+      setSubmitError(String(e));
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create local vault</DialogTitle>
+          <DialogDescription>
+            Pick a name for your vault. It is stored as a single .db file.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="vault-create-name">Vault name</Label>
+            <Input
+              id="vault-create-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSubmit();
+              }}
+              autoFocus
+            />
+            {!trimmed && (
+              <p className="text-sm text-warning">Enter a vault name.</p>
+            )}
+            {trimmed && hasInvalidChars && (
+              <p className="text-sm text-warning">
+                Name cannot contain /, \, or :.
+              </p>
+            )}
+            {trimmed && !hasInvalidChars && startsWithDot && (
+              <p className="text-sm text-warning">Name cannot start with a dot.</p>
+            )}
+            {trimmed && !hasInvalidChars && !startsWithDot && isDuplicate && (
+              <p className="text-sm text-warning">
+                A vault with this name already exists.
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Location</Label>
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex-1 truncate rounded-lg border border-transparent bg-muted px-3 py-2 text-sm ${
+                  location ? "" : "text-muted-foreground"
+                }`}
+                title={location || undefined}
+              >
+                {location || "No location chosen"}
+              </div>
+              <Button type="button" variant="outline" onClick={handleBrowse}>
+                Browse
+              </Button>
+            </div>
+          </div>
+          {location && trimmed && (
+            <p className="truncate text-xs text-muted-foreground">
+              {location}/{filename}
+            </p>
+          )}
+        </div>
+        {submitError && (
+          <p className="text-sm text-destructive">{submitError}</p>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={!canSubmit}>
+            {isSubmitting ? "Creating..." : "Create vault"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
-  const { vaults, activeVault, createVault, openVault, switchVault, renameVault, removeVault, revealVault } =
+  const { vaults, activeVault, openVault, switchVault, renameVault, removeVault, revealVault, createFileVault } =
     useVault();
   const [renamingVault, setRenamingVault] = useState<VaultEntry | null>(null);
+  const [creatingVault, setCreatingVault] = useState(false);
   const otherVaults = vaults.filter((v) => v.id !== activeVault?.id && v.exists);
 
   const handleSave = () => {
@@ -231,7 +374,7 @@ export function SettingsPage() {
                         <Icon name="folder" size="md" />
                         Open existing vault…
                       </Button>
-                      <Button variant="outline" onClick={createVault} className="gap-2">
+                      <Button variant="outline" onClick={() => setCreatingVault(true)} className="gap-2">
                         <Icon name="add" size="md" />
                         Create new vault…
                       </Button>
@@ -741,6 +884,12 @@ export function SettingsPage() {
             setRenamingVault(null);
           }
         }}
+      />
+      <CreateVaultDialog
+        open={creatingVault}
+        existingNames={vaults.map((v) => v.name)}
+        onClose={() => setCreatingVault(false)}
+        onCreate={createFileVault}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -208,7 +209,6 @@ export function PromptEditorPage({
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState<IconName | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const {
     getPromptVariables,
@@ -393,11 +393,10 @@ export function PromptEditorPage({
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) return;
-    setSaveError(null);
     try {
       await onSave({ title, content, category, tags, description, icon });
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : String(e));
+      toast.error(`Failed to save: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
@@ -655,21 +654,6 @@ export function PromptEditorPage({
           </>
         }
       />
-
-      {saveError && (
-        <div
-          role="alert"
-          className="mx-6 mt-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
-        >
-          <Icon name="alert" size="md" className="mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <span className="font-medium">Failed to save:</span> {saveError}
-          </div>
-          <button onClick={() => setSaveError(null)} className="text-destructive/70 hover:text-destructive" aria-label="Dismiss error">
-            <Icon name="close" size="sm" />
-          </button>
-        </div>
-      )}
 
       {/* Split-pane editor area. No outer frame — the per-pane tab strips and
           their content borders define the panels, so the whole editor sits

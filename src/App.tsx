@@ -24,6 +24,7 @@ import { VaultProvider, useVault } from "@/contexts/VaultContext";
 import { VaultSetupScreen } from "@/components/vault";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import type { PromptRow, CategoryCount, GlobalSearchHit } from "@/types";
 
 function AppContent() {
@@ -491,6 +492,7 @@ export function App() {
       <SettingsProvider>
         <TooltipProvider>
           <AppGate />
+          <Toaster />
         </TooltipProvider>
       </SettingsProvider>
     </VaultProvider>

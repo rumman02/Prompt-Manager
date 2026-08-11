@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useVault } from "@/contexts/VaultContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/icon";
 import { cn, formatDate } from "@/lib/utils";
+import { CreateVaultDialog } from "@/components/settings/SettingsPage";
 
 export function VaultSetupScreen() {
-  const { vaults, activeVault, loading, createVault, openVault, switchVault, removeVault, error } = useVault();
+  const { vaults, activeVault, loading, openVault, switchVault, removeVault, error, createFileVault } =
+    useVault();
+  const [creatingVault, setCreatingVault] = useState(false);
 
   return (
     <div className="flex min-h-screen items-center justify-center overflow-hidden bg-secondary/30 p-6">
@@ -119,7 +123,7 @@ export function VaultSetupScreen() {
         </CardContent>
 
         <CardFooter className="flex-col gap-2.5">
-          <Button onClick={createVault} className="h-10 w-full gap-2">
+          <Button onClick={() => setCreatingVault(true)} className="h-10 w-full gap-2">
             <Icon name="add" size="md" />
             Create new vault…
           </Button>
@@ -129,6 +133,12 @@ export function VaultSetupScreen() {
           </Button>
         </CardFooter>
       </Card>
+      <CreateVaultDialog
+        open={creatingVault}
+        existingNames={vaults.map((v) => v.name)}
+        onClose={() => setCreatingVault(false)}
+        onCreate={createFileVault}
+      />
     </div>
   );
 }
