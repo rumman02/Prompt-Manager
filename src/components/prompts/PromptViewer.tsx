@@ -330,13 +330,13 @@ export function PromptViewer({ prompt, onClose, onEdit, onDelete, onToggleFavori
                   </div>
                   <div className="rounded-xl bg-muted/40 p-4">
                     {view === "raw" ? (
-                      <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+                      <pre className="select-text whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
                         {text}
                       </pre>
                     ) : (
                       <div
                         key={`vars-${flashKey}`}
-                        className={`markdown-preview ${flashKey > 0 ? "animate-in fade-in" : ""}`}
+                        className={`markdown-preview select-text ${flashKey > 0 ? "animate-in fade-in" : ""}`}
                         dangerouslySetInnerHTML={{ __html: html }}
                       />
                     )}

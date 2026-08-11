@@ -347,21 +347,21 @@ export function VersionHistorySidebar({
 
                   {viewing.description && (
                     <div className="rounded-xl bg-muted/50 p-4">
-                      <p className="text-sm leading-relaxed text-muted-foreground">{viewing.description}</p>
+                      <p className="select-text text-sm leading-relaxed text-muted-foreground">{viewing.description}</p>
                     </div>
                   )}
 
                   <div className="space-y-2">
                     <span className="text-sm font-medium">Title</span>
                     <div className="rounded-xl bg-muted/40 p-3">
-                      <p className="text-sm text-foreground">{viewing.title}</p>
+                      <p className="select-text text-sm text-foreground">{viewing.title}</p>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <span className="text-sm font-medium">Prompt Content</span>
                     <div className="rounded-xl bg-muted/40 p-4">
-                      <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+                      <pre className="select-text whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
                         {viewing.content}
                       </pre>
                     </div>

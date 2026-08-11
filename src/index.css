@@ -94,6 +94,36 @@
   }
 }
 
+@layer base {
+  html,
+  body,
+  #root {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"],
+  [contenteditable=""],
+  code,
+  pre,
+  kbd,
+  [data-selectable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.22);
+    color: inherit;
+  }
+
+  .dark ::selection {
+    background-color: hsl(var(--primary) / 0.32);
+  }
+}
+
 /* ────────────────────────────────────────────────────────────────
    App-specific styles (no shadcn / Tailwind equivalent).
    Runtime theming lives here too: SettingsContext sets the --font-*,
@@ -141,10 +171,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  ::selection {
-    background: hsl(var(--primary) / 0.2);
   }
 
   /* ── Variable tokens (editor overlay + compiled preview) ── */

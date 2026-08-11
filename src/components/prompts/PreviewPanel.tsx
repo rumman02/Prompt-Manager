@@ -114,7 +114,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
           <ScrollArea className="h-full">
             <div
               aria-label="Compiled prompt preview"
-              className="markdown-preview m-3 rounded-xl bg-muted/40 px-4 py-3 shadow-sm"
+              className="markdown-preview select-text m-3 rounded-xl bg-muted/40 px-4 py-3 shadow-sm"
               dangerouslySetInnerHTML={{ __html: html }}
             />
           </ScrollArea>
@@ -127,7 +127,7 @@ export function PreviewPanel({ content, variableValues }: PreviewPanelProps) {
           <ScrollArea className="h-full">
             <pre
               aria-label="Raw compiled Markdown"
-              className="m-3 whitespace-pre-wrap rounded-xl bg-muted/40 px-4 py-3 font-mono text-sm leading-relaxed text-foreground shadow-sm"
+              className="select-text m-3 whitespace-pre-wrap rounded-xl bg-muted/40 px-4 py-3 font-mono text-sm leading-relaxed text-foreground shadow-sm"
             >
               {text}
             </pre>
