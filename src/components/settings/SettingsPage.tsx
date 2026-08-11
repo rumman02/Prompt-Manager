@@ -284,8 +284,6 @@ export function SettingsPage() {
     useVault();
   const [renamingVault, setRenamingVault] = useState<VaultEntry | null>(null);
   const [creatingVault, setCreatingVault] = useState(false);
-  const otherVaults = vaults.filter((v) => v.id !== activeVault?.id && v.exists);
-
   const handleSave = () => {
     toast.success("Settings saved");
   };
@@ -350,26 +348,10 @@ export function SettingsPage() {
                     <div>
                       <Label>Vault Actions</Label>
                       <p className="text-xs text-muted-foreground">
-                        Switch, open, create, or reveal your vault folders
+                        Open, create, or reveal your vault folders
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <Select
-                        value=""
-                        onValueChange={(v) => switchVault(v)}
-                        disabled={otherVaults.length === 0}
-                      >
-                        <SelectTrigger className="w-48" aria-label="Switch vault">
-                          <SelectValue placeholder="Switch vault…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {otherVaults.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                       <Button variant="outline" onClick={openVault} className="gap-2">
                         <Icon name="folder" size="md" />
                         Open existing vault…
@@ -397,7 +379,7 @@ export function SettingsPage() {
                     <div>
                       <Label>Registered Vaults</Label>
                       <p className="text-xs text-muted-foreground">
-                        Renaming and removing only affects this list — files on disk are never deleted
+                        Click a vault to activate it. Renaming and removing only affects this list — files on disk are never deleted
                       </p>
                     </div>
                     <div className="space-y-2">
@@ -412,7 +394,22 @@ export function SettingsPage() {
                             key={vault.id}
                             className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
                               missing ? "border-border opacity-60" : "border-border"
-                            }`}
+                            }${!isActive && !missing ? " cursor-pointer hover:bg-accent/50 transition-colors" : ""}`}
+                            onClick={() => {
+                              if (!isActive && !missing) switchVault(vault.id);
+                            }}
+                            {...(!isActive && !missing
+                              ? {
+                                  role: "button",
+                                  tabIndex: 0,
+                                  onKeyDown: (e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      switchVault(vault.id);
+                                    }
+                                  },
+                                }
+                              : {})}
                           >
                             <Icon
                               name={isActive ? "check" : "folder"}
@@ -440,7 +437,22 @@ export function SettingsPage() {
                                 {vault.path}
                               </p>
                             </div>
-                            <div className="flex shrink-0 items-center gap-1">
+                            <div
+                              className="flex shrink-0 items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {!isActive && !missing && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => switchVault(vault.id)}
+                                  className="gap-1.5"
+                                  title="Make this the active vault"
+                                >
+                                  <Icon name="circleDot" size="sm" />
+                                  Activate
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
