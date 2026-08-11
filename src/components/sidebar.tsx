@@ -22,8 +22,6 @@ export type { ViewType } from "@/constants/nav";
 
 export interface SidebarCounts {
   prompts: number;
-  agents: number;
-  skills: number;
   favorites: number;
   categories: number;
   tags: number;
@@ -42,8 +40,6 @@ export function Sidebar({ activeView, onViewChange, onOpenSearch, counts }: Side
   const countFor = (id: string): number | null => {
     switch (id) {
       case "prompts": return counts.prompts;
-      case "agents": return counts.agents;
-      case "skills": return counts.skills;
       case "favorites": return counts.favorites;
       case "categories": return counts.categories;
       case "tags": return counts.tags;

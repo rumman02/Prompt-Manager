@@ -16,8 +16,6 @@ import { SettingsPage } from "@/components/settings/SettingsPage";
 import { TagsPage } from "@/components/tags/TagsPage";
 import { TrashPage } from "@/components/trash/TrashPage";
 import { CategoriesPage } from "@/components/categories/CategoriesPage";
-import { AgentsPage } from "@/components/agents";
-import { SkillsPage } from "@/components/skills";
 import { FavoritesPage } from "@/components/favorites";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { VaultProvider, useVault } from "@/contexts/VaultContext";
@@ -29,7 +27,7 @@ import type { PromptRow, CategoryCount, GlobalSearchHit } from "@/types";
 
 function AppContent() {
   const { settings } = useSettings();
-  const views: ViewType[] = ["dashboard", "prompts", "agents", "skills", "favorites", "categories", "tags", "trash", "settings"];
+  const views: ViewType[] = ["dashboard", "prompts", "favorites", "categories", "tags", "trash", "settings"];
   const initialView = views.includes(settings.landingPage) ? settings.landingPage : "dashboard";
 
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
@@ -321,8 +319,6 @@ function AppContent() {
         onOpenSearch={() => setCommandPaletteOpen(true)}
         counts={{
           prompts: stats.totalPrompts,
-          agents: stats.totalAgents,
-          skills: stats.totalSkills,
           favorites: stats.favoritesCount,
           categories: stats.totalCategories,
           tags: stats.tagsCount,
@@ -395,14 +391,6 @@ function AppContent() {
                   : undefined
               }
             />
-          )}
-
-          {!isEditorPageOpen && activeView === "agents" && (
-            <AgentsPage />
-          )}
-
-          {!isEditorPageOpen && activeView === "skills" && (
-            <SkillsPage />
           )}
 
           {!isEditorPageOpen && activeView === "favorites" && (
