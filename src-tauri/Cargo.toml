@@ -1,6 +1,6 @@
 [package]
 name = "prompt-manager"
-version = "0.1.0"
+version = "0.0.1"
 description = "A prompt management desktop application"
 authors = ["you"]
 edition = "2021"

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,6 +43,9 @@ import {
 } from "@/constants/colors";
 import { useCategories } from "@/hooks/useCategories";
 import { useEntityIcons } from "@/hooks/useEntityIcons";
+import { usePaginatedList, type PageResult } from "@/hooks/usePaginatedList";
+import { InfiniteScrollSentinel } from "@/components/ui/infinite-scroll-sentinel";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { CategoryCount, PromptRow } from "@/types";
 
 interface CategoriesPageProps {
@@ -84,52 +87,29 @@ export function CategoriesPage({
   } = useEntityIcons("category");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "count">("name");
+  const {
+    items,
+    total,
+    isLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    loadMore,
+    reload,
+  } = usePaginatedList<CategoryCount>({
+    command: "get_categories_page",
+    search: searchQuery,
+    sort: sortBy === "count" ? "count_desc" : "name_asc",
+  });
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [prompts, setPrompts] = useState<PromptRow[]>([]);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
-
-  // load all prompts once so each card can preview titles in its category
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const result = await invoke<PromptRow[]>("get_prompts");
-        if (!cancelled) setPrompts(result);
-      } catch (e) {
-        console.error("Failed to load prompts for category preview:", e);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [categories.length]);
-
-  const filteredCategories = useMemo(() => {
-    let filtered = categories.filter((cat) =>
-      cat.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    filtered.sort((a, b) => {
-      if (sortBy === "name") return a.category.localeCompare(b.category);
-      return b.count - a.count;
-    });
-    return filtered;
-  }, [categories, searchQuery, sortBy]);
-
-  const refreshPrompts = useCallback(async () => {
-    try {
-      const result = await invoke<PromptRow[]>("get_prompts");
-      setPrompts(result);
-    } catch (e) {
-      console.error("Failed to refresh prompts:", e);
-    }
-  }, []);
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
@@ -139,7 +119,7 @@ export function CategoriesPage({
       setNewCategoryName("");
       setIsAddCategoryModalOpen(false);
       await loadCategories();
-      await refreshPrompts();
+      await reload();
     } catch (e) {
       console.error("Failed to add category:", e);
     } finally {
@@ -169,7 +149,7 @@ export function CategoriesPage({
         await renameCategory(oldName, next.name);
       }
       await loadCategories();
-      await refreshPrompts();
+      await reload();
       await loadCategoryIcons();
       setEditingCategory(null);
     } catch (e) {
@@ -182,7 +162,7 @@ export function CategoriesPage({
     try {
       await deleteCategory(category);
       await loadCategories();
-      await refreshPrompts();
+      await reload();
     } catch (e) {
       console.error("Failed to delete category:", e);
     }
@@ -193,7 +173,7 @@ export function CategoriesPage({
       <PageHeader
         icon="categories"
         title="Categories"
-        subtitle={`${filteredCategories.length} categor${filteredCategories.length !== 1 ? "ies" : "y"}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
+        subtitle={`${total} categor${total !== 1 ? "ies" : "y"}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
           <div className="flex items-center gap-3">
             <SearchBar
@@ -210,11 +190,10 @@ export function CategoriesPage({
       />
       <div className="flex-1 overflow-auto p-6">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredCategories.map((cat) => (
+        {items.map((cat) => (
           <CategoryCard
             key={cat.category}
             category={cat}
-            prompts={prompts}
             onSelect={() => {
               onCategorySelect(cat.category);
               onViewChange("prompts");
@@ -225,7 +204,21 @@ export function CategoriesPage({
             colorKey={colors[cat.category] ?? null}
           />
         ))}
-        {filteredCategories.length === 0 && categories.length > 0 && (
+        {isLoading && items.length === 0 && (
+          <div className="col-span-full grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-40" />
+            ))}
+          </div>
+        )}
+        {error && (
+          <div className="col-span-full">
+            <p className="text-sm text-destructive">
+              Failed to load categories: {error}
+            </p>
+          </div>
+        )}
+        {!isLoading && !error && total === 0 && searchQuery.trim() !== "" && (
           <div className="col-span-full">
             <PageEmptyState
               icon="categories"
@@ -234,7 +227,7 @@ export function CategoriesPage({
             />
           </div>
         )}
-        {categories.length === 0 && (
+        {!isLoading && !error && total === 0 && searchQuery.trim() === "" && (
           <div className="col-span-full">
             <PageEmptyState
               icon="categories"
@@ -244,6 +237,12 @@ export function CategoriesPage({
           </div>
         )}
       </div>
+
+      <InfiniteScrollSentinel
+        onIntersect={loadMore}
+        hasMore={hasMore}
+        isLoading={isLoadingMore}
+      />
 
       <AddCategoryModal
         open={isAddCategoryModalOpen}
@@ -306,7 +305,6 @@ export function CategoriesPage({
 
 function CategoryCard({
   category,
-  prompts,
   onSelect,
   onDelete,
   onEdit,
@@ -314,7 +312,6 @@ function CategoryCard({
   colorKey,
 }: {
   category: CategoryCount;
-  prompts: PromptRow[];
   onSelect: () => void;
   onDelete: () => void;
   onEdit: () => void;
@@ -322,15 +319,27 @@ function CategoryCard({
   colorKey: ResourceColorKey | null;
 }) {
   const color = resourceColor(colorKey);
-  const previewTitles = useMemo(
-    () =>
-      prompts
-        .filter((p) => p.category === category.category)
-        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
-        .slice(0, 3)
-        .map((p) => p.title),
-    [prompts, category.category],
-  );
+  const [previewTitles, setPreviewTitles] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    invoke<PageResult<PromptRow>>("get_prompts_page", {
+      limit: 3,
+      offset: 0,
+      category: category.category,
+      sort: "updated_desc",
+      favoritesOnly: false,
+    })
+      .then((result) => {
+        if (!cancelled) setPreviewTitles(result.items.map((p) => p.title));
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewTitles([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [category.category]);
 
   return (
     <ContextMenu>

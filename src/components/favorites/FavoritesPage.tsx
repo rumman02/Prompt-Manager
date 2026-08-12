@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/select";
 import { Icon } from "@/components/ui/icon";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import type { PromptRow } from "@/types";
 
 interface FavoritesPageProps {
-  prompts: PromptRow[];
+  prompts?: PromptRow[];
   viewMode: "list" | "grid";
   onViewModeChange: (mode: "list" | "grid") => void;
   onSelect: (prompt: PromptRow) => void;
@@ -40,23 +42,24 @@ export function FavoritesPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const allFavorites = useMemo(
-    () => prompts.filter((p) => p.is_favorite),
-    [prompts]
-  );
+  const {
+    items,
+    total,
+    isLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    loadMore,
+    reload,
+  } = usePaginatedList<PromptRow>({
+    command: "get_favorites_page",
+    search: searchQuery,
+    sort: "updated_desc",
+  });
   const nonFavorites = useMemo(
-    () => prompts.filter((p) => !p.is_favorite),
+    () => (prompts ?? []).filter((p) => !p.is_favorite),
     [prompts]
   );
-  const favoritePrompts = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return allFavorites;
-    return allFavorites.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.content.toLowerCase().includes(q)
-    );
-  }, [allFavorites, searchQuery]);
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
@@ -68,7 +71,7 @@ export function FavoritesPage({
       <PageHeader
         icon="favorites"
         title="Favorites"
-        subtitle={`${favoritePrompts.length} favorited prompt${favoritePrompts.length !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
+        subtitle={`${total} favorited prompt${total !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
           <div className="flex items-center gap-3">
             <SearchBar
@@ -83,7 +86,19 @@ export function FavoritesPage({
           </div>
         }
       />
-      {favoritePrompts.length === 0 ? (
+      {isLoading && items.length === 0 ? (
+        <div className="flex-1 overflow-auto p-6">
+          <div className="space-y-3">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        </div>
+      ) : error && items.length === 0 ? (
+        <div className="flex-1 overflow-auto p-6">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="flex-1 overflow-auto p-6">
           <Card className="border-dashed shadow-none">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
@@ -98,19 +113,29 @@ export function FavoritesPage({
           </Card>
         </div>
       ) : (
-        <PromptList
-          prompts={favoritePrompts}
-          viewMode={viewMode}
-          onSelect={onSelect}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onDuplicate={onDuplicate}
-          onToggleFavorite={onToggleFavorite}
-          showHeader={false}
-          searchQuery={searchQuery}
-          onSearch={setSearchQuery}
-          onCreatePrompt={undefined}
-        />
+        <>
+          <PromptList
+            prompts={items}
+            viewMode={viewMode}
+            onSelect={onSelect}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onDuplicate={onDuplicate}
+            onToggleFavorite={(id) => {
+              onToggleFavorite(id);
+              reload();
+            }}
+            loadMore={loadMore}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingMore}
+            error={error}
+            total={total}
+            showHeader={false}
+            searchQuery={searchQuery}
+            onSearch={setSearchQuery}
+            onCreatePrompt={undefined}
+          />
+        </>
       )}
 
       <Dialog
@@ -123,30 +148,32 @@ export function FavoritesPage({
           <DialogHeader>
             <DialogTitle>Add Favorite</DialogTitle>
           </DialogHeader>
-          {nonFavorites.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              All prompts are already favorited.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="add-favorite-prompt">Select Prompt</Label>
-              <Select
-                value={selectedId !== null ? String(selectedId) : ""}
-                onValueChange={(value) => setSelectedId(Number(value))}
-              >
-                <SelectTrigger id="add-favorite-prompt">
-                  <SelectValue placeholder="Choose a prompt..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {nonFavorites.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {prompts ? (
+            nonFavorites.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                All prompts are already favorited.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="add-favorite-prompt">Select Prompt</Label>
+                <Select
+                  value={selectedId !== null ? String(selectedId) : ""}
+                  onValueChange={(value) => setSelectedId(Number(value))}
+                >
+                  <SelectTrigger id="add-favorite-prompt">
+                    <SelectValue placeholder="Choose a prompt..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nonFavorites.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )
+          ) : null}
           <DialogFooter>
             <Button variant="ghost" onClick={closeAddModal}>
               Cancel
@@ -154,7 +181,10 @@ export function FavoritesPage({
             <Button
               disabled={!selectedId}
               onClick={() => {
-                if (selectedId) onToggleFavorite(selectedId);
+                if (selectedId) {
+                  onToggleFavorite(selectedId);
+                  reload();
+                }
                 closeAddModal();
               }}
             >

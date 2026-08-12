@@ -1,7 +1,8 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { PromptGrid } from "./PromptGrid";
 import { PromptListTable } from "./PromptListTable";
 import { EmptyPromptsState } from "./EmptyPromptsState";
+import { InfiniteScrollSentinel } from "@/components/ui/infinite-scroll-sentinel";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBar } from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,15 @@ interface PromptListProps {
   onCreatePrompt?: () => void;
   autoFocusSearch?: boolean;
   onSearchFocused?: () => void;
+  selectedCategory?: string | null;
+  onCategoryFilterChange?: (category: string | null) => void;
+  categoryOptions?: { value: string; label: string }[];
+  loadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  isLoading?: boolean;
+  error?: string | null;
+  total?: number;
 }
 
 export function PromptList({
@@ -58,32 +68,15 @@ export function PromptList({
   onCreatePrompt,
   autoFocusSearch,
   onSearchFocused,
+  selectedCategory,
+  onCategoryFilterChange,
+  categoryOptions,
+  loadMore,
+  hasMore,
+  isLoadingMore,
+  isLoading,
+  error,
 }: PromptListProps) {
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-
-  // Category options derived from the prompts actually passed in.
-  const categoryOptions = useMemo<{ value: string; label: string }[]>(() => {
-    const seen = new Set<string>();
-    const categories: string[] = [];
-    for (const prompt of prompts) {
-      const category = prompt.category?.trim();
-      if (category && !seen.has(category)) {
-        seen.add(category);
-        categories.push(category);
-      }
-    }
-    categories.sort((a, b) => a.localeCompare(b));
-    return [
-      { value: "all", label: "All categories" },
-      ...categories.map((category) => ({ value: category, label: category })),
-    ];
-  }, [prompts]);
-
-  const visiblePrompts = useMemo(() => {
-    if (categoryFilter === "all") return prompts;
-    return prompts.filter((prompt) => prompt.category?.trim() === categoryFilter);
-  }, [prompts, categoryFilter]);
-
   return (
     <div className="flex flex-col h-full min-h-0">
       {showHeader && headerTitle && (
@@ -95,18 +88,23 @@ export function PromptList({
           actions={
             (onSearch || onCreatePrompt || onViewModeChange) ? (
               <div className="flex items-center gap-3">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categoryOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {categoryOptions && (
+                  <Select
+                    value={selectedCategory ?? "all"}
+                    onValueChange={(value) => onCategoryFilterChange?.(value === "all" ? null : value)}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {onViewModeChange && (
                   <Tabs
                     value={viewMode}
@@ -144,7 +142,13 @@ export function PromptList({
         />
       )}
       <div className="flex-1 min-h-0 overflow-auto p-6">
-        {prompts.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+          </div>
+        ) : error ? (
+          <div className="rounded-xl bg-card p-6 text-sm text-destructive">{error}</div>
+        ) : prompts.length === 0 ? (
           <EmptyPromptsState
             icon="prompts"
             title="No prompts yet"
@@ -153,7 +157,7 @@ export function PromptList({
           />
         ) : viewMode === "grid" ? (
           <PromptGrid
-            prompts={visiblePrompts}
+            prompts={prompts}
             onSelect={onSelect}
             onEdit={onEdit}
             onDelete={onDelete}
@@ -162,12 +166,19 @@ export function PromptList({
           />
         ) : (
           <PromptListTable
-            prompts={visiblePrompts}
+            prompts={prompts}
             onSelect={onSelect}
             onEdit={onEdit}
             onDelete={onDelete}
             onDuplicate={onDuplicate}
             onToggleFavorite={onToggleFavorite}
+          />
+        )}
+        {hasMore && (
+          <InfiniteScrollSentinel
+            onIntersect={loadMore ?? (() => undefined)}
+            hasMore={hasMore}
+            isLoading={isLoadingMore ?? false}
           />
         )}
       </div>

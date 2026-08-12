@@ -1,5 +1,6 @@
-import { type CSSProperties, useState, useEffect, useCallback } from "react";
+import { type CSSProperties, useState, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { Sidebar, type ViewType } from "@/components/sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { CommandPalette } from "@/components/layout/CommandPalette";
@@ -92,10 +93,28 @@ function AppContent() {
     await Promise.all([loadPrompts(), loadStats(), loadCategories()]);
   }, [loadPrompts, loadStats, loadCategories]);
 
+  const paginated = usePaginatedList<PromptRow>({
+    command: "get_prompts_page",
+    search: searchQuery,
+    sort: "updated_desc",
+    extraArgs: { category: selectedCategory, tag: selectedTag, favoritesOnly: false },
+  });
+
+  const categoryOptions = useMemo(() => {
+    const names = [...new Set(categories.map((c) => c.category))]
+      .filter((name) => name.trim())
+      .sort((a, b) => a.localeCompare(b));
+    return [
+      { value: "all", label: "All categories" },
+      ...names.map((name) => ({ value: name, label: name })),
+    ];
+  }, [categories]);
+
   const handleToggleFavorite = async (id: number) => {
     try {
       await invoke("toggle_favorite", { id });
       await refresh();
+      paginated.reload();
     } catch (e) {
       console.error("Failed to toggle favorite:", e);
     }
@@ -105,6 +124,7 @@ function AppContent() {
     try {
       await invoke("seed_demo_prompts");
       await refresh();
+      paginated.reload();
     } catch (e) {
       console.error("Failed to load demo prompts:", e);
     }
@@ -180,6 +200,7 @@ function AppContent() {
       await invoke("delete_prompt", { id });
       if (selectedPrompt?.id === id) setSelectedPrompt(null);
       await refresh();
+      paginated.reload();
     } catch (e) {
       console.error("Failed to delete prompt:", e);
     }
@@ -189,6 +210,7 @@ function AppContent() {
     try {
       await invoke("duplicate_prompt", { id });
       await refresh();
+      paginated.reload();
     } catch (e) {
       console.error("Failed to duplicate prompt:", e);
     }
@@ -226,6 +248,7 @@ function AppContent() {
         setEditingPrompt(null);
       }
       await refresh();
+      paginated.reload();
     } catch (e) {
       // Re-throw so the editor page can surface the failure as an inline
       // error banner — a silent console.error-only handler is what made
@@ -357,7 +380,16 @@ function AppContent() {
 
           {!isEditorPageOpen && activeView === "prompts" && (
             <PromptList
-              prompts={filteredPrompts}
+              prompts={paginated.items}
+              loadMore={paginated.loadMore}
+              hasMore={paginated.hasMore}
+              isLoadingMore={paginated.isLoadingMore}
+              isLoading={paginated.isLoading}
+              error={paginated.error}
+              total={paginated.total}
+              selectedCategory={selectedCategory}
+              onCategoryFilterChange={setSelectedCategory}
+              categoryOptions={categoryOptions}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
               onSelect={setSelectedPrompt}
@@ -373,7 +405,7 @@ function AppContent() {
                     ? `Prompts: ${selectedCategory}`
                     : "Prompts"
               }
-              headerSubtitle={`${filteredPrompts.length} prompt${filteredPrompts.length !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
+              headerSubtitle={`${paginated.total} prompt${paginated.total !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
               searchQuery={searchQuery}
               onSearch={handleSearch}
               onCreatePrompt={handleCreatePrompt}

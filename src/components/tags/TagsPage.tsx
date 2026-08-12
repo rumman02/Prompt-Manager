@@ -1,5 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
+import { InfiniteScrollSentinel } from "@/components/ui/infinite-scroll-sentinel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -57,7 +60,7 @@ import {
   type ResourceColorKey,
 } from "@/constants/colors";
 import { useEntityIcons } from "@/hooks/useEntityIcons";
-import type { PromptRow } from "@/types";
+import type { PromptRow, TagCount } from "@/types";
 
 interface TagInfo {
   name: string;
@@ -119,32 +122,22 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
     }
   };
 
-  const tags: TagInfo[] = useMemo(() => {
-    const tagMap = new Map<string, number>();
-    prompts.forEach((prompt) => {
-      if (prompt.tags) {
-        prompt.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean)
-          .forEach((tag) => {
-            tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
-          });
-      }
-    });
-    return Array.from(tagMap.entries()).map(([name, count]) => ({ name, count }));
-  }, [prompts]);
+  const {
+    items,
+    total,
+    isLoading: isListLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    loadMore,
+    reload,
+  } = usePaginatedList<TagCount>({
+    command: "get_tags_page",
+    search: searchQuery,
+    sort: sortBy === "count" ? "count_desc" : "name_asc",
+  });
 
-  const filteredTags = useMemo(() => {
-    let filtered = tags.filter((tag) =>
-      tag.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    filtered.sort((a, b) => {
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      return b.count - a.count;
-    });
-    return filtered;
-  }, [tags, searchQuery, sortBy]);
+  const tags: TagInfo[] = items.map((t) => ({ name: t.tag, count: t.count }));
 
   const handleAddTags = async () => {
     if (!selectedPromptId || !newTags.trim()) return;
@@ -171,7 +164,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
       setIsAddModalOpen(false);
       setNewTags("");
       setSelectedPromptId(null);
-      await loadPrompts();
+      await reload();
       onRefresh();
     } catch (e) {
       console.error("Failed to add tags:", e);
@@ -201,7 +194,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
           description: null,
         });
       }
-      await loadPrompts();
+      await reload();
       onRefresh();
     } catch (e) {
       console.error("Failed to delete tag:", e);
@@ -232,7 +225,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
           description: null,
         });
       }
-      await loadPrompts();
+      await reload();
       onRefresh();
     } catch (e) {
       console.error("Failed to rename tag:", e);
@@ -261,7 +254,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
         // above, before the rename.
         await handleRenameTag(oldName, next.name);
       }
-      await loadPrompts();
+      await reload();
       onRefresh();
       await loadTagIcons();
       setEditingTag(null);
@@ -276,7 +269,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
       <PageHeader
         icon="tags"
         title="Tags"
-        subtitle={`${filteredTags.length} tag${filteredTags.length !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
+        subtitle={`${total} tag${total !== 1 ? "s" : ""}${searchQuery ? ` matching "${searchQuery}"` : ""}`}
         actions={
           <div className="flex items-center gap-3">
             <SearchBar
@@ -293,10 +286,25 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
       />
       <div className="flex-1 overflow-auto p-6">
 
-      {filteredTags.length > 0 ? (
-        viewMode === "grid" ? (
+      {isListLoading ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="p-4">
+              <Skeleton className="h-5 w-full" />
+            </Card>
+          ))}
+        </div>
+      ) : error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : total === 0 ? (
+        <PageEmptyState
+          icon="tags"
+          title={searchQuery ? "No tags found" : "No tags yet"}
+          description={searchQuery ? `No tags match "${searchQuery}"` : "Add tags to your prompts to see them here"}
+        />
+      ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredTags.map((tag) => (
+            {tags.map((tag) => (
               <TagCard
                 key={tag.name}
                 tag={tag}
@@ -309,6 +317,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
             ))}
           </div>
         ) : (
+          <>
           <Card className="overflow-hidden shadow-md">
             <Table>
               <TableHeader>
@@ -319,7 +328,7 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTags.map((tag) => {
+                {tags.map((tag) => {
                   const color = resourceColor(colors[tag.name] ?? null);
                   return (
                     <ContextMenu key={tag.name}>
@@ -384,14 +393,14 @@ export function TagsPage({ onRefresh, onTagSelect }: TagsPageProps) {
               </TableBody>
             </Table>
           </Card>
-        )
-      ) : (
-        <PageEmptyState
-          icon="tags"
-          title={searchQuery ? "No tags found" : "No tags yet"}
-          description={searchQuery ? `No tags match "${searchQuery}"` : "Add tags to your prompts to see them here"}
-        />
+        </>
       )}
+
+      <InfiniteScrollSentinel
+        onIntersect={loadMore}
+        hasMore={hasMore}
+        isLoading={isLoadingMore}
+      />
 
       <AddTagsModal
         open={isAddModalOpen}

@@ -155,6 +155,69 @@ fn get_prompts_by_category(
 }
 
 #[tauri::command]
+fn get_prompts_page(
+    app_handle: tauri::AppHandle,
+    limit: i64,
+    offset: i64,
+    search: Option<String>,
+    category: Option<String>,
+    tag: Option<String>,
+    favorites_only: bool,
+    sort: String,
+) -> Result<db::Page<db::Prompt>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_prompts_page(
+        limit,
+        offset,
+        search.as_deref(),
+        category.as_deref(),
+        tag.as_deref(),
+        favorites_only,
+        &sort,
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_favorites_page(
+    app_handle: tauri::AppHandle,
+    limit: i64,
+    offset: i64,
+    search: Option<String>,
+    sort: String,
+) -> Result<db::Page<db::Prompt>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_favorites_page(limit, offset, search.as_deref(), &sort)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_categories_page(
+    app_handle: tauri::AppHandle,
+    limit: i64,
+    offset: i64,
+    search: Option<String>,
+    sort: String,
+) -> Result<db::Page<db::CategoryCount>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_categories_page(limit, offset, search.as_deref(), &sort)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_tags_page(
+    app_handle: tauri::AppHandle,
+    limit: i64,
+    offset: i64,
+    search: Option<String>,
+    sort: String,
+) -> Result<db::Page<db::TagCount>, String> {
+    let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
+    db.get_tags_page(limit, offset, search.as_deref(), &sort)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn get_categories(app_handle: tauri::AppHandle) -> Result<Vec<String>, String> {
     let db = Database::new(&app_handle).map_err(|e| e.to_string())?;
     db.get_categories().map_err(|e| e.to_string())
@@ -775,6 +838,10 @@ pub fn run() {
             purge_expired_prompts,
             empty_trash,
             get_prompts_by_category,
+            get_prompts_page,
+            get_favorites_page,
+            get_categories_page,
+            get_tags_page,
             get_categories,
             get_prompts_count,
             get_categories_count,

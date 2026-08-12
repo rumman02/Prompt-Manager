@@ -18,6 +18,12 @@ pub struct Prompt {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Page<T> {
+    pub items: Vec<T>,
+    pub total: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SearchHit {
     pub id: String,
     pub kind: String,
@@ -29,6 +35,12 @@ pub struct SearchHit {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CategoryCount {
     pub category: String,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TagCount {
+    pub tag: String,
     pub count: i64,
 }
 
@@ -523,6 +535,39 @@ impl Database {
         })
     }
 
+    fn prompt_filter_sql(
+        search: Option<&str>,
+        category: Option<&str>,
+        tag: Option<&str>,
+        favorites_only: bool,
+    ) -> (String, Vec<String>) {
+        let mut clauses: Vec<&str> = vec!["deleted_at IS NULL"];
+        let mut params: Vec<String> = Vec::new();
+
+        if let Some(s) = search.map(str::trim).filter(|s| !s.is_empty()) {
+            clauses.push(
+                "(title LIKE ? COLLATE NOCASE OR content LIKE ? COLLATE NOCASE OR description LIKE ? COLLATE NOCASE)",
+            );
+            let like = format!("%{}%", s);
+            params.push(like.clone());
+            params.push(like.clone());
+            params.push(like);
+        }
+        if let Some(c) = category.filter(|c| !c.is_empty()) {
+            clauses.push("category = ?");
+            params.push(c.to_string());
+        }
+        if let Some(t) = tag.map(str::trim).filter(|t| !t.is_empty()) {
+            clauses.push("(',' || replace(tags, ' ', '') || ',') LIKE ?");
+            params.push(format!("%,{},%", t));
+        }
+        if favorites_only {
+            clauses.push("is_favorite = 1");
+        }
+
+        (clauses.join(" AND "), params)
+    }
+
     pub fn create_prompt(
         &self,
         title: &str,
@@ -885,6 +930,63 @@ impl Database {
         Ok(prompts)
     }
 
+    pub fn get_prompts_page(
+        &self,
+        limit: i64,
+        offset: i64,
+        search: Option<&str>,
+        category: Option<&str>,
+        tag: Option<&str>,
+        favorites_only: bool,
+        sort: &str,
+    ) -> Result<Page<Prompt>> {
+        let limit = limit.clamp(1, 200);
+        let offset = offset.max(0);
+        let (where_sql, params) = Self::prompt_filter_sql(search, category, tag, favorites_only);
+
+        let total: i64 = self.conn.query_row(
+            &format!("SELECT COUNT(*) FROM prompts WHERE {}", where_sql),
+            rusqlite::params_from_iter(params.iter()),
+            |row| row.get(0),
+        )?;
+
+        let order = match sort {
+            "updated_asc" => "updated_at ASC",
+            "created_desc" => "created_at DESC",
+            "created_asc" => "created_at ASC",
+            "title_asc" => "title COLLATE NOCASE ASC",
+            "title_desc" => "title COLLATE NOCASE DESC",
+            _ => "updated_at DESC",
+        };
+
+        let sql = format!(
+            "SELECT id, title, content, category, tags, description, icon, is_favorite, created_at, updated_at, deleted_at
+             FROM prompts WHERE {} ORDER BY {} LIMIT ? OFFSET ?",
+            where_sql, order
+        );
+        let mut page_params = params;
+        page_params.push(limit.to_string());
+        page_params.push(offset.to_string());
+
+        let mut stmt = self.conn.prepare(&sql)?;
+        let items = stmt
+            .query_map(rusqlite::params_from_iter(page_params.iter()), Self::row_to_prompt)?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(Page { items, total })
+    }
+
+    pub fn get_favorites_page(
+        &self,
+        limit: i64,
+        offset: i64,
+        search: Option<&str>,
+        sort: &str,
+    ) -> Result<Page<Prompt>> {
+        self.get_prompts_page(limit, offset, search, None, None, true, sort)
+    }
+
     pub fn get_categories(&self) -> Result<Vec<String>> {
         let mut stmt = self
             .conn
@@ -943,6 +1045,127 @@ impl Database {
             .collect();
 
         Ok(counts)
+    }
+
+    pub fn get_categories_page(
+        &self,
+        limit: i64,
+        offset: i64,
+        search: Option<&str>,
+        sort: &str,
+    ) -> Result<Page<CategoryCount>> {
+        let limit = limit.clamp(1, 200);
+        let offset = offset.max(0);
+        let mut clauses: Vec<&str> = vec!["category IS NOT NULL", "deleted_at IS NULL"];
+        let mut params: Vec<String> = Vec::new();
+        if let Some(s) = search.map(str::trim).filter(|s| !s.is_empty()) {
+            clauses.push("category LIKE ? COLLATE NOCASE");
+            params.push(format!("%{}%", s));
+        }
+        let where_sql = clauses.join(" AND ");
+
+        let total: i64 = self.conn.query_row(
+            &format!(
+                "SELECT COUNT(DISTINCT category) FROM prompts WHERE {}",
+                where_sql
+            ),
+            rusqlite::params_from_iter(params.iter()),
+            |row| row.get(0),
+        )?;
+
+        let order = match sort {
+            "name_desc" => "category DESC",
+            "count_desc" => "count DESC",
+            "count_asc" => "count ASC",
+            _ => "category ASC",
+        };
+
+        let sql = format!(
+            "SELECT category, COUNT(*) as count
+             FROM prompts
+             WHERE {}
+             GROUP BY category
+             ORDER BY {} LIMIT ? OFFSET ?",
+            where_sql, order
+        );
+        let mut page_params = params;
+        page_params.push(limit.to_string());
+        page_params.push(offset.to_string());
+
+        let mut stmt = self.conn.prepare(&sql)?;
+        let items = stmt
+            .query_map(rusqlite::params_from_iter(page_params.iter()), |row| {
+                Ok(CategoryCount {
+                    category: row.get(0)?,
+                    count: row.get(1)?,
+                })
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(Page { items, total })
+    }
+
+    pub fn get_tags_page(
+        &self,
+        limit: i64,
+        offset: i64,
+        search: Option<&str>,
+        sort: &str,
+    ) -> Result<Page<TagCount>> {
+        let limit = limit.clamp(1, 200);
+        let offset = offset.max(0);
+
+        let mut stmt = self.conn.prepare(
+            "SELECT tags FROM prompts WHERE tags IS NOT NULL AND tags != '' AND deleted_at IS NULL",
+        )?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+
+        let mut counts: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+        for row in rows {
+            for tag in row?.split(',').map(|t| t.trim()).filter(|t| !t.is_empty()) {
+                *counts.entry(tag.to_string()).or_insert(0) += 1;
+            }
+        }
+
+        let needle = search
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_lowercase);
+        let mut items: Vec<TagCount> = counts
+            .into_iter()
+            .filter(|(tag, _)| {
+                needle
+                    .as_deref()
+                    .map_or(true, |q| tag.to_lowercase().contains(q))
+            })
+            .map(|(tag, count)| TagCount { tag, count })
+            .collect();
+        let total = items.len() as i64;
+
+        match sort {
+            "name_desc" => items.sort_by(|a, b| b.tag.cmp(&a.tag)),
+            "count_desc" => items.sort_by(|a, b| {
+                b.count
+                    .cmp(&a.count)
+                    .then_with(|| a.tag.cmp(&b.tag))
+            }),
+            "count_asc" => items.sort_by(|a, b| {
+                a.count
+                    .cmp(&b.count)
+                    .then_with(|| a.tag.cmp(&b.tag))
+            }),
+            _ => items.sort_by(|a, b| a.tag.cmp(&b.tag)),
+        }
+
+        let start = offset as usize;
+        let items = items
+            .into_iter()
+            .skip(start)
+            .take(limit as usize)
+            .collect();
+
+        Ok(Page { items, total })
     }
 
     pub fn toggle_favorite(&self, id: i64) -> Result<bool> {

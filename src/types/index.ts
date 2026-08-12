@@ -17,6 +17,11 @@ export interface CategoryCount {
   count: number;
 }
 
+export interface TagCount {
+  tag: string;
+  count: number;
+}
+
 export interface PromptVersion {
   id: number;
   prompt_id: number;
